@@ -12,4 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package values
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+)
+
+var rootCmd = &cobra.Command{
+	Use:   "groupvars",
+	Short: "Compiles values based on groups.",
+	Long:  `This is a CLI tool to compile a set of variables based on a group structured directory of files`,
+}
+
+func execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+}
+
+func main() {
+	execute()
+}

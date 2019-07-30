@@ -15,7 +15,22 @@
 package main
 
 import (
-	_ "github.com/mgruener/kubsible/pkg/values"
+	"fmt"
+
+	"github.com/spf13/cobra"
 )
 
-func main() {}
+const appName = "groupvars"
+const version = "v0.0.1"
+
+func init() {
+	rootCmd.AddCommand(versionCmd)
+}
+
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: fmt.Sprint("Print the version number of ", appName),
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("%s %s\n", appName, version)
+	},
+}
