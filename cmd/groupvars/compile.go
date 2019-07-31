@@ -15,16 +15,27 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/mgruener/kusible/pkg/groupvars"
 	"github.com/spf13/cobra"
+
+	log "github.com/sirupsen/logrus"
+
+	// Use geofffranks yaml library instead of go-yaml
+	// to ensure compatibility with spruce
+	"github.com/geofffranks/yaml"
 )
 
+var groupVarsDir string
+
 func init() {
+	compileCmd.Flags().StringVarP(&groupVarsDir, "dir", "d", "group_vars", "Source directory to read from")
 	rootCmd.AddCommand(compileCmd)
 }
 
 var compileCmd = &cobra.Command{
-	Use:   "compile <group> <group> ...",
+	Use:   "compile GROUP ...",
 	Short: "Compile the values for the given groups",
 	Long: `Use the given groups to compile a single yaml file.
 	The groups are priorized from least to most specific.
@@ -32,6 +43,22 @@ var compileCmd = &cobra.Command{
 	of groups with lower priorities.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		values, err := groupvars.Compile(args)
+		values, err := groupvars.Compile(groupVarsDir, args)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Fatal("Failed to compile group vars.")
+			return
+		}
+
+		merged, err := yaml.Marshal(values)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+				"yaml":  values,
+			}).Fatal("Failed to convert compiled group vars to yaml.")
+			return
+		}
+		fmt.Printf("%s", string(merged))
 	},
 }
