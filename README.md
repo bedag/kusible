@@ -1,3 +1,5 @@
+![Logo of kusible](assets/images/kusible-0.0.4-small.png)
+
 # kusible documentation
 
 kusible is a multi-kubernetes-helm-chart-deployment tool. It uses YAML files which describe chart repositories,
