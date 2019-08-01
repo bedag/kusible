@@ -15,11 +15,13 @@
 package groupvars
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/Shopify/ejson"
 	"github.com/geofffranks/simpleyaml"
 	"github.com/geofffranks/spruce"
 	log "github.com/sirupsen/logrus"
@@ -57,9 +59,15 @@ import (
 // Files can make use of spruce operators (https://github.com/geofffranks/spruce/blob/master/doc/operators.md).
 // *.ejson will be treated as ejson (https://github.com/Shopify/ejson) encrypted
 // and decrypted before merging if a matching private key was provided.
-func Compile(directory string, skipeval bool, groups []string) (map[interface{}]interface{}, error) {
+func Compile(directory string, groups []string, ejsonKeyDir string, ejsonPrivKey string, skipEval bool, skipDecrypt bool) (map[interface{}]interface{}, error) {
+	// List of keys that should be pruned when running the merged data
+	// through the spruce evaluator
+	//   * _public_key: only present in encrypted ejson files to identify the correct private key
+	//                  not required in resulting document
+	pruneKeys := []string{"_public_key"}
 	root := make(map[interface{}]interface{})
 
+	// get the list of files that should be merged
 	files, err := GetOrderedDataFileList(directory, groups)
 	if err != nil {
 		return nil, err
@@ -69,18 +77,49 @@ func Compile(directory string, skipeval bool, groups []string) (map[interface{}]
 		"files": strings.Join(files[:], " "),
 	}).Debug("Ordered list of files to merge")
 
+	// merge everything while decrypting any ejson files encountered
 	merger := &spruce.Merger{AppendByDefault: false}
-	for _, file := range files {
+	for _, path := range files {
 		var data []byte
-		data, err = ioutil.ReadFile(file)
-		if err != nil {
-			return nil, err
+
+		// Check if the current path is an ejson file and if so, try
+		// to decrypt it. If it cannot be decrypted, continue as there
+		// is no harm in using the encrypted values
+		isEjson, err := filepath.Match("*.ejson", filepath.Base(path))
+		if err == nil && isEjson && !skipDecrypt {
+			file, err := os.Open(path)
+			if err != nil {
+				return nil, err
+			}
+			defer file.Close()
+			var outBuffer bytes.Buffer
+
+			err = ejson.Decrypt(file, &outBuffer, ejsonKeyDir, ejsonPrivKey)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"file":  path,
+					"error": err.Error(),
+				}).Warn("Failed to decrypt ejson file, continuing with encrypted data")
+
+				data, err = ioutil.ReadFile(path)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				data = outBuffer.Bytes()
+			}
+		} else {
+			data, err = ioutil.ReadFile(path)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		yamlData, err := simpleyaml.NewYaml(data)
 		if err != nil {
 			return nil, err
 		}
+
 		doc, err := yamlData.Map()
 		if err != nil {
 			return nil, err
@@ -93,9 +132,8 @@ func Compile(directory string, skipeval bool, groups []string) (map[interface{}]
 		return nil, merger.Error()
 	}
 
-	evaluator := &spruce.Evaluator{Tree: root, SkipEval: skipeval}
-	// we neither want to prune nor cherrypick here
-	err = evaluator.Run(nil, nil)
+	evaluator := &spruce.Evaluator{Tree: root, SkipEval: skipEval}
+	err = evaluator.Run(pruneKeys, nil)
 	return evaluator.Tree, err
 }
 

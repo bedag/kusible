@@ -17,24 +17,23 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
-
-var optVerbose string
-var optJSONLog bool
 
 var rootCmd = &cobra.Command{
 	Use:   "kusible",
 	Short: "Render and deploy kubernetes resources",
 	Long:  `This is a CLI tool to render and deploy kubernetes resources to multiple clusters`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		if optJSONLog {
+		if viper.GetBool("json-log") {
 			log.SetFormatter(&log.JSONFormatter{})
 		}
 
-		logLevel, err := log.ParseLevel(optVerbose)
+		logLevel, err := log.ParseLevel(viper.GetString("log-level"))
 
 		if err != nil {
 			log.Fatal(err.Error())
@@ -45,8 +44,17 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&optVerbose, "log-level", "", log.WarnLevel.String(), "log level (trace,debug,info,warn/warning,error,fatal,panic)")
-	rootCmd.PersistentFlags().BoolVarP(&optJSONLog, "json-log", "", false, "log as json")
+	viper.SetEnvPrefix(appName)
+	dashReplacer := strings.NewReplacer("-", "_", ".", "_")
+	viper.SetEnvKeyReplacer(dashReplacer)
+	viper.AutomaticEnv()
+
+	rootCmd.PersistentFlags().StringP("log-level", "", log.WarnLevel.String(), "log level (trace,debug,info,warn/warning,error,fatal,panic)")
+	rootCmd.PersistentFlags().BoolP("json-log", "", false, "log as json")
+	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Suppress all normal output")
+	viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
+	viper.BindPFlag("json-log", rootCmd.PersistentFlags().Lookup("json-log"))
+	viper.BindPFlag("quiet", rootCmd.PersistentFlags().Lookup("quiet"))
 }
 
 func execute() {
