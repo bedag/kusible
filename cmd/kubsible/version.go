@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const appName = "groupvars"
+const appName = "kusible"
 const version = "v0.0.1"
 
 func init() {

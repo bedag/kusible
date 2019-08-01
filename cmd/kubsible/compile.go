@@ -27,10 +27,12 @@ import (
 	"github.com/geofffranks/yaml"
 )
 
-var groupVarsDir string
+var optGroupVarsDir string
+var optQuiet bool
 
 func init() {
-	compileCmd.Flags().StringVarP(&groupVarsDir, "dir", "d", "group_vars", "Source directory to read from")
+	compileCmd.Flags().StringVarP(&optGroupVarsDir, "dir", "d", "group_vars", "Source directory to read from")
+	compileCmd.Flags().BoolVarP(&optQuiet, "quiet", "q", false, "Suppress all normal output")
 	rootCmd.AddCommand(compileCmd)
 }
 
@@ -43,7 +45,7 @@ var compileCmd = &cobra.Command{
 	of groups with lower priorities.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		values, err := groupvars.Compile(groupVarsDir, args)
+		values, err := groupvars.Compile(optGroupVarsDir, args)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
@@ -59,6 +61,9 @@ var compileCmd = &cobra.Command{
 			}).Fatal("Failed to convert compiled group vars to yaml.")
 			return
 		}
-		fmt.Printf("%s", string(merged))
+
+		if !optQuiet {
+			fmt.Printf("%s", string(merged))
+		}
 	},
 }

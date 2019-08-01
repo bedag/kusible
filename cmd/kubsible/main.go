@@ -18,13 +18,35 @@ import (
 	"fmt"
 	"os"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
+var optVerbose string
+var optJSONLog bool
+
 var rootCmd = &cobra.Command{
-	Use:   "groupvars",
-	Short: "Compiles values based on groups.",
-	Long:  `This is a CLI tool to compile a set of variables based on a group structured directory of files`,
+	Use:   "kusible",
+	Short: "Render and deploy kubernetes resources",
+	Long:  `This is a CLI tool to render and deploy kubernetes resources to multiple clusters`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if optJSONLog {
+			log.SetFormatter(&log.JSONFormatter{})
+		}
+
+		logLevel, err := log.ParseLevel(optVerbose)
+
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		log.SetLevel(logLevel)
+	},
+}
+
+func init() {
+	rootCmd.PersistentFlags().StringVarP(&optVerbose, "log-level", "", log.WarnLevel.String(), "log level (trace,debug,info,warn/warning,error,fatal,panic)")
+	rootCmd.PersistentFlags().BoolVarP(&optJSONLog, "json-log", "", false, "log as json")
 }
 
 func execute() {

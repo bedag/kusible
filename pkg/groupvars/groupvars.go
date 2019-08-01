@@ -70,12 +70,12 @@ func GetOrderedDataFileList(directory string, groups []string) ([]string, error)
 	for _, group := range groups {
 		groupDirectory := filepath.Join(directory, group)
 		var orderedGroupFileList []string
+		// TODO: this adds directories in revers alphabetical order (files are fine though)
 		err := filepath.Walk(groupDirectory, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				log.WithFields(log.Fields{
-					"error": err.Error(),
-					"path":  path,
-				}).Warn("Failed to access path in group vars, skipping")
+					"path": path,
+				}).Warn(err.Error())
 				return nil
 			}
 
@@ -89,9 +89,8 @@ func GetOrderedDataFileList(directory string, groups []string) ([]string, error)
 		})
 		if err != nil {
 			log.WithFields(log.Fields{
-				"error":        err.Error(),
 				"groupVarsDir": directory,
-			}).Error("Error while collecting files in group vars directory.")
+			}).Error(err.Error())
 			return nil, err
 		}
 
@@ -137,9 +136,8 @@ func DirectoryDataFiles(directory string, pattern string) ([]string, bool) {
 		files, err := filepath.Glob(filepath.Join(directory, glob))
 		if err != nil {
 			log.WithFields(log.Fields{
-				"error":   err.Error(),
 				"pattern": glob,
-			}).Warn("Failed match files in group vars directory")
+			}).Warn(err.Error())
 			ok = false
 		} else {
 			fileList = append(fileList, files...)
