@@ -15,10 +15,13 @@
 package groupvars
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/geofffranks/simpleyaml"
+	"github.com/geofffranks/spruce"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -54,12 +57,46 @@ import (
 // Files can make use of spruce operators (https://github.com/geofffranks/spruce/blob/master/doc/operators.md).
 // *.ejson will be treated as ejson (https://github.com/Shopify/ejson) encrypted
 // and decrypted before merging if a matching private key was provided.
-func Compile(directory string, groups []string) (map[interface{}]interface{}, error) {
-	var result map[interface{}]interface{}
+func Compile(directory string, skipeval bool, groups []string) (map[interface{}]interface{}, error) {
+	root := make(map[interface{}]interface{})
 
-	_, _ = GetOrderedDataFileList(directory, groups)
+	files, err := GetOrderedDataFileList(directory, groups)
+	if err != nil {
+		return nil, err
+	}
 
-	return result, nil
+	log.WithFields(log.Fields{
+		"files": strings.Join(files[:], " "),
+	}).Debug("Ordered list of files to merge")
+
+	merger := &spruce.Merger{AppendByDefault: false}
+	for _, file := range files {
+		var data []byte
+		data, err = ioutil.ReadFile(file)
+		if err != nil {
+			return nil, err
+		}
+
+		yamlData, err := simpleyaml.NewYaml(data)
+		if err != nil {
+			return nil, err
+		}
+		doc, err := yamlData.Map()
+		if err != nil {
+			return nil, err
+		}
+
+		merger.Merge(root, doc)
+	}
+
+	if merger.Error() != nil {
+		return nil, merger.Error()
+	}
+
+	evaluator := &spruce.Evaluator{Tree: root, SkipEval: skipeval}
+	// we neither want to prune nor cherrypick here
+	err = evaluator.Run(nil, nil)
+	return evaluator.Tree, err
 }
 
 // GetOrderedDataFileList traverses the given directory and returns a list of
@@ -68,32 +105,31 @@ func GetOrderedDataFileList(directory string, groups []string) ([]string, error)
 	var orderedFileList []string
 
 	for _, group := range groups {
-		groupDirectory := filepath.Join(directory, group)
 		var orderedGroupFileList []string
-		// TODO: this adds directories in revers alphabetical order (files are fine though)
-		err := filepath.Walk(groupDirectory, func(path string, info os.FileInfo, err error) error {
+		groupDirectory := filepath.Join(directory, group)
+
+		if stat, err := os.Stat(groupDirectory); err == nil && stat.Mode().IsDir() {
+			// TODO: this adds directories in revers alphabetical order (files are fine though)
+			err := filepath.Walk(groupDirectory, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					log.WithFields(log.Fields{
+						"path": path,
+					}).Warn(err.Error())
+					return nil
+				}
+
+				if info.IsDir() && path != groupDirectory {
+					files, _ := DirectoryDataFiles(path, "*")
+					orderedGroupFileList = append(files, orderedGroupFileList...)
+					return nil
+				}
+
+				return nil
+			})
 			if err != nil {
-				log.WithFields(log.Fields{
-					"path": path,
-				}).Warn(err.Error())
-				return nil
+				return nil, err
 			}
-
-			if info.IsDir() && path != groupDirectory {
-				files, _ := DirectoryDataFiles(path, "*")
-				orderedGroupFileList = append(files, orderedGroupFileList...)
-				return nil
-			}
-
-			return nil
-		})
-		if err != nil {
-			log.WithFields(log.Fields{
-				"groupVarsDir": directory,
-			}).Error(err.Error())
-			return nil, err
 		}
-
 		// add all files contained in subdirectories of the group directory
 		// e.g. <directory>/<group>/**/*.{yml,yaml,json,ejson}
 		orderedFileList = append(orderedFileList, orderedGroupFileList...)
@@ -108,10 +144,6 @@ func GetOrderedDataFileList(directory string, groups []string) ([]string, error)
 		files, _ = DirectoryDataFiles(directory, group)
 		orderedFileList = append(orderedFileList, files...)
 	}
-
-	log.WithFields(log.Fields{
-		"files": strings.Join(orderedFileList[:], " "),
-	}).Debug("Ordered list of files to merge")
 
 	return orderedFileList, nil
 }
