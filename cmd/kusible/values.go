@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/mgruener/kusible/pkg/groupvars"
+	"github.com/mgruener/kusible/pkg/values"
 	"github.com/pborman/ansi"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -31,10 +31,10 @@ import (
 	"github.com/geofffranks/yaml"
 )
 
-var compileCmd = &cobra.Command{
-	Use:   "compile GROUP ...",
-	Short: "Compile the values for the given groups",
-	Long: `Use the given groups to compile a single yaml file.
+var valuesCmd = &cobra.Command{
+	Use:   "values GROUP ...",
+	Short: "Compile values for a list of groups",
+	Long: `Use the given groups to compile a single values yaml file.
 	The groups are priorized from least to most specific.
 	Values of groups of higher priorities override values
 	of groups with lower priorities.`,
@@ -47,7 +47,7 @@ var compileCmd = &cobra.Command{
 		ejsonPrivKey := viper.GetString("ejson-privkey")
 		ejsonKeyDir := viper.GetString("ejson-key-dir")
 
-		values, err := groupvars.Compile(groupVarsDir, groups, ejsonKeyDir, ejsonPrivKey, skipEval, skipDecrypt)
+		values, err := values.Compile(groupVarsDir, groups, ejsonKeyDir, ejsonPrivKey, skipEval, skipDecrypt)
 		if err != nil {
 			// spruce error messages can contain ansi colors
 			strippedError, _ := ansi.Strip([]byte(err.Error()))
@@ -88,10 +88,10 @@ var compileCmd = &cobra.Command{
 }
 
 func init() {
-	compileCmd.Flags().BoolP("json", "j", false, "Output json instead of yaml")
-	compileCmd.Flags().BoolP("skip-decrypt", "", false, "Skip ejson decryption")
-	viper.BindPFlag("json", compileCmd.Flags().Lookup("json"))
-	viper.BindPFlag("skip-decrypt", compileCmd.Flags().Lookup("skip-decrypt"))
+	valuesCmd.Flags().BoolP("json", "j", false, "Output json instead of yaml")
+	valuesCmd.Flags().BoolP("skip-decrypt", "", false, "Skip ejson decryption")
+	viper.BindPFlag("json", valuesCmd.Flags().Lookup("json"))
+	viper.BindPFlag("skip-decrypt", valuesCmd.Flags().Lookup("skip-decrypt"))
 
-	rootCmd.AddCommand(compileCmd)
+	rootCmd.AddCommand(valuesCmd)
 }
