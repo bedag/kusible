@@ -20,20 +20,20 @@ import (
 	"errors"
 	"io"
 
-	"github.com/h2non/filetype"
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/kjk/lzmadec"
 )
 
-func ExtractSingleTar7ZipFile(path string, password string) (bytes.Buffer, error) {
+func extractSingleTar7ZipFile(path string, password string) (bytes.Buffer, error) {
 	var archive *lzmadec.Archive
 	result := bytes.Buffer{}
 
-	fileType, err := filetype.MatchFile(path)
+	mime, _, err := mimetype.DetectFile(path)
 	if err != nil {
 		return result, err
 	}
-	if fileType.MIME.Value != "application/x-7z-compressed" {
-		return result, errors.New("Expected MIME type application/x-7z-compressed but got " + fileType.MIME.Value)
+	if mime != "application/x-7z-compressed" {
+		return result, errors.New("Expected MIME type application/x-7z-compressed but got " + mime)
 	}
 
 	if password != "" {
