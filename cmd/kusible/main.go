@@ -52,9 +52,22 @@ func init() {
 	rootCmd.PersistentFlags().StringP("log-level", "", log.WarnLevel.String(), "log level (trace,debug,info,warn/warning,error,fatal,panic)")
 	rootCmd.PersistentFlags().BoolP("json-log", "", false, "log as json")
 	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Suppress all normal output")
+	rootCmd.PersistentFlags().StringP("inventory", "i", "inventory.yml", "Path to the inventory")
+	rootCmd.PersistentFlags().StringP("group-vars-dir", "d", "group_vars", "Source directory to read from")
+	rootCmd.PersistentFlags().StringP("ejson-privkey", "k", "", "EJSON private key")
+	rootCmd.PersistentFlags().StringP("ejson-key-dir", "", "/opt/ejson/keys", "Directory containing EJSON keys")
+	rootCmd.PersistentFlags().BoolP("skip-eval", "", false, "Skip spruce operator evaluation")
+	rootCmd.PersistentFlags().StringSliceP("limit", "l", []string{}, "Limit selected groups")
+
+	viper.BindPFlag("group-vars-dir", rootCmd.PersistentFlags().Lookup("group-vars-dir"))
+	viper.BindPFlag("ejson-privkey", rootCmd.PersistentFlags().Lookup("ejson-privkey"))
+	viper.BindPFlag("ejson-key-dir", rootCmd.PersistentFlags().Lookup("ejson-key-dir"))
+	viper.BindPFlag("skip-eval", rootCmd.PersistentFlags().Lookup("skip-eval"))
+	viper.BindPFlag("inventory", rootCmd.PersistentFlags().Lookup("inventory"))
 	viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
 	viper.BindPFlag("json-log", rootCmd.PersistentFlags().Lookup("json-log"))
 	viper.BindPFlag("quiet", rootCmd.PersistentFlags().Lookup("quiet"))
+	viper.BindPFlag("limit", rootCmd.PersistentFlags().Lookup("limit"))
 }
 
 func execute() {

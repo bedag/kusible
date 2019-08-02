@@ -88,17 +88,9 @@ var compileCmd = &cobra.Command{
 }
 
 func init() {
-	compileCmd.Flags().StringP("group-vars-dir", "d", "group_vars", "Source directory to read from")
-	compileCmd.Flags().StringP("ejson-privkey", "k", "", "EJSON private key")
-	compileCmd.Flags().StringP("ejson-key-dir", "", "/opt/ejson/keys", "Directory containing EJSON keys")
 	compileCmd.Flags().BoolP("json", "j", false, "Output json instead of yaml")
-	compileCmd.Flags().BoolP("skip-eval", "", false, "Skip spruce operator evaluation")
 	compileCmd.Flags().BoolP("skip-decrypt", "", false, "Skip ejson decryption")
-	viper.BindPFlag("group-vars-dir", compileCmd.Flags().Lookup("group-vars-dir"))
-	viper.BindPFlag("ejson-privkey", compileCmd.Flags().Lookup("ejson-privkey"))
-	viper.BindPFlag("ejson-key-dir", compileCmd.Flags().Lookup("ejson-key-dir"))
 	viper.BindPFlag("json", compileCmd.Flags().Lookup("json"))
-	viper.BindPFlag("skip-eval", compileCmd.Flags().Lookup("skip-eval"))
 	viper.BindPFlag("skip-decrypt", compileCmd.Flags().Lookup("skip-decrypt"))
 
 	rootCmd.AddCommand(compileCmd)
