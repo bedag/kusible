@@ -9,6 +9,8 @@ require (
 	github.com/geofffranks/simpleyaml v0.0.0-20161109204137-c9320f076de5
 	github.com/geofffranks/spruce v1.22.0
 	github.com/geofffranks/yaml v0.0.0-20161117152608-9f2fe4b6f295
+	github.com/h2non/filetype v1.0.9
+	github.com/kjk/lzmadec v0.0.0-20190802150927-78d187673998
 	github.com/mattn/go-isatty v0.0.8 // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
