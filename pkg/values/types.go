@@ -31,9 +31,9 @@ type valueFile struct {
 	skipEval bool
 }
 
-type values struct {
+type valuesDirectory struct {
 	valueData
-	directory       string
+	path            string
 	groups          []string
 	ejson           EjsonSettings
 	skipEval        bool

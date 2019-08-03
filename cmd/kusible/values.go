@@ -48,8 +48,8 @@ var valuesCmd = &cobra.Command{
 			SkipDecrypt: skipDecrypt,
 		}
 
-		values := values.NewValues(groupVarsDir, groups, skipEval, ejsonSettings)
-		_, err := values.Compile()
+		values := values.NewValuesDirectory(groupVarsDir, groups, skipEval, ejsonSettings)
+		_, err := values.LoadMap()
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),

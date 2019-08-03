@@ -32,7 +32,7 @@ func StripAnsiError(err error) error {
 
 // DirectoryDataFiles returns all data files of a given directory matching
 // the provided pattern. Only the filetypes give in the description of the
-// Compile method are considered. The operation is non-recursive.
+// LoadMap method are considered. The operation is non-recursive.
 //
 // The pattern syntax is the same as the one for fmt.Match.
 func DirectoryDataFiles(directory string, pattern string) ([]string, bool) {

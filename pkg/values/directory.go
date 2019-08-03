@@ -23,16 +23,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func NewValues(directory string, groups []string, skipEval bool, ejsonSettings EjsonSettings) *values {
-	return &values{
-		directory: directory,
-		ejson:     ejsonSettings,
-		skipEval:  skipEval,
-		groups:    groups,
+func NewValuesDirectory(path string, groups []string, skipEval bool, ejsonSettings EjsonSettings) *valuesDirectory {
+	return &valuesDirectory{
+		path:     path,
+		ejson:    ejsonSettings,
+		skipEval: skipEval,
+		groups:   groups,
 	}
 }
 
-// Compile takes a directory and a list of groups as parameters and
+// LoadMap takes a directory and a list of groups as parameters and
 // compiles a map of values based on the files in the given directory
 // where the file names / directory names on the top level of the directory
 // match the given group names.
@@ -64,7 +64,7 @@ func NewValues(directory string, groups []string, skipEval bool, ejsonSettings E
 // Files can make use of spruce operators (https://github.com/geofffranks/spruce/blob/master/doc/operators.md).
 // *.ejson will be treated as ejson (https://github.com/Shopify/ejson) encrypted
 // and decrypted before merging if a matching private key was provided.
-func (values *values) Compile() (map[interface{}]interface{}, error) {
+func (values *valuesDirectory) LoadMap() (map[interface{}]interface{}, error) {
 	if len(values.data) > 0 {
 		return values.data, nil
 	}
@@ -110,14 +110,14 @@ func (values *values) Compile() (map[interface{}]interface{}, error) {
 
 // GetOrderedDataFileList traverses the given directory and returns a list of
 // files according to the rules described for the Compile method
-func (values *values) OrderedDataFileList() ([]string, error) {
+func (values *valuesDirectory) OrderedDataFileList() ([]string, error) {
 	if len(values.orderedFileList) > 0 {
 		return values.orderedFileList, nil
 	}
 
 	for _, group := range values.groups {
 		var orderedGroupFileList []string
-		groupDirectory := filepath.Join(values.directory, group)
+		groupDirectory := filepath.Join(values.path, group)
 
 		if stat, err := os.Stat(groupDirectory); err == nil && stat.Mode().IsDir() {
 			// TODO: this adds directories in revers alphabetical order (files are fine though)
@@ -152,7 +152,7 @@ func (values *values) OrderedDataFileList() ([]string, error) {
 
 		// add all group files
 		// e.g. <directory>/<group>.{yml,yaml,json,ejson}
-		files, _ = DirectoryDataFiles(values.directory, group)
+		files, _ = DirectoryDataFiles(values.path, group)
 		values.orderedFileList = append(values.orderedFileList, files...)
 	}
 
