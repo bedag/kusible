@@ -15,17 +15,22 @@
 package values
 
 import (
-	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/Shopify/ejson"
-	"github.com/geofffranks/simpleyaml"
 	"github.com/geofffranks/spruce"
 	log "github.com/sirupsen/logrus"
 )
+
+func NewValues(directory string, groups []string, skipEval bool, ejsonSettings EjsonSettings) *values {
+	return &values{
+		directory: directory,
+		ejson:     ejsonSettings,
+		skipEval:  skipEval,
+		groups:    groups,
+	}
+}
 
 // Compile takes a directory and a list of groups as parameters and
 // compiles a map of values based on the files in the given directory
@@ -59,92 +64,60 @@ import (
 // Files can make use of spruce operators (https://github.com/geofffranks/spruce/blob/master/doc/operators.md).
 // *.ejson will be treated as ejson (https://github.com/Shopify/ejson) encrypted
 // and decrypted before merging if a matching private key was provided.
-func Compile(directory string, groups []string, ejsonKeyDir string, ejsonPrivKey string, skipEval bool, skipDecrypt bool) (map[interface{}]interface{}, error) {
+func (values *values) Compile() (map[interface{}]interface{}, error) {
+	if len(values.data) > 0 {
+		return values.data, nil
+	}
 	// List of keys that should be pruned when running the merged data
 	// through the spruce evaluator
 	//   * _public_key: only present in encrypted ejson files to identify the correct private key
 	//                  not required in resulting document
 	pruneKeys := []string{"_public_key"}
-	root := make(map[interface{}]interface{})
+	values.data = make(map[interface{}]interface{})
 
+	var err error
 	// get the list of files that should be merged
-	files, err := GetOrderedDataFileList(directory, groups)
+	values.orderedFileList, err = values.OrderedDataFileList()
 	if err != nil {
 		return nil, err
 	}
 
 	log.WithFields(log.Fields{
-		"files": strings.Join(files[:], " "),
+		"files": strings.Join(values.orderedFileList[:], " "),
 	}).Debug("Ordered list of files to merge")
 
 	// merge everything while decrypting any ejson files encountered
 	merger := &spruce.Merger{AppendByDefault: false}
-	for _, path := range files {
-		var data []byte
-
-		// Check if the current path is an ejson file and if so, try
-		// to decrypt it. If it cannot be decrypted, continue as there
-		// is no harm in using the encrypted values
-		isEjson, err := filepath.Match("*.ejson", filepath.Base(path))
-		if err == nil && isEjson && !skipDecrypt {
-			file, err := os.Open(path)
-			if err != nil {
-				return nil, err
-			}
-			defer file.Close()
-			var outBuffer bytes.Buffer
-
-			err = ejson.Decrypt(file, &outBuffer, ejsonKeyDir, ejsonPrivKey)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"file":  path,
-					"error": err.Error(),
-				}).Warn("Failed to decrypt ejson file, continuing with encrypted data")
-
-				data, err = ioutil.ReadFile(path)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				data = outBuffer.Bytes()
-			}
-		} else {
-			data, err = ioutil.ReadFile(path)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		yamlData, err := simpleyaml.NewYaml(data)
+	for _, path := range values.orderedFileList {
+		file := NewValueFile(path, true, values.ejson)
+		doc, err := file.LoadMap()
 		if err != nil {
 			return nil, err
 		}
-
-		doc, err := yamlData.Map()
-		if err != nil {
-			return nil, err
-		}
-
-		merger.Merge(root, doc)
+		merger.Merge(values.data, doc)
 	}
 
 	if merger.Error() != nil {
-		return nil, merger.Error()
+		// spruce error messages can contain ansi colors
+		return nil, StripAnsiError(merger.Error())
 	}
 
-	evaluator := &spruce.Evaluator{Tree: root, SkipEval: skipEval}
+	evaluator := &spruce.Evaluator{Tree: values.data, SkipEval: values.skipEval}
 	err = evaluator.Run(pruneKeys, nil)
-	return evaluator.Tree, err
+	values.data = evaluator.Tree
+	return values.data, StripAnsiError(err)
 }
 
 // GetOrderedDataFileList traverses the given directory and returns a list of
 // files according to the rules described for the Compile method
-func GetOrderedDataFileList(directory string, groups []string) ([]string, error) {
-	var orderedFileList []string
+func (values *values) OrderedDataFileList() ([]string, error) {
+	if len(values.orderedFileList) > 0 {
+		return values.orderedFileList, nil
+	}
 
-	for _, group := range groups {
+	for _, group := range values.groups {
 		var orderedGroupFileList []string
-		groupDirectory := filepath.Join(directory, group)
+		groupDirectory := filepath.Join(values.directory, group)
 
 		if stat, err := os.Stat(groupDirectory); err == nil && stat.Mode().IsDir() {
 			// TODO: this adds directories in revers alphabetical order (files are fine though)
@@ -170,49 +143,18 @@ func GetOrderedDataFileList(directory string, groups []string) ([]string, error)
 		}
 		// add all files contained in subdirectories of the group directory
 		// e.g. <directory>/<group>/**/*.{yml,yaml,json,ejson}
-		orderedFileList = append(orderedFileList, orderedGroupFileList...)
+		values.orderedFileList = append(values.orderedFileList, orderedGroupFileList...)
 
 		// add all files contained in the group directory
 		// e.g. <directory>/<group>/*.{yml,yaml,json,ejson}
 		files, _ := DirectoryDataFiles(groupDirectory, "*")
-		orderedFileList = append(orderedFileList, files...)
+		values.orderedFileList = append(values.orderedFileList, files...)
 
 		// add all group files
 		// e.g. <directory>/<group>.{yml,yaml,json,ejson}
-		files, _ = DirectoryDataFiles(directory, group)
-		orderedFileList = append(orderedFileList, files...)
+		files, _ = DirectoryDataFiles(values.directory, group)
+		values.orderedFileList = append(values.orderedFileList, files...)
 	}
 
-	return orderedFileList, nil
-}
-
-// DirectoryDataFiles returns all data files of a given directory matching
-// the provided pattern. Only the filetypes give in the description of the
-// Compile method are considered. The operation is non-recursive.
-//
-// The pattern syntax is the same as the one for fmt.Match.
-func DirectoryDataFiles(directory string, pattern string) ([]string, bool) {
-	dataFileExt := [...]string{".yaml", ".yml", ".json", ".ejson"}
-	var dataFileGlobs []string
-
-	for _, ext := range dataFileExt {
-		dataFileGlobs = append(dataFileGlobs, pattern+ext)
-	}
-
-	var fileList []string
-	ok := true
-
-	for _, glob := range dataFileGlobs {
-		files, err := filepath.Glob(filepath.Join(directory, glob))
-		if err != nil {
-			log.WithFields(log.Fields{
-				"pattern": glob,
-			}).Warn(err.Error())
-			ok = false
-		} else {
-			fileList = append(fileList, files...)
-		}
-	}
-
-	return fileList, ok
+	return values.orderedFileList, nil
 }

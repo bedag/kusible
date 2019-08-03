@@ -15,20 +15,15 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/mgruener/kusible/pkg/values"
-	"github.com/pborman/ansi"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/geofffranks/spruce"
 	log "github.com/sirupsen/logrus"
-
 	// Use geofffranks yaml library instead of go-yaml
 	// to ensure compatibility with spruce
-	"github.com/geofffranks/yaml"
 )
 
 var valuesCmd = &cobra.Command{
@@ -47,39 +42,37 @@ var valuesCmd = &cobra.Command{
 		ejsonPrivKey := viper.GetString("ejson-privkey")
 		ejsonKeyDir := viper.GetString("ejson-key-dir")
 
-		values, err := values.Compile(groupVarsDir, groups, ejsonKeyDir, ejsonPrivKey, skipEval, skipDecrypt)
+		ejsonSettings := values.EjsonSettings{
+			PrivKey:     ejsonPrivKey,
+			KeyDir:      ejsonKeyDir,
+			SkipDecrypt: skipDecrypt,
+		}
+
+		values := values.NewValues(groupVarsDir, groups, skipEval, ejsonSettings)
+		_, err := values.Compile()
 		if err != nil {
-			// spruce error messages can contain ansi colors
-			strippedError, _ := ansi.Strip([]byte(err.Error()))
 			log.WithFields(log.Fields{
-				"error": string(strippedError),
+				"error": err.Error(),
 			}).Fatal("Failed to compile group vars.")
 			return
 		}
 
 		var result string
-		// Although we have a --json option, always marshal to yaml
-		// first. The reason is that the type returned by the
-		// spruce evaluator cannot be easyly converted to json,
-		// but the byte slice returned after marshalling to yaml
-		// can be (with the help of spruce).
-		// As we do this only in memory to the final document and
-		// we probably will not have to deal with huge (> a few MB)
-		// datasets, the performance penalty of the double convert
-		// should be negligible
-		merged, err := yaml.Marshal(values)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err.Error(),
-				"yaml":  values,
-			}).Fatal("Failed to convert compiled group vars to yaml.")
-			return
-		}
 
 		if viper.GetBool("json") {
-			result, _ = spruce.JSONifyIO(bytes.NewReader(merged), false)
+			result, err = values.JsonString()
+			if err != nil {
+				log.WithFields(log.Fields{
+					"error": err.Error(),
+				}).Fatal("Failed to convert compiled group vars to json.")
+			}
 		} else {
-			result = string(merged)
+			result, err = values.YamlString()
+			if err != nil {
+				log.WithFields(log.Fields{
+					"error": err.Error(),
+				}).Fatal("Failed to convert compiled group vars to yaml.")
+			}
 		}
 		if !viper.GetBool("quiet") {
 			fmt.Printf("%s", result)
