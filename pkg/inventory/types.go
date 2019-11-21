@@ -14,24 +14,25 @@
 
 package inventory
 
+import clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+
+type Inventory struct {
+	entries []inventoryEntry `mapstructure:"inventory"`
+}
+
 type kubeconfigLoader interface {
-	Load() string
+	Load() ([]byte, error)
 }
 
 type kubeconfig struct {
-	kubeconfig string
-	loader     kubeconfigLoader
-}
-
-type inventory struct {
-	entries []inventoryEntry
+	config *clientcmdapi.Config
 }
 
 type inventoryEntry struct {
 	name            string
 	groups          []string
 	tiller          tillerSettings
-	configNamespace string
+	configNamespace string `mapstructure:"config_namespace"`
 	kubeconfig      kubeconfig
 }
 

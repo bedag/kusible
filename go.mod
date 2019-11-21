@@ -10,10 +10,10 @@ require (
 	github.com/geofffranks/simpleyaml v0.0.0-20161109204137-c9320f076de5
 	github.com/geofffranks/spruce v1.22.0
 	github.com/geofffranks/yaml v0.0.0-20161117152608-9f2fe4b6f295
+	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/kjk/lzmadec v0.0.0-20190802150927-78d187673998
 	github.com/mattn/go-isatty v0.0.8 // indirect
-	github.com/onsi/ginkgo v1.8.0 // indirect
-	github.com/onsi/gomega v1.5.0 // indirect
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pborman/ansi v0.0.0-20160920233902-86f499584b0a
 	github.com/sirupsen/logrus v1.4.2
 	github.com/smartystreets/goconvey v0.0.0-20190731233626-505e41936337 // indirect
@@ -21,4 +21,11 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/starkandwayne/goutils v0.0.0-20190115202530-896b8a6904be // indirect
 	github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c // indirect
+	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
+	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
+	k8s.io/apimachinery v0.0.0-20191121015412-41065c7a8c2a // indirect
+	k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
+	k8s.io/utils v0.0.0-20191114200735-6ca3b61696b6 // indirect
 )
+
+go 1.13

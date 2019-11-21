@@ -17,8 +17,6 @@ package inventory
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
-	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -40,7 +38,7 @@ func NewKubeconfigS3Loader(accessKey string, secretKey string, region string, se
 	}
 }
 
-func (loader *kubeconfigS3Loader) Load() (string, error) {
+func (loader *kubeconfigS3Loader) Load() ([]byte, error) {
 	// TODO: session caching
 	awsConfig := &aws.Config{
 		Region:           aws.String(loader.region),
@@ -50,7 +48,7 @@ func (loader *kubeconfigS3Loader) Load() (string, error) {
 	}
 	sess, err := session.NewSession(awsConfig)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	downloader := s3manager.NewDownloader(sess)
@@ -62,41 +60,31 @@ func (loader *kubeconfigS3Loader) Load() (string, error) {
 	buf := aws.NewWriteAtBuffer([]byte{})
 	_, err = downloader.Download(buf, &requestInput)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	data := buf.Bytes()
 
 	mime, _, err := mimetype.DetectReader(bytes.NewReader(data))
 
-	var buffer bytes.Buffer
+	var rawKubeconfig []byte
 
 	switch mime {
 	case "text/plain":
-		buffer = *bytes.NewBuffer(data)
+		rawKubeconfig = data
 	case "application/x-7z-compressed":
-		// extracting 7zip data only works with files stored in the filesystem
-		tmpfile, err := ioutil.TempFile("", "s3loader")
+		rawKubeconfig, err = extractSingleTar7Zip(data, loader.decryptKey)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-		defer func(tmpfile *os.File) {
-			tmpfile.Close()
-			os.Remove(tmpfile.Name())
-		}(tmpfile)
-
-		if _, err := tmpfile.Write(data); err != nil {
-			return "", err
-		}
-
-		buffer, err = extractSingleTar7ZipFile(tmpfile.Name(), loader.decryptKey)
+	case "application/octet-stream":
+		rawKubeconfig, err = decryptOpensslSymmetric(data, loader.decryptKey)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	default:
-		return "", errors.New("Unknown kubeconfig source file type: " + mime)
+		return nil, errors.New("Unknown kubeconfig source file type: " + mime)
 	}
 
-	kubeconfig := buffer.String()
-	return kubeconfig, nil
+	return rawKubeconfig, nil
 
 }

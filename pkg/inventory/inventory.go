@@ -14,48 +14,88 @@
 //
 package inventory
 
-//
-//import (
-//	"os"
-//
-//	"github.com/mgruener/kusible/pkg/groups"
-//
-//	"github.com/mgruener/kusible/pkg/values"
-//)
-//
-//func NewInventory(path string, ejson values.EjsonSettings) (*inventory, error) {
-//	stat, err := os.Stat(path)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	var data map[interface{}]interface{}
-//	if stat.Mode().IsRegular() {
-//		// the path provided is a file, treat it as a single value
-//		// file, thus loading it with ejson and spruc operator support
-//		inventoryFile := values.NewValueFile(path, false, ejson)
-//		data, err = inventoryFile.LoadMap()
-//		if err != nil {
-//			return nil, err
-//		}
-//	} else {
-//		// The path provided is a directory, treat it as a values
-//		// directory. As the valuesDirectory type requires a list
-//		// of groups to determine which files to process, first
-//		// get a list of all groups in the given directory
-//		groups, err := groups.Groups(path, ".*", []string{})
-//		if err != nil {
-//			return nil, err
-//		}
-//		inventoryDir := values.NewValuesDirectory(path, groups, false, ejson)
-//		data, err = inventoryDir.LoadMap()
-//		if err != nil {
-//			return nil, err
-//		}
-//	}
-//
-//	// TODO: revisit http://ghodss.com/2014/the-right-way-to-handle-yaml-in-golang/
-//	// and actually load the inventory via proper deserialization
-//
-//	return nil, nil
-//}
+import (
+	"os"
+	"reflect"
+
+	"github.com/mgruener/kusible/pkg/groups"
+	"github.com/mgruener/kusible/pkg/values"
+	"github.com/mitchellh/mapstructure"
+)
+
+func NewInventory(path string, ejson values.EjsonSettings) (*Inventory, error) {
+	stat, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var data map[interface{}]interface{}
+	if stat.Mode().IsRegular() {
+		// the path provided is a file, treat it as a single value
+		// file, thus loading it with ejson and spruc operator support
+		inventoryFile := values.NewValueFile(path, false, ejson)
+		data, err = inventoryFile.LoadMap()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// The path provided is a directory, treat it as a values
+		// directory. As the valuesDirectory type requires a list
+		// of groups to determine which files to process, first
+		// get a list of all groups in the given directory
+		groups, err := groups.Groups(path, ".*", []string{})
+		if err != nil {
+			return nil, err
+		}
+		inventoryDir := values.NewValuesDirectory(path, groups, false, ejson)
+		data, err = inventoryDir.LoadMap()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var inventory Inventory
+
+	decoderConfig := &mapstructure.DecoderConfig{
+		DecodeHook: inventoryDecodeHook,
+		Result:     &inventory,
+	}
+
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	if err != nil {
+		return nil, err
+	}
+	err = decoder.Decode(data)
+	return &inventory, err
+}
+
+func inventoryDecodeHook(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+	if t.Name() == "kubeconfig" {
+		dataMap := data.(map[interface{}]interface{})
+
+		var backend string
+		var params map[interface{}]interface{}
+		for k, v := range dataMap {
+			key := k.(string)
+			if key == "backend" {
+				backend = v.(string)
+			}
+			if key == "params" {
+				params = v.(map[interface{}]interface{})
+			}
+		}
+
+		kubeconfig, err := NewKubeconfigFromBackend(backend, params)
+		return kubeconfig, err
+	}
+	return data, nil
+}
+
+func (i *Inventory) EntryNames(filter string) []string {
+	var result []string
+
+	for _, entry := range i.entries {
+		result = append(result, entry.name)
+	}
+	return result
+}

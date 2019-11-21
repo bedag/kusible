@@ -15,9 +15,8 @@
 package inventory
 
 import (
-	"bytes"
 	"errors"
-	"io"
+	"io/ioutil"
 	"os"
 
 	"github.com/gabriel-vasile/mimetype"
@@ -27,35 +26,37 @@ func NewKubeconfigFileLoader(path string, decryptKey string) *kubeconfigFileLoad
 	return &kubeconfigFileLoader{path: path, decryptKey: decryptKey}
 }
 
-func (loader *kubeconfigFileLoader) Load() (string, error) {
+func (loader *kubeconfigFileLoader) Load() ([]byte, error) {
 	_, err := os.Stat(loader.path)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	mime, _, err := mimetype.DetectFile(loader.path)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	var buffer bytes.Buffer
-
+	var rawKubeconfig []byte
 	switch mime {
 	case "text/plain":
-		file, err := os.Open(loader.path)
+		rawKubeconfig, err = ioutil.ReadFile(loader.path)
 		if err != nil {
-			return "", err
-		}
-		defer file.Close()
-		if _, err := io.Copy(&buffer, file); err != nil {
-			return "", err
+			return nil, err
 		}
 	case "application/x-7z-compressed":
-		buffer, err = extractSingleTar7ZipFile(loader.path, loader.decryptKey)
+		rawKubeconfig, err = extractSingleTar7ZipFile(loader.path, loader.decryptKey)
+		if err != nil {
+			return nil, err
+		}
+	case "application/octet-stream":
+		rawKubeconfig, err = decryptOpensslSymmetricFile(loader.path, loader.decryptKey)
+		if err != nil {
+			return nil, err
+		}
 	default:
-		return "", errors.New("Unknown kubeconfig source file type: " + mime)
+		return nil, errors.New("Unknown kubeconfig source file type: " + mime)
 	}
 
-	kubeconfig := buffer.String()
-	return kubeconfig, nil
+	return rawKubeconfig, nil
 }
