@@ -1,4 +1,4 @@
-module github.com/mgruener/kusible
+module github.com/bedag/kusible
 
 require (
 	github.com/Knetic/govaluate v3.0.0+incompatible // indirect

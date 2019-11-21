@@ -18,8 +18,8 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/mgruener/kusible/pkg/groups"
-	"github.com/mgruener/kusible/pkg/values"
+	"github.com/bedag/kusible/pkg/groups"
+	"github.com/bedag/kusible/pkg/values"
 	"github.com/mitchellh/mapstructure"
 )
 

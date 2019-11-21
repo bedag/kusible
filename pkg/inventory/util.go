@@ -24,7 +24,7 @@ import (
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/kjk/lzmadec"
-	"github.com/mgruener/kusible/pkg/opensslsymmetric"
+	"github.com/bedag/kusible/pkg/opensslsymmetric"
 )
 
 func extractSingleTar7Zip(data []byte, password string) ([]byte, error) {

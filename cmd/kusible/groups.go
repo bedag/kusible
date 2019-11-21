@@ -19,7 +19,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mgruener/kusible/pkg/groups"
+	"github.com/bedag/kusible/pkg/groups"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

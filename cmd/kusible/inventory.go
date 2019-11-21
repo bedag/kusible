@@ -17,8 +17,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/mgruener/kusible/pkg/inventory"
-	"github.com/mgruener/kusible/pkg/values"
+	"github.com/bedag/kusible/pkg/inventory"
+	"github.com/bedag/kusible/pkg/values"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
