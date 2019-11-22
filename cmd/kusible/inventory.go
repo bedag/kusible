@@ -33,6 +33,7 @@ var inventoryCmd = &cobra.Command{
 		inventoryPath := viper.GetString("inventory")
 		ejsonPrivKey := viper.GetString("ejson-privkey")
 		ejsonKeyDir := viper.GetString("ejson-key-dir")
+		skipKubeconfig := viper.GetBool("skip-kubeconfig")
 
 		ejsonSettings := values.EjsonSettings{
 			PrivKey:     ejsonPrivKey,
@@ -40,21 +41,23 @@ var inventoryCmd = &cobra.Command{
 			SkipDecrypt: false,
 		}
 
-		inventory, err := inventory.NewInventory(inventoryPath, ejsonSettings)
+		inventory, err := inventory.NewInventory(inventoryPath, ejsonSettings, skipKubeconfig)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
 			}).Fatal("Failed to compile inventory.")
 			return
 		}
-		fmt.Printf("Inventory: %#v", inventory)
 
 		for _, name := range inventory.EntryNames(filter) {
-			fmt.Printf("Entry: %s", name)
+			fmt.Printf("Entry: %s\n", name)
 		}
 	},
 }
 
 func init() {
+	inventoryCmd.Flags().BoolP("skip-kubeconfig", "", false, "Skip kubeconfig loading")
+	viper.BindPFlag("skip-kubeconfig", inventoryCmd.Flags().Lookup("skip-kubeconfig"))
+
 	rootCmd.AddCommand(inventoryCmd)
 }

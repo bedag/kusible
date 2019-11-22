@@ -17,6 +17,8 @@ package inventory
 import (
 	"bytes"
 	"errors"
+	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -26,24 +28,49 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 )
 
+func NewKubeconfigS3LoaderFromParams(params map[string]string) *kubeconfigS3Loader {
+	result := map[string]string{
+		"accesskey":  os.Getenv("S3_ACCESSKEY"),
+		"secretkey":  os.Getenv("S3_SECRETKEY"),
+		"region":     os.Getenv("S3_REGION"),
+		"server":     os.Getenv("S3_SERVER"),
+		"decryptkey": os.Getenv("EJSON_PRIVKEY"),
+		"bucket":     "kubernetes",
+		"path":       "kubeconfig/kubeconfig.enc.7z",
+	}
+
+	for k, v := range params {
+		result[strings.ToLower(k)] = v
+	}
+
+	return NewKubeconfigS3Loader(
+		result["accesskey"],
+		result["secretkey"],
+		result["region"],
+		result["server"],
+		result["decryptkey"],
+		result["bucket"],
+		result["path"])
+}
+
 func NewKubeconfigS3Loader(accessKey string, secretKey string, region string, server string, decryptKey string, bucket string, path string) *kubeconfigS3Loader {
 	return &kubeconfigS3Loader{
-		accessKey:  accessKey,
-		secretKey:  secretKey,
-		region:     region,
-		server:     server,
-		decryptKey: decryptKey,
-		bucket:     bucket,
-		path:       path,
+		AccessKey:  accessKey,
+		SecretKey:  secretKey,
+		Region:     region,
+		Server:     server,
+		DecryptKey: decryptKey,
+		Bucket:     bucket,
+		Path:       path,
 	}
 }
 
 func (loader *kubeconfigS3Loader) Load() ([]byte, error) {
 	// TODO: session caching
 	awsConfig := &aws.Config{
-		Region:           aws.String(loader.region),
-		Endpoint:         aws.String(loader.server),
-		Credentials:      credentials.NewStaticCredentials(loader.accessKey, loader.secretKey, ""),
+		Region:           aws.String(loader.Region),
+		Endpoint:         aws.String(loader.Server),
+		Credentials:      credentials.NewStaticCredentials(loader.AccessKey, loader.SecretKey, ""),
 		S3ForcePathStyle: aws.Bool(true),
 	}
 	sess, err := session.NewSession(awsConfig)
@@ -53,8 +80,8 @@ func (loader *kubeconfigS3Loader) Load() ([]byte, error) {
 
 	downloader := s3manager.NewDownloader(sess)
 	requestInput := s3.GetObjectInput{
-		Bucket: aws.String(loader.bucket),
-		Key:    aws.String(loader.path),
+		Bucket: aws.String(loader.Bucket),
+		Key:    aws.String(loader.Path),
 	}
 
 	buf := aws.NewWriteAtBuffer([]byte{})
@@ -72,12 +99,12 @@ func (loader *kubeconfigS3Loader) Load() ([]byte, error) {
 	case "text/plain":
 		rawKubeconfig = data
 	case "application/x-7z-compressed":
-		rawKubeconfig, err = extractSingleTar7Zip(data, loader.decryptKey)
+		rawKubeconfig, err = extractSingleTar7Zip(data, loader.DecryptKey)
 		if err != nil {
 			return nil, err
 		}
 	case "application/octet-stream":
-		rawKubeconfig, err = decryptOpensslSymmetric(data, loader.decryptKey)
+		rawKubeconfig, err = decryptOpensslSymmetric(data, loader.DecryptKey)
 		if err != nil {
 			return nil, err
 		}
@@ -87,4 +114,14 @@ func (loader *kubeconfigS3Loader) Load() ([]byte, error) {
 
 	return rawKubeconfig, nil
 
+}
+
+func (loader *kubeconfigS3Loader) Type() string {
+	return "s3"
+}
+
+func (loader *kubeconfigS3Loader) Config() []byte {
+	// TODO s3 loader config dump
+	var result []byte
+	return result
 }

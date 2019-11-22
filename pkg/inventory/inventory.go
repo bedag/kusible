@@ -23,7 +23,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-func NewInventory(path string, ejson values.EjsonSettings) (*Inventory, error) {
+func NewInventory(path string, ejson values.EjsonSettings, skipKubeconfig bool) (*Inventory, error) {
 	stat, err := os.Stat(path)
 	if err != nil {
 		return nil, err
@@ -56,8 +56,9 @@ func NewInventory(path string, ejson values.EjsonSettings) (*Inventory, error) {
 
 	var inventory Inventory
 
+	hook := loaderDecoderHookFunc(skipKubeconfig)
 	decoderConfig := &mapstructure.DecoderConfig{
-		DecodeHook: inventoryDecodeHook,
+		DecodeHook: hook,
 		Result:     &inventory,
 	}
 
@@ -69,33 +70,38 @@ func NewInventory(path string, ejson values.EjsonSettings) (*Inventory, error) {
 	return &inventory, err
 }
 
-func inventoryDecodeHook(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
-	if t.Name() == "kubeconfig" {
-		dataMap := data.(map[interface{}]interface{})
+func loaderDecoderHookFunc(skipKubeconfig bool) mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+		if t.Name() == "kubeconfig" {
+			dataMap := data.(map[interface{}]interface{})
 
-		var backend string
-		var params map[interface{}]interface{}
-		for k, v := range dataMap {
-			key := k.(string)
-			if key == "backend" {
-				backend = v.(string)
+			var backend string
+			var params map[interface{}]interface{}
+			for k, v := range dataMap {
+				key := k.(string)
+				if key == "backend" {
+					backend = v.(string)
+				}
+				if key == "params" {
+					params = v.(map[interface{}]interface{})
+				}
 			}
-			if key == "params" {
-				params = v.(map[interface{}]interface{})
-			}
+
+			kubeconfig, err := NewKubeconfigFromConfig(backend, params, skipKubeconfig)
+			return kubeconfig, err
 		}
-
-		kubeconfig, err := NewKubeconfigFromBackend(backend, params)
-		return kubeconfig, err
+		return data, nil
 	}
-	return data, nil
 }
 
 func (i *Inventory) EntryNames(filter string) []string {
 	var result []string
 
-	for _, entry := range i.entries {
-		result = append(result, entry.name)
+	for _, entry := range i.Entries {
+		result = append(result, entry.Name)
 	}
 	return result
 }

@@ -17,44 +17,47 @@ package inventory
 import clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 type Inventory struct {
-	entries []inventoryEntry `mapstructure:"inventory"`
+	Entries []inventoryEntry `mapstructure:"inventory"`
 }
 
 type kubeconfigLoader interface {
 	Load() ([]byte, error)
+	Type() string
+	Config() []byte
 }
 
 type kubeconfig struct {
-	config *clientcmdapi.Config
+	Loader kubeconfigLoader
+	Config *clientcmdapi.Config
 }
 
 type inventoryEntry struct {
-	name            string
-	groups          []string
-	tiller          tillerSettings
-	configNamespace string `mapstructure:"config_namespace"`
-	kubeconfig      kubeconfig
+	Name            string
+	Groups          []string
+	Tiller          tillerSettings
+	ConfigNamespace string `mapstructure:"config_namespace"`
+	Kubeconfig      kubeconfig
 }
 
 type tillerSettings struct {
-	namespace string
-	tls       bool
-	ca        string
-	cert      string
-	key       string
+	Namespace string
+	TLS       bool
+	CA        string
+	Cert      string
+	Key       string
 }
 
 type kubeconfigS3Loader struct {
-	accessKey  string
-	secretKey  string
-	region     string
-	server     string
-	decryptKey string
-	bucket     string
-	path       string
+	AccessKey  string
+	SecretKey  string
+	Region     string
+	Server     string
+	DecryptKey string
+	Bucket     string
+	Path       string
 }
 
 type kubeconfigFileLoader struct {
-	path       string
-	decryptKey string
+	Path       string
+	DecryptKey string
 }

@@ -18,21 +18,37 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/gabriel-vasile/mimetype"
 )
 
+func NewKubeconfigFileLoaderFromParams(params map[string]string) *kubeconfigFileLoader {
+	result := map[string]string{
+		"decryptkey": os.Getenv("EJSON_PRIVKEY"),
+		"path":       "kubeconfig",
+	}
+
+	for k, v := range params {
+		result[strings.ToLower(k)] = v
+	}
+
+	return NewKubeconfigFileLoader(
+		result["decryptkey"],
+		result["path"])
+}
+
 func NewKubeconfigFileLoader(path string, decryptKey string) *kubeconfigFileLoader {
-	return &kubeconfigFileLoader{path: path, decryptKey: decryptKey}
+	return &kubeconfigFileLoader{Path: path, DecryptKey: decryptKey}
 }
 
 func (loader *kubeconfigFileLoader) Load() ([]byte, error) {
-	_, err := os.Stat(loader.path)
+	_, err := os.Stat(loader.Path)
 	if err != nil {
 		return nil, err
 	}
 
-	mime, _, err := mimetype.DetectFile(loader.path)
+	mime, _, err := mimetype.DetectFile(loader.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -40,17 +56,17 @@ func (loader *kubeconfigFileLoader) Load() ([]byte, error) {
 	var rawKubeconfig []byte
 	switch mime {
 	case "text/plain":
-		rawKubeconfig, err = ioutil.ReadFile(loader.path)
+		rawKubeconfig, err = ioutil.ReadFile(loader.Path)
 		if err != nil {
 			return nil, err
 		}
 	case "application/x-7z-compressed":
-		rawKubeconfig, err = extractSingleTar7ZipFile(loader.path, loader.decryptKey)
+		rawKubeconfig, err = extractSingleTar7ZipFile(loader.Path, loader.DecryptKey)
 		if err != nil {
 			return nil, err
 		}
 	case "application/octet-stream":
-		rawKubeconfig, err = decryptOpensslSymmetricFile(loader.path, loader.decryptKey)
+		rawKubeconfig, err = decryptOpensslSymmetricFile(loader.Path, loader.DecryptKey)
 		if err != nil {
 			return nil, err
 		}
@@ -59,4 +75,14 @@ func (loader *kubeconfigFileLoader) Load() ([]byte, error) {
 	}
 
 	return rawKubeconfig, nil
+}
+
+func (loader *kubeconfigFileLoader) Type() string {
+	return "file"
+}
+
+func (loader *kubeconfigFileLoader) Config() []byte {
+	// TODO file loader config dump
+	var result []byte
+	return result
 }

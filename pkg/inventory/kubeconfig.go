@@ -22,54 +22,63 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func NewKubeconfigFromBackend(backend string, params map[interface{}]interface{}) (*kubeconfig, error) {
+func NewKubeconfigFromConfig(backend string, params map[interface{}]interface{}, skipLoading bool) (*kubeconfig, error) {
 	var kubeconfig *kubeconfig
 
-	switch strings.ToLower(backend) {
-	default:
-		return nil, fmt.Errorf("unknown kubeconfig backend: %s", backend)
-	case "s3":
-		var loader kubeconfigS3Loader
-		err := mapstructure.Decode(params, &loader)
-		if err != nil {
-			return nil, err
-		}
-		kubeconfig, err = NewKubeconfigFromLoader(&loader)
-	case "file":
-		var loader kubeconfigFileLoader
-		err := mapstructure.Decode(params, &loader)
-		if err != nil {
-			return nil, err
-		}
-		kubeconfig, err = NewKubeconfigFromLoader(&loader)
-	}
-	return kubeconfig, nil
-}
-
-func NewKubeconfigFromLoader(loader kubeconfigLoader) (*kubeconfig, error) {
-	if loader == nil {
-		return nil, fmt.Errorf("no kubeconfig loader defined")
-	}
-
-	// TODO split data loading an data decoding
-	rawConfig, err := loader.Load()
+	var loaderParams map[string]string
+	var loader kubeconfigLoader
+	err := mapstructure.Decode(params, &loaderParams)
 	if err != nil {
 		return nil, err
 	}
 
+	switch strings.ToLower(backend) {
+	case "s3", "":
+		// the default, if no specific kubeconfig backend was provided in the
+		// inventory entry, is to load the kubeconfig from s3
+		loader = NewKubeconfigS3LoaderFromParams(loaderParams)
+	case "file":
+		loader = NewKubeconfigFileLoaderFromParams(loaderParams)
+	default:
+		return nil, fmt.Errorf("unknown kubeconfig backend: %s", backend)
+	}
+
+	kubeconfig, err = NewKubeconfigFromLoader(loader, skipLoading)
+	return kubeconfig, nil
+}
+
+func NewKubeconfigFromLoader(loader kubeconfigLoader, skipLoading bool) (*kubeconfig, error) {
+	if loader == nil {
+		return nil, fmt.Errorf("no kubeconfig loader defined")
+	}
+
+	var rawConfig []byte
+	var err error
+	if !skipLoading {
+		// TODO split data loading and data decoding
+		rawConfig, err = loader.Load()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// if rawConfig is empty because of skipLoading, clientcmd.Load()
+	// returns an  empty config, see
+	// https://github.com/kubernetes/client-go/blob/571c0ef67034a5e72b9e30e662044b770361641e/tools/clientcmd/loader.go#L408
 	clientConfig, err := clientcmd.Load(rawConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	kubeconfig := &kubeconfig{
-		config: clientConfig,
+		Loader: loader,
+		Config: clientConfig,
 	}
 
 	return kubeconfig, nil
 }
 
-func (k *kubeconfig) Config() ([]byte, error) {
-	config, err := clientcmd.Write(*k.config)
+func (k *kubeconfig) Yaml() ([]byte, error) {
+	config, err := clientcmd.Write(*k.Config)
 	return config, err
 }
