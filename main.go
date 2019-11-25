@@ -15,22 +15,14 @@
 package main
 
 import (
-	"fmt"
+	"os"
 
-	"github.com/spf13/cobra"
+	"github.com/bedag/kusible/cmd"
 )
 
-const appName = "kusible"
-const version = "v0.0.1"
+var version string
 
-func init() {
-	rootCmd.AddCommand(versionCmd)
-}
-
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: fmt.Sprint("Print the version number of ", appName),
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("%s %s\n", appName, version)
-	},
+func main() {
+	cmd.Execute()
+	os.Exit(0)
 }
