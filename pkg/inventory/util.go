@@ -22,9 +22,9 @@ import (
 	"io/ioutil"
 	"os"
 
+	openssl "github.com/Luzifer/go-openssl/v3"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/kjk/lzmadec"
-	"github.com/bedag/kusible/pkg/opensslsymmetric"
 )
 
 func extractSingleTar7Zip(data []byte, password string) ([]byte, error) {
@@ -112,7 +112,9 @@ func decryptOpensslSymmetricFile(path string, password string) ([]byte, error) {
 }
 
 func decryptOpensslSymmetric(data []byte, password string) ([]byte, error) {
-	result, err := opensslsymmetric.Decrypt(password, data)
+	o := openssl.New()
+	result, err := o.DecryptBinaryBytes(password, data, openssl.DigestSHA256Sum)
+
 	if err != nil {
 		return nil, err
 	}

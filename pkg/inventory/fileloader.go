@@ -16,6 +16,7 @@ package inventory
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -25,8 +26,8 @@ import (
 
 func NewKubeconfigFileLoaderFromParams(params map[string]string) *kubeconfigFileLoader {
 	result := map[string]string{
-		"decryptkey": os.Getenv("EJSON_PRIVKEY"),
-		"path":       "kubeconfig",
+		"decrypt_key": os.Getenv("EJSON_PRIVKEY"),
+		"path":        "kubeconfig",
 	}
 
 	for k, v := range params {
@@ -34,8 +35,8 @@ func NewKubeconfigFileLoaderFromParams(params map[string]string) *kubeconfigFile
 	}
 
 	return NewKubeconfigFileLoader(
-		result["decryptkey"],
-		result["path"])
+		result["path"],
+		result["decrypt_key"])
 }
 
 func NewKubeconfigFileLoader(path string, decryptKey string) *kubeconfigFileLoader {
@@ -50,7 +51,7 @@ func (loader *kubeconfigFileLoader) Load() ([]byte, error) {
 
 	mime, _, err := mimetype.DetectFile(loader.Path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to detect mimetype for file://%s", loader.Path)
 	}
 
 	var rawKubeconfig []byte

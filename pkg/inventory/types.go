@@ -14,7 +14,10 @@
 
 package inventory
 
-import clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+import (
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+)
 
 type Inventory struct {
 	Entries []inventoryEntry `mapstructure:"inventory"`
@@ -55,6 +58,7 @@ type kubeconfigS3Loader struct {
 	DecryptKey string
 	Bucket     string
 	Path       string
+	Downloader *s3manager.Downloader
 }
 
 type kubeconfigFileLoader struct {

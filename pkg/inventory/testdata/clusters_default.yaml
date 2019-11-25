@@ -1,6 +1,5 @@
 ---
 inventory:
-# dev
   - name: cluster-test-01-preflight
     groups: [dev,rz01,preflight-check]
     kubeconfig:

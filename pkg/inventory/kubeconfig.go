@@ -44,6 +44,9 @@ func NewKubeconfigFromConfig(backend string, params map[interface{}]interface{},
 	}
 
 	kubeconfig, err = NewKubeconfigFromLoader(loader, skipLoading)
+	if err != nil {
+		return nil, err
+	}
 	return kubeconfig, nil
 }
 

@@ -15,8 +15,10 @@
 package inventory
 
 import (
+	"fmt"
 	"os"
 	"reflect"
+	"regexp"
 
 	"github.com/bedag/kusible/pkg/groups"
 	"github.com/bedag/kusible/pkg/values"
@@ -97,11 +99,18 @@ func loaderDecoderHookFunc(skipKubeconfig bool) mapstructure.DecodeHookFunc {
 	}
 }
 
-func (i *Inventory) EntryNames(filter string) []string {
+func (i *Inventory) EntryNames(filter string) ([]string, error) {
 	var result []string
 
-	for _, entry := range i.Entries {
-		result = append(result, entry.Name)
+	regex, err := regexp.Compile("^" + filter + "$")
+	if err != nil {
+		return nil, fmt.Errorf("inventory entry filter '%s' is not a valid regex: %s", filter, err)
 	}
-	return result
+
+	for _, entry := range i.Entries {
+		if regex.MatchString(entry.Name) {
+			result = append(result, entry.Name)
+		}
+	}
+	return result, nil
 }

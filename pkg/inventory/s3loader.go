@@ -17,6 +17,7 @@ package inventory
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -30,13 +31,18 @@ import (
 
 func NewKubeconfigS3LoaderFromParams(params map[string]string) *kubeconfigS3Loader {
 	result := map[string]string{
-		"accesskey":  os.Getenv("S3_ACCESSKEY"),
-		"secretkey":  os.Getenv("S3_SECRETKEY"),
-		"region":     os.Getenv("S3_REGION"),
-		"server":     os.Getenv("S3_SERVER"),
-		"decryptkey": os.Getenv("EJSON_PRIVKEY"),
-		"bucket":     "kubernetes",
-		"path":       "kubeconfig/kubeconfig.enc.7z",
+		"accesskey":   os.Getenv("S3_ACCESSKEY"),
+		"secretkey":   os.Getenv("S3_SECRETKEY"),
+		"region":      os.Getenv("S3_REGION"),
+		"server":      os.Getenv("S3_SERVER"),
+		"decrypt_key": os.Getenv("EJSON_PRIVKEY"),
+		"bucket":      os.Getenv("S3_BUCKET"),
+		"path":        "kubeconfig/kubeconfig.enc.7z",
+	}
+
+	// for downward compatibility
+	if result["bucket"] == "" {
+		result["bucket"] = "kubernetes"
 	}
 
 	for k, v := range params {
@@ -48,12 +54,25 @@ func NewKubeconfigS3LoaderFromParams(params map[string]string) *kubeconfigS3Load
 		result["secretkey"],
 		result["region"],
 		result["server"],
-		result["decryptkey"],
+		result["decrypt_key"],
 		result["bucket"],
 		result["path"])
 }
 
 func NewKubeconfigS3Loader(accessKey string, secretKey string, region string, server string, decryptKey string, bucket string, path string) *kubeconfigS3Loader {
+	awsConfig := &aws.Config{
+		Region:           aws.String(region),
+		Endpoint:         aws.String(server),
+		Credentials:      credentials.NewStaticCredentials(accessKey, secretKey, ""),
+		S3ForcePathStyle: aws.Bool(true),
+	}
+	sess, err := session.NewSession(awsConfig)
+	if err != nil {
+		return nil
+	}
+
+	downloader := s3manager.NewDownloader(sess)
+
 	return &kubeconfigS3Loader{
 		AccessKey:  accessKey,
 		SecretKey:  secretKey,
@@ -62,36 +81,31 @@ func NewKubeconfigS3Loader(accessKey string, secretKey string, region string, se
 		DecryptKey: decryptKey,
 		Bucket:     bucket,
 		Path:       path,
+		Downloader: downloader,
 	}
 }
 
 func (loader *kubeconfigS3Loader) Load() ([]byte, error) {
-	// TODO: session caching
-	awsConfig := &aws.Config{
-		Region:           aws.String(loader.Region),
-		Endpoint:         aws.String(loader.Server),
-		Credentials:      credentials.NewStaticCredentials(loader.AccessKey, loader.SecretKey, ""),
-		S3ForcePathStyle: aws.Bool(true),
-	}
-	sess, err := session.NewSession(awsConfig)
-	if err != nil {
-		return nil, err
+	if loader.Downloader == nil {
+		return nil, fmt.Errorf("no s3 client configured")
 	}
 
-	downloader := s3manager.NewDownloader(sess)
 	requestInput := s3.GetObjectInput{
 		Bucket: aws.String(loader.Bucket),
 		Key:    aws.String(loader.Path),
 	}
 
 	buf := aws.NewWriteAtBuffer([]byte{})
-	_, err = downloader.Download(buf, &requestInput)
+	_, err := loader.Downloader.Download(buf, &requestInput)
 	if err != nil {
 		return nil, err
 	}
 	data := buf.Bytes()
 
 	mime, _, err := mimetype.DetectReader(bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("failed to detect mimetype for s3://%s/%s/%s", loader.Server, loader.Bucket, loader.Path)
+	}
 
 	var rawKubeconfig []byte
 
