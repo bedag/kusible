@@ -15,34 +15,19 @@
 package inventory
 
 import (
+	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
 	"gotest.tools/assert"
+	"k8s.io/client-go/tools/clientcmd"
 )
-
-type mockedS3DownloadManager struct {
-	s3manageriface.DownloaderAPI
-	PartSize       int64
-	Concurrency    int
-	S3             s3iface.S3API
-	RequestOptions []request.Option
-}
-
-func (s mockedS3DownloadManager) Download(w io.WriterAt, input *s3.GetObjectInput, options ...func(*s3manager.Downloader)) (int64, error) {
-	return 0, nil
-}
-
-func (s mockedS3DownloadManager) DownloadWithContext(ctx aws.Context, w io.WriterAt, input *s3.GetObjectInput, options ...func(*s3manager.Downloader)) (int64, error) {
-	return 0, nil
-}
 
 func TestS3LoaderType(t *testing.T) {
 	loader := &kubeconfigS3Loader{}
@@ -178,16 +163,50 @@ func TestS3LoaderCreateParamsFullEnv(t *testing.T) {
 	assert.Equal(t, "kubeconfig/kubeconfig.enc.7z", loader.Path)
 }
 
-// TODO: S3Loader Load() test
-//func TestS3LoaderLoad(t *testing.T) {
-//	decryptKey := "test123"
-//	bucket := "testdata"
-//	path := "kubeconfig.enc"
-//
-//	loader := &kubeconfigS3Loader{
-//		DecryptKey: decryptKey,
-//		Bucket:     bucket,
-//		Path:       path,
-//		Downloader: mockedS3DownloadManager{},
-//	}
-//}
+type mockedS3DownloadManager struct {
+	s3manageriface.DownloaderAPI
+}
+
+func (d mockedS3DownloadManager) Download(w io.WriterAt, input *s3.GetObjectInput, options ...func(*s3manager.Downloader)) (int64, error) {
+	return d.DownloadWithContext(aws.BackgroundContext(), w, input, options...)
+}
+
+func (d mockedS3DownloadManager) DownloadWithContext(ctx aws.Context, w io.WriterAt, input *s3.GetObjectInput, options ...func(*s3manager.Downloader)) (int64, error) {
+	path := fmt.Sprintf("%s/%s", aws.StringValue(input.Bucket), aws.StringValue(input.Key))
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		return 0, err
+	}
+	count, err := w.WriteAt(content, 0)
+	return int64(count), err
+}
+
+func TestS3LoaderLoad(t *testing.T) {
+	decryptKey := "test123"
+	bucket := "testdata"
+	path := "kubeconfig.enc"
+
+	loader := &kubeconfigS3Loader{
+		DecryptKey: decryptKey,
+		Bucket:     bucket,
+		Path:       path,
+		Downloader: mockedS3DownloadManager{},
+	}
+
+	resultConfigBytesIn, err := loader.Load()
+	assert.NilError(t, err)
+	resultConfig, err := clientcmd.Load(resultConfigBytesIn)
+	assert.NilError(t, err)
+	resultConfigBytes, err := clientcmd.Write(*resultConfig)
+	assert.NilError(t, err)
+
+	expectedConfigPath := fmt.Sprintf("%s/%s", bucket, "kubeconfig")
+	assert.NilError(t, err)
+	expectedConfigBytesIn, err := ioutil.ReadFile(expectedConfigPath)
+	assert.NilError(t, err)
+	expectedConfig, err := clientcmd.Load(expectedConfigBytesIn)
+	assert.NilError(t, err)
+	expectedConfigBytes, err := clientcmd.Write(*expectedConfig)
+	assert.NilError(t, err)
+	assert.Equal(t, string(expectedConfigBytes), string(resultConfigBytes))
+}

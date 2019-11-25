@@ -15,7 +15,7 @@
 package inventory
 
 import (
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
@@ -58,7 +58,7 @@ type kubeconfigS3Loader struct {
 	DecryptKey string
 	Bucket     string
 	Path       string
-	Downloader *s3manager.Downloader
+	Downloader s3manageriface.DownloaderAPI
 }
 
 type kubeconfigFileLoader struct {
