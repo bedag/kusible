@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/gabriel-vasile/mimetype"
+	"gopkg.in/yaml.v2"
 )
 
 func NewKubeconfigFileLoaderFromParams(params map[string]string) *kubeconfigFileLoader {
@@ -82,8 +83,14 @@ func (loader *kubeconfigFileLoader) Type() string {
 	return "file"
 }
 
-func (loader *kubeconfigFileLoader) Config() []byte {
-	// TODO file loader config dump
-	var result []byte
-	return result
+func (loader *kubeconfigFileLoader) Config() ([]byte, error) {
+	config := map[string]string{
+		"decrypt_key": loader.DecryptKey,
+		"path":        loader.Path,
+	}
+	result, err := yaml.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

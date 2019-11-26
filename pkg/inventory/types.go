@@ -26,7 +26,7 @@ type Inventory struct {
 type kubeconfigLoader interface {
 	Load() ([]byte, error)
 	Type() string
-	Config() []byte
+	Config() ([]byte, error)
 }
 
 type kubeconfig struct {

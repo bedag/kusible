@@ -26,6 +26,7 @@ require (
 	github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
+	gopkg.in/yaml.v2 v2.2.7
 	gotest.tools v2.2.0+incompatible
 	k8s.io/apimachinery v0.0.0-20191121015412-41065c7a8c2a // indirect
 	k8s.io/client-go v0.0.0-20190620085101-78d2af792bab

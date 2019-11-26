@@ -27,6 +27,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/gabriel-vasile/mimetype"
+	"gopkg.in/yaml.v2"
 )
 
 func NewKubeconfigS3LoaderFromParams(params map[string]string) *kubeconfigS3Loader {
@@ -134,8 +135,19 @@ func (loader *kubeconfigS3Loader) Type() string {
 	return "s3"
 }
 
-func (loader *kubeconfigS3Loader) Config() []byte {
-	// TODO s3 loader config dump
-	var result []byte
-	return result
+func (loader *kubeconfigS3Loader) Config() ([]byte, error) {
+	config := map[string]string{
+		"accesskey":   loader.AccessKey,
+		"secretkey":   loader.SecretKey,
+		"region":      loader.Region,
+		"server":      loader.Server,
+		"decrypt_key": loader.DecryptKey,
+		"bucket":      loader.Bucket,
+		"path":        loader.Path,
+	}
+	result, err := yaml.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

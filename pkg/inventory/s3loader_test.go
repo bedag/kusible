@@ -25,6 +25,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
+	"github.com/mitchellh/mapstructure"
+	"gopkg.in/yaml.v2"
 	"gotest.tools/assert"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -209,4 +211,51 @@ func TestS3LoaderLoad(t *testing.T) {
 	expectedConfigBytes, err := clientcmd.Write(*expectedConfig)
 	assert.NilError(t, err)
 	assert.Equal(t, string(expectedConfigBytes), string(resultConfigBytes))
+}
+
+func TestS3LoaderConfig(t *testing.T) {
+	params := map[string]string{
+		"accesskey":   "aaaaa",
+		"secretkey":   "bbbbb",
+		"region":      "ccccc",
+		"server":      "ddddd",
+		"decrypt_key": "eeeee",
+		"bucket":      "fffff",
+		"path":        "ggggg",
+	}
+
+	loader := NewKubeconfigS3LoaderFromParams(params)
+	if loader == nil {
+		t.Errorf("failed to create s3 loader")
+	}
+
+	type config struct {
+		AccessKey  string `yaml:"accesskey"`
+		SecretKey  string `yaml:"secretkey"`
+		Region     string `yaml:"region"`
+		Server     string `yaml:"server"`
+		DecryptKey string `yaml:"decrypt_key"`
+		Bucket     string `yaml:"bucket"`
+		Path       string `yaml:"path"`
+	}
+
+	var expected config
+	var result config
+
+	decoderConfig := &mapstructure.DecoderConfig{
+		Result:  &expected,
+		TagName: "yaml",
+	}
+
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	assert.NilError(t, err)
+	err = decoder.Decode(params)
+	assert.NilError(t, err)
+
+	resultRaw, err := loader.Config()
+	assert.NilError(t, err)
+	err = yaml.Unmarshal(resultRaw, &result)
+	assert.NilError(t, err)
+
+	assert.DeepEqual(t, expected, result)
 }
