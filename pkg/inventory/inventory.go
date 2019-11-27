@@ -32,7 +32,7 @@ func NewInventory(path string, ejson values.EjsonSettings, skipKubeconfig bool) 
 
 	var inventory Inventory
 
-	hook := loaderDecoderHookFunc(skipKubeconfig)
+	hook := entriesDecoderHookFunc(skipKubeconfig)
 	decoderConfig := &mapstructure.DecoderConfig{
 		DecodeHook: hook,
 		Result:     &inventory,
@@ -46,7 +46,75 @@ func NewInventory(path string, ejson values.EjsonSettings, skipKubeconfig bool) 
 	return &inventory, err
 }
 
-func loaderDecoderHookFunc(skipKubeconfig bool) mapstructure.DecodeHookFunc {
+func entriesDecoderHookFunc(skipKubeconfig bool) mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+		if t.Name() == "entries" {
+			var entriesList []entry
+
+			hook := entryDecoderHookFunc(skipKubeconfig)
+			decoderConfig := &mapstructure.DecoderConfig{
+				DecodeHook: hook,
+				Result:     &entriesList,
+			}
+			decoder, err := mapstructure.NewDecoder(decoderConfig)
+			if err != nil {
+				return data, err
+			}
+			err = decoder.Decode(data)
+			if err != nil {
+				return data, err
+			}
+			entriesMap := make(entries, len(entriesList))
+			for _, entry := range entriesList {
+				name := entry.Name
+				entriesMap[name] = entry
+			}
+			return entriesMap, nil
+		}
+		return data, nil
+	}
+}
+
+func entryDecoderHookFunc(skipKubeconfig bool) mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+		if t.Name() == "entry" {
+			var stub struct {
+				Name string
+			}
+			err := mapstructure.Decode(data, &stub)
+			if err != nil {
+				return data, err
+			}
+
+			var entry entry
+			hook := kubeconfigDecoderHookFunc(skipKubeconfig, stub.Name)
+			decoderConfig := &mapstructure.DecoderConfig{
+				DecodeHook: hook,
+				Result:     &entry,
+			}
+			decoder, err := mapstructure.NewDecoder(decoderConfig)
+			if err != nil {
+				return data, err
+			}
+			err = decoder.Decode(data)
+			if err != nil {
+				return data, err
+			}
+			entry.Groups = append(entry.Groups, stub.Name)
+			entry.Groups = append([]string{"all"}, entry.Groups...)
+			return entry, nil
+		}
+		return data, nil
+	}
+}
+
+func kubeconfigDecoderHookFunc(skipKubeconfig bool, entryName string) mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,

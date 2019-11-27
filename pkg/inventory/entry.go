@@ -22,7 +22,7 @@ import (
 
 // MatchLimits returns true if the groups of the inventory entry satisfy all given
 // limits, which are treated as ^$ enclosed regex
-func (e *inventoryEntry) MatchLimits(limits []string) (bool, error) {
+func (e *entry) MatchLimits(limits []string) (bool, error) {
 	// no limits -> all groups are valid
 	if len(limits) <= 0 {
 		return true, nil
@@ -55,6 +55,6 @@ func (e *inventoryEntry) MatchLimits(limits []string) (bool, error) {
 
 // ValidGroups returns all groups of the inventory entry that satisfy at
 // least one limit
-func (e *inventoryEntry) ValidGroups(limits []string) ([]string, error) {
+func (e *entry) ValidGroups(limits []string) ([]string, error) {
 	return groups.LimitGroups(e.Groups, limits)
 }

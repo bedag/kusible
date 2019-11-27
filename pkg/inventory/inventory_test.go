@@ -104,7 +104,7 @@ func TestInventoryEntriesLimits(t *testing.T) {
 	assert.NilError(t, err)
 }
 
-func TestInventoryLoadFile(t *testing.T) {
+func TestInventoryLoader(t *testing.T) {
 	inventoryPath := "testdata/clusters_file.yaml"
 	skipKubeconfig := false
 	filter := ".*"
@@ -114,6 +114,31 @@ func TestInventoryLoadFile(t *testing.T) {
 		"cluster-test-02",
 		"cluster-test-03",
 	}
-	_, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
+	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
 	assert.NilError(t, err)
+	for _, entry := range inventory.Entries {
+		loader := entry.Kubeconfig.Loader
+		assert.Assert(t, loader != nil)
+		assert.Equal(t, "file", loader.Type())
+	}
+}
+
+func TestInventoryEntryGroups(t *testing.T) {
+	inventoryPath := "testdata/clusters_file.yaml"
+	skipKubeconfig := false
+	filter := ".*"
+	limits := []string{}
+	expected := []string{
+		"cluster-test-01",
+		"cluster-test-02",
+		"cluster-test-03",
+	}
+	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
+	assert.NilError(t, err)
+	for _, entry := range inventory.Entries {
+		name := entry.Name
+		groups := entry.Groups
+		assert.Equal(t, "all", groups[0])
+		assert.Equal(t, name, groups[len(groups)-1])
+	}
 }

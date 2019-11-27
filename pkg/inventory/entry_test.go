@@ -23,7 +23,7 @@ import (
 func TestEntryMatchLimits(t *testing.T) {
 	limitsMatching := []string{"dev", "test"}
 	limitsNotMatching := []string{"dev", "foo"}
-	entry := &inventoryEntry{
+	entry := &entry{
 		Name:   "test",
 		Groups: []string{"dev", "test", "state", "prod"},
 	}
@@ -39,7 +39,7 @@ func TestEntryMatchLimits(t *testing.T) {
 
 func TestEntryValidGroups(t *testing.T) {
 	limits := []string{"dev", "test"}
-	entry := &inventoryEntry{
+	entry := &entry{
 		Name:   "test",
 		Groups: []string{"dev", "test", "state", "prod"},
 	}

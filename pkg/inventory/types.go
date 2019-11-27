@@ -20,7 +20,17 @@ import (
 )
 
 type Inventory struct {
-	Entries []inventoryEntry `mapstructure:"inventory"`
+	Entries entries `mapstructure:"inventory"`
+}
+
+type entries map[string]entry
+
+type entry struct {
+	Name            string
+	Groups          []string
+	Tiller          tillerSettings
+	ConfigNamespace string `mapstructure:"config_namespace"`
+	Kubeconfig      kubeconfig
 }
 
 type kubeconfigLoader interface {
@@ -32,14 +42,6 @@ type kubeconfigLoader interface {
 type kubeconfig struct {
 	Loader kubeconfigLoader
 	Config *clientcmdapi.Config
-}
-
-type inventoryEntry struct {
-	Name            string
-	Groups          []string
-	Tiller          tillerSettings
-	ConfigNamespace string `mapstructure:"config_namespace"`
-	Kubeconfig      kubeconfig
 }
 
 type tillerSettings struct {
