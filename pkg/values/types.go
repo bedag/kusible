@@ -20,19 +20,25 @@ type EjsonSettings struct {
 	SkipDecrypt bool
 }
 
-type valueData struct {
+type Values interface {
+	YAML() ([]byte, error)
+	JSON() ([]byte, error)
+	Map() *map[interface{}]interface{}
+}
+
+type ValueData struct {
 	data map[interface{}]interface{}
 }
 
 type valueFile struct {
-	valueData
+	ValueData
 	path     string
 	ejson    EjsonSettings
 	skipEval bool
 }
 
 type valuesDirectory struct {
-	valueData
+	ValueData
 	path            string
 	groups          []string
 	ejson           EjsonSettings

@@ -24,7 +24,7 @@ import (
 	"gotest.tools/assert"
 )
 
-func basicInventoryTest(path string, filter string, skip bool, expected []string) (*Inventory, error) {
+func basicInventoryTest(path string, filter string, limits []string, skip bool, expected []string) (*Inventory, error) {
 	ejsonSettings := values.EjsonSettings{
 		PrivKey:     "",
 		KeyDir:      "",
@@ -36,7 +36,7 @@ func basicInventoryTest(path string, filter string, skip bool, expected []string
 		return nil, fmt.Errorf("failed to create inventory: %s", err)
 	}
 
-	result, err := inventory.EntryNames(filter)
+	result, err := inventory.EntryNames(filter, limits)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve inventory entries: %s", err)
 	}
@@ -56,6 +56,7 @@ func TestInventoryEntriesFull(t *testing.T) {
 	inventoryPath := "testdata/clusters_default.yaml"
 	skipKubeconfig := true
 	filter := ".*"
+	limits := []string{}
 	expected := []string{
 		"cluster-test-01-preflight",
 		"cluster-dev-01",
@@ -69,7 +70,7 @@ func TestInventoryEntriesFull(t *testing.T) {
 		"cluster-prod-04",
 	}
 
-	_, err := basicInventoryTest(inventoryPath, filter, skipKubeconfig, expected)
+	_, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
 	assert.NilError(t, err)
 }
 
@@ -79,9 +80,27 @@ func TestInventoryEntriesSingle(t *testing.T) {
 	expected := []string{
 		"cluster-dev-01",
 	}
+	limits := []string{}
 	filter := expected[0]
 
-	_, err := basicInventoryTest(inventoryPath, filter, skipKubeconfig, expected)
+	_, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
+	assert.NilError(t, err)
+}
+
+func TestInventoryEntriesLimits(t *testing.T) {
+	inventoryPath := "testdata/clusters_default.yaml"
+	skipKubeconfig := true
+	expected := []string{
+		"cluster-stage-01",
+		"cluster-stage-02",
+		"cluster-stage-03",
+	}
+	limits := []string{
+		"stage",
+	}
+	filter := ".*"
+
+	_, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
 	assert.NilError(t, err)
 }
 
@@ -89,11 +108,12 @@ func TestInventoryLoadFile(t *testing.T) {
 	inventoryPath := "testdata/clusters_file.yaml"
 	skipKubeconfig := false
 	filter := ".*"
+	limits := []string{}
 	expected := []string{
 		"cluster-test-01",
 		"cluster-test-02",
 		"cluster-test-03",
 	}
-	_, err := basicInventoryTest(inventoryPath, filter, skipKubeconfig, expected)
+	_, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
 	assert.NilError(t, err)
 }

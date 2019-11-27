@@ -48,8 +48,7 @@ var valuesCmd = &cobra.Command{
 			SkipDecrypt: skipDecrypt,
 		}
 
-		values := values.NewValuesDirectory(groupVarsDir, groups, skipEval, ejsonSettings)
-		_, err := values.LoadMap()
+		values, err := values.NewValues(groupVarsDir, groups, skipEval, ejsonSettings)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
@@ -57,17 +56,17 @@ var valuesCmd = &cobra.Command{
 			return
 		}
 
-		var result string
+		var result []byte
 
 		if viper.GetBool("json") {
-			result, err = values.JsonString()
+			result, err = values.JSON()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error": err.Error(),
 				}).Fatal("Failed to convert compiled group vars to json.")
 			}
 		} else {
-			result, err = values.YamlString()
+			result, err = values.YAML()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"error": err.Error(),
@@ -75,7 +74,7 @@ var valuesCmd = &cobra.Command{
 			}
 		}
 		if !viper.GetBool("quiet") {
-			fmt.Printf("%s", result)
+			fmt.Printf("%s", string(result))
 		}
 	},
 }

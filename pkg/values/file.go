@@ -28,12 +28,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func NewValueFile(path string, skipEval bool, ejsonSettings EjsonSettings) *valueFile {
-	return &valueFile{
+func NewValueFile(path string, skipEval bool, ejsonSettings EjsonSettings) (*valueFile, error) {
+	result := &valueFile{
 		path:     path,
 		ejson:    ejsonSettings,
 		skipEval: skipEval,
 	}
+	err := result.loadMap()
+	return result, err
 }
 
 func (valueFile *valueFile) load() ([]byte, error) {
@@ -73,20 +75,20 @@ func (valueFile *valueFile) load() ([]byte, error) {
 	return data, nil
 }
 
-func (valueFile *valueFile) LoadMap() (map[interface{}]interface{}, error) {
+func (valueFile *valueFile) loadMap() error {
 	data, err := valueFile.load()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	yamlData, err := simpleyaml.NewYaml(data)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	valueFile.data, err = yamlData.Map()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// if we want to skip the spruce evaluation, skip the evaluator
@@ -96,7 +98,7 @@ func (valueFile *valueFile) LoadMap() (map[interface{}]interface{}, error) {
 		evaluator := &spruce.Evaluator{Tree: valueFile.data, SkipEval: false}
 		err = evaluator.Run(nil, nil)
 		valueFile.data = evaluator.Tree
-		return valueFile.data, StripAnsiError(err)
+		return StripAnsiError(err)
 	}
-	return valueFile.data, nil
+	return nil
 }

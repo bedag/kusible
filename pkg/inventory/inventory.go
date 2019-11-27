@@ -16,45 +16,19 @@ package inventory
 
 import (
 	"fmt"
-	"os"
 	"reflect"
 	"regexp"
 
-	"github.com/bedag/kusible/pkg/groups"
 	"github.com/bedag/kusible/pkg/values"
 	"github.com/mitchellh/mapstructure"
 )
 
 func NewInventory(path string, ejson values.EjsonSettings, skipKubeconfig bool) (*Inventory, error) {
-	stat, err := os.Stat(path)
+	raw, err := values.NewValues(path, []string{}, false, ejson)
 	if err != nil {
 		return nil, err
 	}
-
-	var data map[interface{}]interface{}
-	if stat.Mode().IsRegular() {
-		// the path provided is a file, treat it as a single value
-		// file, thus loading it with ejson and spruc operator support
-		inventoryFile := values.NewValueFile(path, false, ejson)
-		data, err = inventoryFile.LoadMap()
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		// The path provided is a directory, treat it as a values
-		// directory. As the valuesDirectory type requires a list
-		// of groups to determine which files to process, first
-		// get a list of all groups in the given directory
-		groups, err := groups.Groups(path, ".*", []string{})
-		if err != nil {
-			return nil, err
-		}
-		inventoryDir := values.NewValuesDirectory(path, groups, false, ejson)
-		data, err = inventoryDir.LoadMap()
-		if err != nil {
-			return nil, err
-		}
-	}
+	data := raw.Map()
 
 	var inventory Inventory
 
@@ -99,7 +73,7 @@ func loaderDecoderHookFunc(skipKubeconfig bool) mapstructure.DecodeHookFunc {
 	}
 }
 
-func (i *Inventory) EntryNames(filter string) ([]string, error) {
+func (i *Inventory) EntryNames(filter string, limits []string) ([]string, error) {
 	var result []string
 
 	regex, err := regexp.Compile("^" + filter + "$")
@@ -109,7 +83,13 @@ func (i *Inventory) EntryNames(filter string) ([]string, error) {
 
 	for _, entry := range i.Entries {
 		if regex.MatchString(entry.Name) {
-			result = append(result, entry.Name)
+			valid, err := entry.MatchLimits(limits)
+			if err != nil {
+				return nil, err
+			}
+			if valid {
+				result = append(result, entry.Name)
+			}
 		}
 	}
 	return result, nil

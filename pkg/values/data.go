@@ -22,28 +22,33 @@ import (
 )
 
 // YamlString returns the map data as yaml encoded string
-func (value *valueData) YamlString() (string, error) {
+func (value *ValueData) YAML() ([]byte, error) {
 	yaml, err := yaml.Marshal(value.data)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(yaml), nil
+	return yaml, nil
 }
 
 // JsonString returns the map data as yaml encoded string
-func (value *valueData) JsonString() (string, error) {
+func (value *ValueData) JSON() ([]byte, error) {
 	// Although we want to create a json string, first convert
 	// the data to yaml as there is no easy way to convert
 	// a map that can have non-string keys to json. Then
 	// convert the yaml data to json with the help of spruce
 	yaml, err := yaml.Marshal(value.data)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	json, err := spruce.JSONifyIO(bytes.NewReader(yaml), false)
 	if err != nil {
 		// spruce errors can contain ansi colors
-		return "", StripAnsiError(err)
+		return nil, StripAnsiError(err)
 	}
-	return json, nil
+	return []byte(json), nil
+}
+
+// Data returns the actual value data struct
+func (value *ValueData) Map() *map[interface{}]interface{} {
+	return &value.data
 }

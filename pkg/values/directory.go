@@ -23,13 +23,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func NewValuesDirectory(path string, groups []string, skipEval bool, ejsonSettings EjsonSettings) *valuesDirectory {
-	return &valuesDirectory{
+func NewValuesDirectory(path string, groups []string, skipEval bool, ejsonSettings EjsonSettings) (*valuesDirectory, error) {
+	result := &valuesDirectory{
 		path:     path,
 		ejson:    ejsonSettings,
 		skipEval: skipEval,
 		groups:   groups,
 	}
+	err := result.load()
+	return result, err
 }
 
 // LoadMap takes a directory and a list of groups as parameters and
@@ -64,9 +66,9 @@ func NewValuesDirectory(path string, groups []string, skipEval bool, ejsonSettin
 // Files can make use of spruce operators (https://github.com/geofffranks/spruce/blob/master/doc/operators.md).
 // *.ejson will be treated as ejson (https://github.com/Shopify/ejson) encrypted
 // and decrypted before merging if a matching private key was provided.
-func (values *valuesDirectory) LoadMap() (map[interface{}]interface{}, error) {
+func (values *valuesDirectory) load() error {
 	if len(values.data) > 0 {
-		return values.data, nil
+		return nil
 	}
 	// List of keys that should be pruned when running the merged data
 	// through the spruce evaluator
@@ -79,7 +81,7 @@ func (values *valuesDirectory) LoadMap() (map[interface{}]interface{}, error) {
 	// get the list of files that should be merged
 	values.orderedFileList, err = values.OrderedDataFileList()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	log.WithFields(log.Fields{
@@ -89,23 +91,23 @@ func (values *valuesDirectory) LoadMap() (map[interface{}]interface{}, error) {
 	// merge everything while decrypting any ejson files encountered
 	merger := &spruce.Merger{AppendByDefault: false}
 	for _, path := range values.orderedFileList {
-		file := NewValueFile(path, true, values.ejson)
-		doc, err := file.LoadMap()
+		file, err := NewValueFile(path, true, values.ejson)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		merger.Merge(values.data, doc)
+		doc := file.Map()
+		merger.Merge(values.data, *doc)
 	}
 
 	if merger.Error() != nil {
 		// spruce error messages can contain ansi colors
-		return nil, StripAnsiError(merger.Error())
+		return StripAnsiError(merger.Error())
 	}
 
 	evaluator := &spruce.Evaluator{Tree: values.data, SkipEval: values.skipEval}
 	err = evaluator.Run(pruneKeys, nil)
 	values.data = evaluator.Tree
-	return values.data, StripAnsiError(err)
+	return StripAnsiError(err)
 }
 
 // GetOrderedDataFileList traverses the given directory and returns a list of

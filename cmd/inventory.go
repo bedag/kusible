@@ -49,7 +49,13 @@ var inventoryCmd = &cobra.Command{
 			return
 		}
 
-		for _, name := range inventory.EntryNames(filter) {
+		names, err := inventory.EntryNames(filter, []string{})
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Fatal("Failed to get list of entries")
+		}
+		for _, name := range names {
 			fmt.Printf("Entry: %s\n", name)
 		}
 	},
