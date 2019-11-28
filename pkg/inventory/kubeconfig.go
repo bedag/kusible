@@ -16,34 +16,30 @@ package inventory
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func NewKubeconfigFromConfig(backend string, params map[interface{}]interface{}, skipLoading bool) (*kubeconfig, error) {
+func NewKubeconfigFromConfig(backend string, params map[string]interface{}, skipLoading bool) (*kubeconfig, error) {
 	var kubeconfig *kubeconfig
 
-	var loaderParams map[string]string
 	var loader kubeconfigLoader
-	err := mapstructure.Decode(params, &loaderParams)
-	if err != nil {
-		return nil, err
-	}
 
 	switch strings.ToLower(backend) {
 	case "s3", "":
 		// the default, if no specific kubeconfig backend was provided in the
 		// inventory entry, is to load the kubeconfig from s3
-		loader = NewKubeconfigS3LoaderFromParams(loaderParams)
+		loader = NewKubeconfigS3LoaderFromParams(params)
 	case "file":
-		loader = NewKubeconfigFileLoaderFromParams(loaderParams)
+		loader = NewKubeconfigFileLoaderFromParams(params)
 	default:
 		return nil, fmt.Errorf("unknown kubeconfig backend: %s", backend)
 	}
 
-	kubeconfig, err = NewKubeconfigFromLoader(loader, skipLoading)
+	kubeconfig, err := NewKubeconfigFromLoader(loader, skipLoading)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +68,12 @@ func NewKubeconfigFromLoader(loader kubeconfigLoader, skipLoading bool) (*kubeco
 	if err != nil {
 		return nil, err
 	}
+	if clientConfig.CurrentContext == "" {
+		for name := range clientConfig.Contexts {
+			clientConfig.CurrentContext = name
+			break
+		}
+	}
 
 	kubeconfig := &kubeconfig{
 		Loader: loader,
@@ -84,4 +86,28 @@ func NewKubeconfigFromLoader(loader kubeconfigLoader, skipLoading bool) (*kubeco
 func (k *kubeconfig) Yaml() ([]byte, error) {
 	config, err := clientcmd.Write(*k.Config)
 	return config, err
+}
+
+func kubeconfigDecoderHookFunc(skipKubeconfig bool, entryName string) mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+		if t.Name() == "kubeconfig" {
+			var config struct {
+				Backend string
+				Params  map[string]interface{}
+			}
+			err := mapstructure.Decode(data, &config)
+
+			// keys starting with _ are treated as metadata by the kubeconfig loaders
+			// add the name of the entry currently being decoded as metadata
+			// so a loader can use it to construct its default values
+			config.Params["_entry"] = entryName
+
+			kubeconfig, err := NewKubeconfigFromConfig(config.Backend, config.Params, skipKubeconfig)
+			return kubeconfig, err
+		}
+		return data, nil
+	}
 }

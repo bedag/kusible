@@ -68,7 +68,7 @@ func TestS3LoaderCreateParamsNoEnv(t *testing.T) {
 	bucket := "fffff"
 	path := "ggggg"
 
-	params := map[string]string{
+	params := map[string]interface{}{
 		"accesskey":   accessKey,
 		"secretkey":   secretKey,
 		"region":      region,
@@ -100,7 +100,7 @@ func TestS3LoaderCreateParamsPartialEnv(t *testing.T) {
 	decryptKey := "eeeee"
 	path := "ggggg"
 
-	params := map[string]string{
+	params := map[string]interface{}{
 		"region": region,
 		"path":   path,
 	}
@@ -136,7 +136,7 @@ func TestS3LoaderCreateParamsFullEnv(t *testing.T) {
 	decryptKey := "eeeee"
 	bucket := "fffff"
 
-	params := map[string]string{}
+	params := map[string]interface{}{}
 
 	err := os.Setenv("S3_ACCESSKEY", accessKey)
 	assert.NilError(t, err, "failed to set environment %s=%s", "S3_ACCESSKEY", accessKey)
@@ -163,6 +163,22 @@ func TestS3LoaderCreateParamsFullEnv(t *testing.T) {
 	assert.Equal(t, decryptKey, loader.DecryptKey)
 	assert.Equal(t, bucket, loader.Bucket)
 	assert.Equal(t, "kubeconfig/kubeconfig.enc.7z", loader.Path)
+}
+
+func TestS3LoaderEntryDefault(t *testing.T) {
+	entry := "test"
+	defaultPath := "kubeconfig/kubeconfig.enc.7z"
+	params := map[string]interface{}{
+		"_entry": entry,
+	}
+
+	expected := fmt.Sprintf("%s/%s", entry, defaultPath)
+	loader := NewKubeconfigS3LoaderFromParams(params)
+	if loader == nil {
+		t.Errorf("failed to create s3 loader")
+	}
+
+	assert.Equal(t, expected, loader.Path)
 }
 
 type mockedS3DownloadManager struct {
@@ -214,7 +230,7 @@ func TestS3LoaderLoad(t *testing.T) {
 }
 
 func TestS3LoaderConfig(t *testing.T) {
-	params := map[string]string{
+	params := map[string]interface{}{
 		"accesskey":   "aaaaa",
 		"secretkey":   "bbbbb",
 		"region":      "ccccc",

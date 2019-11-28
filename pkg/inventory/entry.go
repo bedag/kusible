@@ -15,10 +15,82 @@
 package inventory
 
 import (
+	"fmt"
+	"reflect"
 	"regexp"
 
 	"github.com/bedag/kusible/pkg/groups"
+	"github.com/mitchellh/mapstructure"
 )
+
+func NewEntryFromParams(params map[string]interface{}, skipKubeconfig bool) (*entry, error) {
+	var entry entry
+
+	if _, ok := params["name"].(string); !ok {
+		return nil, fmt.Errorf("inventory entry has no name")
+	}
+
+	name := params["name"].(string)
+
+	kubeconfigHook := kubeconfigDecoderHookFunc(skipKubeconfig, name)
+	tillerSettingsHook := tillerDecodeFunc()
+	hook := mapstructure.ComposeDecodeHookFunc(kubeconfigHook, tillerSettingsHook)
+	decoderConfig := &mapstructure.DecoderConfig{
+		DecodeHook: hook,
+		Result:     &entry,
+	}
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	if err != nil {
+		return nil, err
+	}
+	err = decoder.Decode(params)
+	if err != nil {
+		return nil, err
+	}
+
+	entry.Groups = append(entry.Groups, name)
+	entry.Groups = append([]string{"all"}, entry.Groups...)
+
+	if entry.ConfigNamespace == "" {
+		entry.ConfigNamespace = "kube-config"
+	}
+
+	if entry.Kubeconfig == nil {
+		loader := NewKubeconfigS3LoaderFromParams(map[string]interface{}{})
+		if err != nil {
+			return &entry, fmt.Errorf("failed to create default loader for entry %s: %s", name, err)
+		}
+		entry.Kubeconfig, err = NewKubeconfigFromLoader(loader, skipKubeconfig)
+	}
+
+	if entry.Tiller == nil {
+		tillerParams := map[string]interface{}{
+			"tls": false,
+		}
+		if entry.Kubeconfig.Config != nil && !skipKubeconfig {
+			contextName := entry.Kubeconfig.Config.CurrentContext
+			clusterName := entry.Kubeconfig.Config.Contexts[contextName].Cluster
+			authName := entry.Kubeconfig.Config.Contexts[contextName].AuthInfo
+			cluster := entry.Kubeconfig.Config.Clusters[clusterName]
+			auth := entry.Kubeconfig.Config.AuthInfos[authName]
+			caData := cluster.CertificateAuthorityData
+			certData := auth.ClientCertificateData
+			keyData := auth.ClientKeyData
+			if len(caData) > 0 && len(certData) > 0 && len(keyData) > 0 {
+				tillerParams["tls"] = true
+				tillerParams["ca"] = caData
+				tillerParams["cert"] = certData
+				tillerParams["key"] = keyData
+			}
+		}
+		entry.Tiller, err = NewTillerFromParams(tillerParams)
+		if err != nil {
+			return &entry, fmt.Errorf("failed to create tiller config: %s", err)
+		}
+	}
+
+	return &entry, nil
+}
 
 // MatchLimits returns true if the groups of the inventory entry satisfy all given
 // limits, which are treated as ^$ enclosed regex
@@ -57,4 +129,26 @@ func (e *entry) MatchLimits(limits []string) (bool, error) {
 // least one limit
 func (e *entry) ValidGroups(limits []string) ([]string, error) {
 	return groups.LimitGroups(e.Groups, limits)
+}
+
+func entryDecoderHookFunc(skipKubeconfig bool) mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+		if t.Name() == "entry" {
+			var params map[string]interface{}
+			err := mapstructure.Decode(data, &params)
+			if err != nil {
+				return data, err
+			}
+
+			entry, err := NewEntryFromParams(params, skipKubeconfig)
+			if err != nil {
+				return data, err
+			}
+			return entry, nil
+		}
+		return data, nil
+	}
 }

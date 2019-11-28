@@ -78,69 +78,6 @@ func entriesDecoderHookFunc(skipKubeconfig bool) mapstructure.DecodeHookFunc {
 	}
 }
 
-func entryDecoderHookFunc(skipKubeconfig bool) mapstructure.DecodeHookFunc {
-	return func(
-		f reflect.Type,
-		t reflect.Type,
-		data interface{}) (interface{}, error) {
-		if t.Name() == "entry" {
-			var stub struct {
-				Name string
-			}
-			err := mapstructure.Decode(data, &stub)
-			if err != nil {
-				return data, err
-			}
-
-			var entry entry
-			hook := kubeconfigDecoderHookFunc(skipKubeconfig, stub.Name)
-			decoderConfig := &mapstructure.DecoderConfig{
-				DecodeHook: hook,
-				Result:     &entry,
-			}
-			decoder, err := mapstructure.NewDecoder(decoderConfig)
-			if err != nil {
-				return data, err
-			}
-			err = decoder.Decode(data)
-			if err != nil {
-				return data, err
-			}
-			entry.Groups = append(entry.Groups, stub.Name)
-			entry.Groups = append([]string{"all"}, entry.Groups...)
-			return entry, nil
-		}
-		return data, nil
-	}
-}
-
-func kubeconfigDecoderHookFunc(skipKubeconfig bool, entryName string) mapstructure.DecodeHookFunc {
-	return func(
-		f reflect.Type,
-		t reflect.Type,
-		data interface{}) (interface{}, error) {
-		if t.Name() == "kubeconfig" {
-			dataMap := data.(map[interface{}]interface{})
-
-			var backend string
-			var params map[interface{}]interface{}
-			for k, v := range dataMap {
-				key := k.(string)
-				if key == "backend" {
-					backend = v.(string)
-				}
-				if key == "params" {
-					params = v.(map[interface{}]interface{})
-				}
-			}
-
-			kubeconfig, err := NewKubeconfigFromConfig(backend, params, skipKubeconfig)
-			return kubeconfig, err
-		}
-		return data, nil
-	}
-}
-
 func (i *Inventory) EntryNames(filter string, limits []string) ([]string, error) {
 	var result []string
 

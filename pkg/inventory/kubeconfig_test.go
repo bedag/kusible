@@ -24,7 +24,7 @@ import (
 
 func TestNewKubeconfigFromConfig(t *testing.T) {
 	backend := "file"
-	params := map[interface{}]interface{}{
+	params := map[string]interface{}{
 		"decrypt_key": "test123",
 		"path":        "testdata/kubeconfig.enc.7z",
 	}
@@ -34,6 +34,8 @@ func TestNewKubeconfigFromConfig(t *testing.T) {
 	assert.Equal(t, "file", kubeconfig.Loader.Type())
 	resultConfigBytes, err := kubeconfig.Yaml()
 	assert.NilError(t, err)
+	resultCurrentContext := kubeconfig.Config.CurrentContext
+	assert.Assert(t, resultCurrentContext != "")
 
 	expectedConfigPath := "testdata/kubeconfig"
 	assert.NilError(t, err)
@@ -41,13 +43,16 @@ func TestNewKubeconfigFromConfig(t *testing.T) {
 	assert.NilError(t, err)
 	expectedConfig, err := clientcmd.Load(expectedConfigBytesIn)
 	assert.NilError(t, err)
+	if expectedConfig.CurrentContext == "" {
+		expectedConfig.CurrentContext = resultCurrentContext
+	}
 	expectedConfigBytes, err := clientcmd.Write(*expectedConfig)
 	assert.NilError(t, err)
 	assert.Equal(t, string(expectedConfigBytes), string(resultConfigBytes))
 }
 
 func TestNewKubeconfigFromLoader(t *testing.T) {
-	params := map[string]string{
+	params := map[string]interface{}{
 		"decrypt_key": "test123",
 		"path":        "testdata/kubeconfig.enc.7z",
 	}
@@ -62,6 +67,8 @@ func TestNewKubeconfigFromLoader(t *testing.T) {
 	assert.Equal(t, "file", kubeconfig.Loader.Type())
 	resultConfigBytes, err := kubeconfig.Yaml()
 	assert.NilError(t, err)
+	resultCurrentContext := kubeconfig.Config.CurrentContext
+	assert.Assert(t, resultCurrentContext != "")
 
 	expectedConfigPath := "testdata/kubeconfig"
 	assert.NilError(t, err)
@@ -69,6 +76,9 @@ func TestNewKubeconfigFromLoader(t *testing.T) {
 	assert.NilError(t, err)
 	expectedConfig, err := clientcmd.Load(expectedConfigBytesIn)
 	assert.NilError(t, err)
+	if expectedConfig.CurrentContext == "" {
+		expectedConfig.CurrentContext = resultCurrentContext
+	}
 	expectedConfigBytes, err := clientcmd.Write(*expectedConfig)
 	assert.NilError(t, err)
 	assert.Equal(t, string(expectedConfigBytes), string(resultConfigBytes))

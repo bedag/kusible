@@ -47,7 +47,7 @@ func TestFileLoaderCreateParamsNoEnv(t *testing.T) {
 	decryptKey := "aaaaa"
 	path := "bbbbb"
 
-	params := map[string]string{
+	params := map[string]interface{}{
 		"decrypt_key": decryptKey,
 		"path":        path,
 	}
@@ -65,7 +65,7 @@ func TestFileLoaderCreateParamsPartialEnv(t *testing.T) {
 	decryptKey := "aaaaa"
 	path := "bbbbb"
 
-	params := map[string]string{
+	params := map[string]interface{}{
 		"path": path,
 	}
 
@@ -84,7 +84,7 @@ func TestFileLoaderCreateParamsPartialEnv(t *testing.T) {
 func TestFileLoaderCreateParamsFullEnv(t *testing.T) {
 	decryptKey := "aaaaa"
 
-	params := map[string]string{}
+	params := map[string]interface{}{}
 
 	err := os.Setenv("EJSON_PRIVKEY", decryptKey)
 	assert.NilError(t, err, "failed to set environment %s=%s", "EJSON_PRIVKEY", decryptKey)
@@ -126,7 +126,7 @@ func TestFileLoaderLoad(t *testing.T) {
 }
 
 func TestFileConfig(t *testing.T) {
-	params := map[string]string{
+	params := map[string]interface{}{
 		"decrypt_key": "aaaaa",
 		"path":        "bbbbb",
 	}

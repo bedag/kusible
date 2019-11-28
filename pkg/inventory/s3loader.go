@@ -30,7 +30,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func NewKubeconfigS3LoaderFromParams(params map[string]string) *kubeconfigS3Loader {
+func NewKubeconfigS3LoaderFromParams(params map[string]interface{}) *kubeconfigS3Loader {
 	result := map[string]string{
 		"accesskey":   os.Getenv("S3_ACCESSKEY"),
 		"secretkey":   os.Getenv("S3_SECRETKEY"),
@@ -46,8 +46,17 @@ func NewKubeconfigS3LoaderFromParams(params map[string]string) *kubeconfigS3Load
 		result["bucket"] = "kubernetes"
 	}
 
+	// if the loader is being created for a specific inventory entry,
+	// use the entry name in the _entry metadata key to construct
+	// the default path
+	if entry, ok := params["_entry"]; ok {
+		result["path"] = fmt.Sprintf("%s/%s", entry.(string), result["path"])
+	}
+
 	for k, v := range params {
-		result[strings.ToLower(k)] = v
+		if !strings.HasPrefix(k, "_") {
+			result[strings.ToLower(k)] = v.(string)
+		}
 	}
 
 	return NewKubeconfigS3Loader(
@@ -89,6 +98,14 @@ func NewKubeconfigS3Loader(accessKey string, secretKey string, region string, se
 func (loader *kubeconfigS3Loader) Load() ([]byte, error) {
 	if loader.Downloader == nil {
 		return nil, fmt.Errorf("no s3 client configured")
+	}
+
+	if loader.Bucket == "" {
+		return nil, fmt.Errorf("bucket for the kubeconfig S3 loader is empty")
+	}
+
+	if loader.Path == "" {
+		return nil, fmt.Errorf("path for the kubeconfig S3 loader is empty")
 	}
 
 	requestInput := s3.GetObjectInput{

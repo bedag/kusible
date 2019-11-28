@@ -15,6 +15,9 @@
 package inventory
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+
 	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -26,11 +29,11 @@ type Inventory struct {
 type entries map[string]entry
 
 type entry struct {
-	Name            string
-	Groups          []string
-	Tiller          tillerSettings
-	ConfigNamespace string `mapstructure:"config_namespace"`
-	Kubeconfig      kubeconfig
+	Name            string   `mapstructure:"name"`
+	Groups          []string `mapstructure:"groups"`
+	Tiller          *tiller  `mapstructure:"tiller"`
+	ConfigNamespace string   `mapstructure:"config_namespace"`
+	Kubeconfig      *kubeconfig
 }
 
 type kubeconfigLoader interface {
@@ -44,22 +47,22 @@ type kubeconfig struct {
 	Config *clientcmdapi.Config
 }
 
-type tillerSettings struct {
-	Namespace string
-	TLS       bool
-	CA        string
-	Cert      string
-	Key       string
+type tiller struct {
+	Namespace string            `mapstructure:"namespace"`
+	TLS       bool              `mapstructure:"tls"`
+	CA        *x509.Certificate `mapstrucutre:"ca"`
+	Cert      *x509.Certificate `mapstructure:"cert"`
+	Key       *rsa.PrivateKey   `mapstrucutre:"key"`
 }
 
 type kubeconfigS3Loader struct {
-	AccessKey  string
-	SecretKey  string
-	Region     string
-	Server     string
-	DecryptKey string
-	Bucket     string
-	Path       string
+	AccessKey  string `mapstructure:"accesskey"`
+	SecretKey  string `mapstructure:"secretkey"`
+	Region     string `mapstructure:"region"`
+	Server     string `mapstructure:"server"`
+	DecryptKey string `mapstructure:"decrypt_key"`
+	Bucket     string `mapstructure:"bucket"`
+	Path       string `mapstructure:"path"`
 	Downloader s3manageriface.DownloaderAPI
 }
 

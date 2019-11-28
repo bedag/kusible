@@ -25,14 +25,16 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func NewKubeconfigFileLoaderFromParams(params map[string]string) *kubeconfigFileLoader {
+func NewKubeconfigFileLoaderFromParams(params map[string]interface{}) *kubeconfigFileLoader {
 	result := map[string]string{
 		"decrypt_key": os.Getenv("EJSON_PRIVKEY"),
 		"path":        "kubeconfig",
 	}
 
 	for k, v := range params {
-		result[strings.ToLower(k)] = v
+		if !strings.HasPrefix(k, "_") {
+			result[strings.ToLower(k)] = v.(string)
+		}
 	}
 
 	return NewKubeconfigFileLoader(
@@ -45,6 +47,9 @@ func NewKubeconfigFileLoader(path string, decryptKey string) *kubeconfigFileLoad
 }
 
 func (loader *kubeconfigFileLoader) Load() ([]byte, error) {
+	if loader.Path == "" {
+		return nil, fmt.Errorf("no path set for kubeconfig file loader")
+	}
 	_, err := os.Stat(loader.Path)
 	if err != nil {
 		return nil, err
