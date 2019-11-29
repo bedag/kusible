@@ -154,7 +154,8 @@ func TestFileConfig(t *testing.T) {
 	err = decoder.Decode(params)
 	assert.NilError(t, err)
 
-	resultRaw, err := loader.Config()
+	// TODO: unsafe vs. safe test
+	resultRaw, err := loader.ConfigYaml(true)
 	assert.NilError(t, err)
 
 	err = yaml.Unmarshal(resultRaw, &result)

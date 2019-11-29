@@ -43,6 +43,7 @@ func NewInventory(path string, ejson values.EjsonSettings, skipKubeconfig bool) 
 		return nil, err
 	}
 	err = decoder.Decode(data)
+	inventory.Ejson = &ejson
 	return &inventory, err
 }
 

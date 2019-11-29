@@ -16,6 +16,7 @@ package inventory
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"os"
@@ -44,6 +45,11 @@ func NewKubeconfigS3LoaderFromParams(params map[string]interface{}) *kubeconfigS
 	// for downward compatibility
 	if result["bucket"] == "" {
 		result["bucket"] = "kubernetes"
+	}
+
+	if result["region"] == "" {
+		// minio default region
+		result["region"] = "us-east-1"
 	}
 
 	// if the loader is being created for a specific inventory entry,
@@ -108,6 +114,18 @@ func (loader *kubeconfigS3Loader) Load() ([]byte, error) {
 		return nil, fmt.Errorf("path for the kubeconfig S3 loader is empty")
 	}
 
+	if loader.AccessKey == "" {
+		return nil, fmt.Errorf("AccessKey for the kubeconfig S3 loader is empty")
+	}
+
+	if loader.SecretKey == "" {
+		return nil, fmt.Errorf("SecretKey for the kubeconfig S3 loader is empty")
+	}
+
+	if loader.Server == "" {
+		return nil, fmt.Errorf("Server for the kubeconfig S3 loader is empty")
+	}
+
 	requestInput := s3.GetObjectInput{
 		Bucket: aws.String(loader.Bucket),
 		Key:    aws.String(loader.Path),
@@ -152,16 +170,28 @@ func (loader *kubeconfigS3Loader) Type() string {
 	return "s3"
 }
 
-func (loader *kubeconfigS3Loader) Config() ([]byte, error) {
-	config := map[string]string{
+func (loader *kubeconfigS3Loader) Config(unsafe bool) map[string]interface{} {
+	secretKey := loader.SecretKey
+	decryptKey := loader.DecryptKey
+	if !unsafe {
+		decryptKey = fmt.Sprintf("%x", sha256.Sum256([]byte(decryptKey)))
+		secretKey = fmt.Sprintf("%x", sha256.Sum256([]byte(secretKey)))
+	}
+
+	result := map[string]interface{}{
 		"accesskey":   loader.AccessKey,
-		"secretkey":   loader.SecretKey,
+		"secretkey":   secretKey,
 		"region":      loader.Region,
 		"server":      loader.Server,
-		"decrypt_key": loader.DecryptKey,
+		"decrypt_key": decryptKey,
 		"bucket":      loader.Bucket,
 		"path":        loader.Path,
 	}
+	return result
+}
+
+func (loader *kubeconfigS3Loader) ConfigYaml(unsafe bool) ([]byte, error) {
+	config := loader.Config(unsafe)
 	result, err := yaml.Marshal(config)
 	if err != nil {
 		return nil, err

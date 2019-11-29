@@ -23,7 +23,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-func NewEntryFromParams(params map[string]interface{}, skipKubeconfig bool) (*entry, error) {
+func NewEntryFromParams(params map[string]interface{}) (*entry, error) {
 	var entry entry
 
 	if _, ok := params["name"].(string); !ok {
@@ -32,9 +32,7 @@ func NewEntryFromParams(params map[string]interface{}, skipKubeconfig bool) (*en
 
 	name := params["name"].(string)
 
-	kubeconfigHook := kubeconfigDecoderHookFunc(skipKubeconfig, name)
-	tillerSettingsHook := tillerDecodeFunc()
-	hook := mapstructure.ComposeDecodeHookFunc(kubeconfigHook, tillerSettingsHook)
+	hook := kubeconfigDecoderHookFunc(name)
 	decoderConfig := &mapstructure.DecoderConfig{
 		DecodeHook: hook,
 		Result:     &entry,
@@ -56,36 +54,16 @@ func NewEntryFromParams(params map[string]interface{}, skipKubeconfig bool) (*en
 	}
 
 	if entry.Kubeconfig == nil {
-		loader := NewKubeconfigS3LoaderFromParams(map[string]interface{}{})
+		config := map[string]interface{}{
+			"_entry": name,
+		}
+		loader := NewKubeconfigS3LoaderFromParams(config)
 		if err != nil {
 			return &entry, fmt.Errorf("failed to create default loader for entry %s: %s", name, err)
 		}
-		entry.Kubeconfig, err = NewKubeconfigFromLoader(loader, skipKubeconfig)
-	}
-
-	if entry.Tiller == nil {
-		tillerParams := map[string]interface{}{
-			"tls": false,
-		}
-		if entry.Kubeconfig.Config != nil && !skipKubeconfig {
-			contextName := entry.Kubeconfig.Config.CurrentContext
-			clusterName := entry.Kubeconfig.Config.Contexts[contextName].Cluster
-			authName := entry.Kubeconfig.Config.Contexts[contextName].AuthInfo
-			cluster := entry.Kubeconfig.Config.Clusters[clusterName]
-			auth := entry.Kubeconfig.Config.AuthInfos[authName]
-			caData := cluster.CertificateAuthorityData
-			certData := auth.ClientCertificateData
-			keyData := auth.ClientKeyData
-			if len(caData) > 0 && len(certData) > 0 && len(keyData) > 0 {
-				tillerParams["tls"] = true
-				tillerParams["ca"] = caData
-				tillerParams["cert"] = certData
-				tillerParams["key"] = keyData
-			}
-		}
-		entry.Tiller, err = NewTillerFromParams(tillerParams)
+		entry.Kubeconfig, err = NewKubeconfigFromLoader(loader)
 		if err != nil {
-			return &entry, fmt.Errorf("failed to create tiller config: %s", err)
+			return nil, fmt.Errorf("failed to load kubeconfig for entry '%s': %s", name, err)
 		}
 	}
 
@@ -143,7 +121,7 @@ func entryDecoderHookFunc(skipKubeconfig bool) mapstructure.DecodeHookFunc {
 				return data, err
 			}
 
-			entry, err := NewEntryFromParams(params, skipKubeconfig)
+			entry, err := NewEntryFromParams(params)
 			if err != nil {
 				return data, err
 			}

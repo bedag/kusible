@@ -21,9 +21,10 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-func NewKubeconfigFromConfig(backend string, params map[string]interface{}, skipLoading bool) (*kubeconfig, error) {
+func NewKubeconfigFromConfig(backend string, params map[string]interface{}) (*kubeconfig, error) {
 	var kubeconfig *kubeconfig
 
 	var loader kubeconfigLoader
@@ -39,34 +40,56 @@ func NewKubeconfigFromConfig(backend string, params map[string]interface{}, skip
 		return nil, fmt.Errorf("unknown kubeconfig backend: %s", backend)
 	}
 
-	kubeconfig, err := NewKubeconfigFromLoader(loader, skipLoading)
+	kubeconfig, err := NewKubeconfigFromLoader(loader)
 	if err != nil {
 		return nil, err
 	}
 	return kubeconfig, nil
 }
 
-func NewKubeconfigFromLoader(loader kubeconfigLoader, skipLoading bool) (*kubeconfig, error) {
+func NewKubeconfigFromLoader(loader kubeconfigLoader) (*kubeconfig, error) {
 	if loader == nil {
 		return nil, fmt.Errorf("no kubeconfig loader defined")
 	}
 
-	var rawConfig []byte
-	var err error
-	if !skipLoading {
-		// TODO split data loading and data decoding
-		rawConfig, err = loader.Load()
+	kubeconfig := &kubeconfig{
+		Loader: loader,
+	}
+
+	return kubeconfig, nil
+}
+
+func (k *kubeconfig) Yaml() ([]byte, error) {
+	config, err := k.Config()
+	if err != nil {
+		return nil, err
+	}
+	data, err := clientcmd.Write(*config)
+	if err != nil {
+		return nil, err
+	}
+	return data, err
+}
+
+func (k *kubeconfig) Config() (*clientcmdapi.Config, error) {
+	if k.config == nil {
+		err := k.loadConfig()
 		if err != nil {
 			return nil, err
 		}
 	}
+	return k.config, nil
+}
 
-	// if rawConfig is empty because of skipLoading, clientcmd.Load()
-	// returns an  empty config, see
-	// https://github.com/kubernetes/client-go/blob/571c0ef67034a5e72b9e30e662044b770361641e/tools/clientcmd/loader.go#L408
+func (k *kubeconfig) loadConfig() error {
+	rawConfig, err := k.Loader.Load()
+	if err != nil {
+		return err
+	}
+
 	clientConfig, err := clientcmd.Load(rawConfig)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if clientConfig.CurrentContext == "" {
 		for name := range clientConfig.Contexts {
@@ -75,20 +98,11 @@ func NewKubeconfigFromLoader(loader kubeconfigLoader, skipLoading bool) (*kubeco
 		}
 	}
 
-	kubeconfig := &kubeconfig{
-		Loader: loader,
-		Config: clientConfig,
-	}
-
-	return kubeconfig, nil
+	k.config = clientConfig
+	return nil
 }
 
-func (k *kubeconfig) Yaml() ([]byte, error) {
-	config, err := clientcmd.Write(*k.Config)
-	return config, err
-}
-
-func kubeconfigDecoderHookFunc(skipKubeconfig bool, entryName string) mapstructure.DecodeHookFunc {
+func kubeconfigDecoderHookFunc(entryName string) mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
@@ -105,7 +119,7 @@ func kubeconfigDecoderHookFunc(skipKubeconfig bool, entryName string) mapstructu
 			// so a loader can use it to construct its default values
 			config.Params["_entry"] = entryName
 
-			kubeconfig, err := NewKubeconfigFromConfig(config.Backend, config.Params, skipKubeconfig)
+			kubeconfig, err := NewKubeconfigFromConfig(config.Backend, config.Params)
 			return kubeconfig, err
 		}
 		return data, nil

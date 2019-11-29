@@ -15,15 +15,27 @@
 package inventory
 
 import (
-	"crypto/rsa"
-	"crypto/x509"
-
 	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
+	"github.com/bedag/kusible/pkg/values"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 type Inventory struct {
 	Entries entries `mapstructure:"inventory"`
+	Ejson   *values.EjsonSettings
+}
+
+type Targets struct {
+	limits     []string
+	filter     string
+	valuesPath string
+	ejson      *values.EjsonSettings
+	targets    map[string]*Target
+}
+
+type Target struct {
+	entry  *entry
+	values values.Values
 }
 
 type entries map[string]entry
@@ -31,7 +43,6 @@ type entries map[string]entry
 type entry struct {
 	Name            string   `mapstructure:"name"`
 	Groups          []string `mapstructure:"groups"`
-	Tiller          *tiller  `mapstructure:"tiller"`
 	ConfigNamespace string   `mapstructure:"config_namespace"`
 	Kubeconfig      *kubeconfig
 }
@@ -39,20 +50,13 @@ type entry struct {
 type kubeconfigLoader interface {
 	Load() ([]byte, error)
 	Type() string
-	Config() ([]byte, error)
+	ConfigYaml(unsafe bool) ([]byte, error)
+	Config(unsafe bool) map[string]interface{}
 }
 
 type kubeconfig struct {
 	Loader kubeconfigLoader
-	Config *clientcmdapi.Config
-}
-
-type tiller struct {
-	Namespace string            `mapstructure:"namespace"`
-	TLS       bool              `mapstructure:"tls"`
-	CA        *x509.Certificate `mapstrucutre:"ca"`
-	Cert      *x509.Certificate `mapstructure:"cert"`
-	Key       *rsa.PrivateKey   `mapstrucutre:"key"`
+	config *clientcmdapi.Config
 }
 
 type kubeconfigS3Loader struct {

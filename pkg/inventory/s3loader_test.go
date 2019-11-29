@@ -205,6 +205,9 @@ func TestS3LoaderLoad(t *testing.T) {
 	path := "kubeconfig.enc"
 
 	loader := &kubeconfigS3Loader{
+		AccessKey:  "foo",
+		SecretKey:  "foo",
+		Server:     "foo",
 		DecryptKey: decryptKey,
 		Bucket:     bucket,
 		Path:       path,
@@ -268,7 +271,8 @@ func TestS3LoaderConfig(t *testing.T) {
 	err = decoder.Decode(params)
 	assert.NilError(t, err)
 
-	resultRaw, err := loader.Config()
+	// TODO: unsafe vs. safe test
+	resultRaw, err := loader.ConfigYaml(true)
 	assert.NilError(t, err)
 	err = yaml.Unmarshal(resultRaw, &result)
 	assert.NilError(t, err)

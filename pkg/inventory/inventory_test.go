@@ -64,15 +64,16 @@ func TestInventoryBare(t *testing.T) {
 	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
 	assert.NilError(t, err)
 	entry := inventory.Entries["test"]
-	assert.Assert(t, entry.Tiller != nil)
-	assert.Equal(t, "kube-system", entry.Tiller.Namespace)
-	assert.Assert(t, entry.Tiller.TLS)
 	assert.Assert(t, entry.Kubeconfig != nil)
 	assert.Assert(t, entry.Kubeconfig.Loader != nil)
 	assert.Equal(t, "s3", entry.Kubeconfig.Loader.Type())
 	assert.Equal(t, "all", entry.Groups[0])
 	assert.Equal(t, "test", entry.Groups[1])
 	assert.Equal(t, "kube-config", entry.ConfigNamespace)
+	expectedPath := fmt.Sprintf("%s/%s", expected[0], "kubeconfig/kubeconfig.enc.7z")
+	resultPath := entry.Kubeconfig.Loader.Config(true)["path"]
+	assert.Equal(t, expectedPath, resultPath)
+	assert.Assert(t, entry.Kubeconfig.Loader.Config(true)["region"] != "")
 }
 
 func TestInventoryEntriesFull(t *testing.T) {
@@ -108,40 +109,6 @@ func TestInventoryEntriesSingle(t *testing.T) {
 
 	_, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
 	assert.NilError(t, err)
-}
-
-func TestInventoryEntriesTiller(t *testing.T) {
-	inventoryPath := "testdata/clusters_tiller.yaml"
-	skipKubeconfig := true
-	expected := []string{
-		"tiller-defaults",
-		"tiller-tls-true",
-		"tiller-tls-string-false",
-	}
-	limits := []string{}
-	filter := ".*"
-
-	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
-	assert.NilError(t, err)
-
-	defaultTillerEntry := inventory.Entries["tiller-defaults"].Tiller
-	tlsTillerEntry := inventory.Entries["tiller-tls-true"].Tiller
-	noTLSTillerEntry := inventory.Entries["tiller-tls-string-false"].Tiller
-
-	assert.Assert(t, defaultTillerEntry != nil)
-	assert.Assert(t, tlsTillerEntry != nil)
-	assert.Assert(t, noTLSTillerEntry != nil)
-
-	assert.Assert(t, defaultTillerEntry.TLS)
-	assert.Equal(t, "kube-system", defaultTillerEntry.Namespace)
-
-	assert.Assert(t, !noTLSTillerEntry.TLS)
-
-	assert.Assert(t, tlsTillerEntry.TLS)
-	assert.Equal(t, "cert-tiller", tlsTillerEntry.Namespace)
-
-	assert.Assert(t, tlsTillerEntry.CA != nil)
-	assert.Assert(t, tlsTillerEntry.Cert != nil)
 }
 
 func TestInventoryEntriesLimits(t *testing.T) {

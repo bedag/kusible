@@ -15,6 +15,7 @@
 package inventory
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -88,11 +89,20 @@ func (loader *kubeconfigFileLoader) Type() string {
 	return "file"
 }
 
-func (loader *kubeconfigFileLoader) Config() ([]byte, error) {
-	config := map[string]string{
-		"decrypt_key": loader.DecryptKey,
+func (loader *kubeconfigFileLoader) Config(unsafe bool) map[string]interface{} {
+	decryptKey := loader.DecryptKey
+	if !unsafe {
+		decryptKey = fmt.Sprintf("%x", sha256.Sum256([]byte(decryptKey)))
+	}
+	result := map[string]interface{}{
+		"decrypt_key": decryptKey,
 		"path":        loader.Path,
 	}
+	return result
+}
+
+func (loader *kubeconfigFileLoader) ConfigYaml(unsafe bool) ([]byte, error) {
+	config := loader.Config(unsafe)
 	result, err := yaml.Marshal(config)
 	if err != nil {
 		return nil, err

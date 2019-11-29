@@ -29,12 +29,14 @@ func TestNewKubeconfigFromConfig(t *testing.T) {
 		"path":        "testdata/kubeconfig.enc.7z",
 	}
 
-	kubeconfig, err := NewKubeconfigFromConfig(backend, params, false)
+	kubeconfig, err := NewKubeconfigFromConfig(backend, params)
 	assert.NilError(t, err)
 	assert.Equal(t, "file", kubeconfig.Loader.Type())
 	resultConfigBytes, err := kubeconfig.Yaml()
 	assert.NilError(t, err)
-	resultCurrentContext := kubeconfig.Config.CurrentContext
+	resultClientConfig, err := kubeconfig.Config()
+	assert.NilError(t, err)
+	resultCurrentContext := resultClientConfig.CurrentContext
 	assert.Assert(t, resultCurrentContext != "")
 
 	expectedConfigPath := "testdata/kubeconfig"
@@ -62,12 +64,14 @@ func TestNewKubeconfigFromLoader(t *testing.T) {
 		t.Errorf("failed to create file loader")
 	}
 
-	kubeconfig, err := NewKubeconfigFromLoader(loader, false)
+	kubeconfig, err := NewKubeconfigFromLoader(loader)
 	assert.NilError(t, err)
 	assert.Equal(t, "file", kubeconfig.Loader.Type())
 	resultConfigBytes, err := kubeconfig.Yaml()
 	assert.NilError(t, err)
-	resultCurrentContext := kubeconfig.Config.CurrentContext
+	resultClientConfig, err := kubeconfig.Config()
+	assert.NilError(t, err)
+	resultCurrentContext := resultClientConfig.CurrentContext
 	assert.Assert(t, resultCurrentContext != "")
 
 	expectedConfigPath := "testdata/kubeconfig"
