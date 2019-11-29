@@ -97,44 +97,6 @@ vars:
   var2: bar
 ```
 
-#### The cluster inventory map
-
-Each kubernetes cluster must have a cluster inventory config map where settings like the default ingress domain or the os proxy used inside
-the cluster are stored. Currently the cluster inventory config map contains the following information:
-
-```json
-{
-  "k8s": {
-    "backuptarget": {
-      "mountpath": "",
-      "nfsshare": ""
-    },
-    "cluster_cidr": "",
-    "cluster_name": "",
-    "default_ingress_domain": "",
-    "defaultingressclass": "",
-    "ingress_wildcard_crt": "",
-    "metallbcidrs": {
-      "bi-svc": "",
-      "ci-svc": "",
-      "kb-svc": "",
-      "mg-pub": ""
-    },
-    "service_cidr": "",
-    "timezone": ""
-  },
-  "os": {
-    "dnsdomain": "",
-    "no_proxy": [],
-    "ntp_servers": [],
-    "proxy": ""
-  }
-}
-```
-
-As all other group vars, the cluster inventory config map is available in the `vars` hash map, e.g. to access the dnsdomain `vars.os.dnsdomain`
-must be used.
-
 ### Playbooks
 
 Playbooks tie the group variables and the inventory together and define which chart gets deployed on which clusters. Each playbook consists
