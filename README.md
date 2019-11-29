@@ -26,12 +26,6 @@ used to access the cluster.
 inventory:
   - name: %cluster-name%
     groups: [all, <cluster-name>]
-    tiller:
-      namespace: kube-config
-      tls: "true"
-      ca: ""
-      cert: ""
-      key: ""
     config_namespace: kube-config
     kubeconfig:
       backend: s3
@@ -54,10 +48,6 @@ inventory:
   - name: <cluster-name>
 ```
 
-This requires that the kubeconfig contains the CA, Cert and Key used to authenticate with tiller (which is only the case when using TLS to
-authenticate to tiller AND kubernetes AND both use the same certificates). TLS for tiller is on by default to stay downward compatible with
-previous versions of kusible.
-
 Currently there are two kubeconfig backends: s3 and file. S3 is the default and supports plain yaml and encrypted tar.7z files kubeconfig files. The
 inventory syntax for the s3 backend can be seen above. If the kubeconfig file is encrypted, it is assumed it uses the same key as the ejson
 files in the group vars, which is provided using the `-e` cli option. Alternatively it can be specified in the `decrypt_key:` parameter.
@@ -79,9 +69,7 @@ subdirectories). Spruce operators, yaml anchors / references and ejson encrypted
 
 #### Kubeconfig and Kubernetes cluster requirements
 
-The kubeconfig is expected to only contain a single cluster and a single user. The cluster must have the "`certificate-authority-data`" field set
-and the user must have the "`client-certificate-data`" and "`client-key-data`" fields set. The key and certificates stored in these fields must
-be valid for authenticating against tiller to deploy helm charts.
+The kubeconfig is expected to only contain a single cluster and a single user.
 
 Each cluster requires a "cluster-inventory" configmap in the config namespace provided to kusible with the `-c` cli flag. The kubeconfig for the
 cluster must contain credentials allowing access to this configmap.
@@ -108,44 +96,6 @@ vars:
   var1: foo
   var2: bar
 ```
-
-#### The cluster inventory map
-
-Each kubernetes cluster must have a cluster inventory config map where settings like the default ingress domain or the os proxy used inside
-the cluster are stored. Currently the cluster inventory config map contains the following information:
-
-```json
-{
-  "k8s": {
-    "backuptarget": {
-      "mountpath": "",
-      "nfsshare": ""
-    },
-    "cluster_cidr": "",
-    "cluster_name": "",
-    "default_ingress_domain": "",
-    "defaultingressclass": "",
-    "ingress_wildcard_crt": "",
-    "metallbcidrs": {
-      "bi-svc": "",
-      "ci-svc": "",
-      "kb-svc": "",
-      "mg-pub": ""
-    },
-    "service_cidr": "",
-    "timezone": ""
-  },
-  "os": {
-    "dnsdomain": "",
-    "no_proxy": [],
-    "ntp_servers": [],
-    "proxy": ""
-  }
-}
-```
-
-As all other group vars, the cluster inventory config map is available in the `vars` hash map, e.g. to access the dnsdomain `vars.os.dnsdomain`
-must be used.
 
 ### Playbooks
 
@@ -179,22 +129,7 @@ Groups in the `groups` field are **OR** associated, meaning that a playbook appl
 
 ## The kusible CLI
 
-```
-Usage: kusible [-h] [-f] [-C [-T]] [-D] [-P] [-i inventory] [-e privkey] [-l limit] [-t namespace] [-c namespace] [-H 'helm params'] <playbook>
-    -h           display this help and exit
-    -i inventory the inventory (file / dir) to use (default: inventory.yml)
-    -e privkey   ejson privkey
-    -f           fail on error
-    -l limit     limit affected groups (egrep compatible regex)
-    -t namespace default tiller namespace (default: config namespace)
-    -c namespace default config namespace for the cluster inventory config map (default: kube-system)
-    -H params    additional parameters to be passed to helm
-    -C           check mode (dry-run)
-    -T           template check, only works during dry run (slow)
-    -V           verbose mode
-    -D           debug mode
-    -P           purge release before deploying
-```
+TBD
 
 ### Limits
 

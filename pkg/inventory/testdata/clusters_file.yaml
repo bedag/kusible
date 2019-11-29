@@ -1,0 +1,23 @@
+---
+inventory:
+  - name: cluster-test-01
+    groups: [dev,rz01]
+    kubeconfig:
+      backend: file
+      params:
+        decrypt_key: test123
+        path: testdata/kubeconfig
+  - name: cluster-test-02
+    groups: [dev,rz01]
+    kubeconfig:
+      backend: file
+      params:
+        decrypt_key: test123
+        path: testdata/kubeconfig.enc.7z
+  - name: cluster-test-03
+    groups: [dev,rz01]
+    kubeconfig:
+      backend: file
+      params:
+        decrypt_key: test123
+        path: testdata/kubeconfig.enc

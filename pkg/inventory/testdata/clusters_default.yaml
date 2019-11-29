@@ -1,0 +1,31 @@
+---
+inventory:
+  - name: cluster-test-01-preflight
+    groups: [dev,rz01,preflight-check]
+    kubeconfig:
+      params:
+        path: cluster-test-01/kubeconfig/kubeconfig.enc.7z
+  - name: cluster-dev-01
+    groups: [dev,rz01]
+
+# test
+  - name: cluster-test-01
+    groups: [test,rz01,enabled]
+
+# stage
+  - name: cluster-stage-01
+    groups: [stage,rz01,enabled]
+  - name: cluster-stage-02
+    groups: [stage,rz02,enabled]
+  - name: cluster-stage-03
+    groups: [stage,rz03,enabled]
+
+# prod
+  - name: cluster-prod-01
+    groups: [prod,rz02,enabled]
+  - name: cluster-prod-02
+    groups: [prod,rz02,enabled]
+  - name: cluster-prod-03
+    groups: [prod,rz03,enabled]
+  - name: cluster-prod-04
+    groups: [prod,rz03,enabled]
