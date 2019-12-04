@@ -14,31 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package inventory
+package loader
 
 import (
 	"fmt"
-
-	"github.com/bedag/kusible/pkg/values"
+	"strings"
 )
 
-func NewTarget(entry *Entry, valuesPath string, ejson *values.EjsonSettings) (*Target, error) {
-	target := &Target{
-		entry: entry,
-	}
-	groups := entry.groups
-	values, err := values.NewValues(valuesPath, groups, false, *ejson)
-	if err != nil {
-		return nil, fmt.Errorf("failed to compile values for target '%s': %s", entry.name, err)
-	}
-	target.values = values
-	return target, nil
-}
+func New(backend string, params map[string]interface{}) (Loader, error) {
 
-func (t *Target) Values() values.Values {
-	return t.values
-}
+	switch strings.ToLower(backend) {
+	case "s3":
+		// the default, if no specific kubeconfig backend was provided in the
+		// inventory entry, is to load the kubeconfig from s3
+		return NewS3BackendFromParams(params)
+	case "file":
+		return NewFileBackendFromParams(params)
+	default:
+		return nil, fmt.Errorf("unknown kubeconfig backend: %s", backend)
+	}
 
-func (t *Target) Entry() *Entry {
-	return t.entry
+	return nil, nil
 }

@@ -21,6 +21,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/bedag/kusible/pkg/loader"
 	"github.com/bedag/kusible/pkg/values"
 	"github.com/go-test/deep"
 	"gotest.tools/assert"
@@ -65,17 +66,17 @@ func TestInventoryBare(t *testing.T) {
 
 	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
 	assert.NilError(t, err)
-	entry := inventory.Entries["test"]
-	assert.Assert(t, entry.Kubeconfig != nil)
-	assert.Assert(t, entry.Kubeconfig.Loader != nil)
-	assert.Equal(t, "s3", entry.Kubeconfig.Loader.Type())
-	assert.Equal(t, "all", entry.Groups[0])
-	assert.Equal(t, "test", entry.Groups[1])
-	assert.Equal(t, "kube-config", entry.ConfigNamespace)
+	entry := inventory.entries["test"]
+	assert.Assert(t, entry.kubeconfig != nil)
+	assert.Assert(t, entry.kubeconfig.loader != nil)
+	assert.Equal(t, "s3", entry.kubeconfig.loader.Type())
+	assert.Equal(t, "all", entry.groups[0])
+	assert.Equal(t, "test", entry.groups[1])
+	assert.Equal(t, "kube-config", entry.configNamespace)
 	expectedPath := fmt.Sprintf("%s/%s", expected[0], "kubeconfig/kubeconfig.enc.7z")
-	resultPath := entry.Kubeconfig.Loader.Config(true)["path"]
-	assert.Equal(t, expectedPath, resultPath)
-	assert.Assert(t, entry.Kubeconfig.Loader.Config(true)["region"] != "")
+	backendConfig := entry.kubeconfig.loader.Config().(*loader.S3Config)
+	assert.Equal(t, expectedPath, backendConfig.Path)
+	assert.Assert(t, backendConfig.Region != "")
 }
 
 func TestInventoryEntriesFull(t *testing.T) {
@@ -142,10 +143,10 @@ func TestInventoryLoader(t *testing.T) {
 	}
 	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
 	assert.NilError(t, err)
-	for _, entry := range inventory.Entries {
-		loader := entry.Kubeconfig.Loader
-		assert.Assert(t, loader != nil)
-		assert.Equal(t, "file", loader.Type())
+	for _, entry := range inventory.entries {
+		ldr := entry.kubeconfig.loader
+		assert.Assert(t, ldr != nil)
+		assert.Equal(t, "file", ldr.Type())
 	}
 }
 
@@ -161,9 +162,9 @@ func TestInventoryEntryGroups(t *testing.T) {
 	}
 	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
 	assert.NilError(t, err)
-	for _, entry := range inventory.Entries {
-		name := entry.Name
-		groups := entry.Groups
+	for _, entry := range inventory.entries {
+		name := entry.name
+		groups := entry.groups
 		assert.Equal(t, "all", groups[0])
 		assert.Equal(t, name, groups[len(groups)-1])
 	}

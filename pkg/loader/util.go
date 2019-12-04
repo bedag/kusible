@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package inventory
+package loader
 
 import (
 	"archive/tar"
@@ -27,6 +27,7 @@ import (
 	openssl "github.com/Luzifer/go-openssl/v3"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/kjk/lzmadec"
+	"github.com/mitchellh/mapstructure"
 )
 
 func extractSingleTar7Zip(data []byte, password string) ([]byte, error) {
@@ -121,4 +122,21 @@ func decryptOpensslSymmetric(data []byte, password string) ([]byte, error) {
 		return nil, err
 	}
 	return result, nil
+}
+
+func decode(input interface{}, output interface{}) error {
+	config := &mapstructure.DecoderConfig{
+		TagName: "json",
+		Result:  output,
+	}
+
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	if err := decoder.Decode(input); err != nil {
+		return err
+	}
+	return nil
 }

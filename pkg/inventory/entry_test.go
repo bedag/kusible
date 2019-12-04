@@ -24,9 +24,9 @@ import (
 func TestEntryMatchLimits(t *testing.T) {
 	limitsMatching := []string{"dev", "test"}
 	limitsNotMatching := []string{"dev", "foo"}
-	entry := &entry{
-		Name:   "test",
-		Groups: []string{"dev", "test", "state", "prod"},
+	entry := &Entry{
+		name:   "test",
+		groups: []string{"dev", "test", "state", "prod"},
 	}
 
 	result, err := entry.MatchLimits(limitsMatching)
@@ -40,9 +40,9 @@ func TestEntryMatchLimits(t *testing.T) {
 
 func TestEntryValidGroups(t *testing.T) {
 	limits := []string{"dev", "test"}
-	entry := &entry{
-		Name:   "test",
-		Groups: []string{"dev", "test", "state", "prod"},
+	entry := &Entry{
+		name:   "test",
+		groups: []string{"dev", "test", "state", "prod"},
 	}
 
 	result, err := entry.ValidGroups(limits)

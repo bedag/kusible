@@ -38,8 +38,8 @@ func NewTargets(filter string, limits []string, valuesPath string, inventory *In
 	}
 
 	for _, name := range targetNames {
-		entry := inventory.Entries[name]
-		target, err := NewTarget(&entry, valuesPath, ejson)
+		entry := inventory.entries[name]
+		target, err := NewTarget(entry, valuesPath, ejson)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create target for inventory entry '%s': %s", name, err)
 		}

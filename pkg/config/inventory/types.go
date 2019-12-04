@@ -21,32 +21,32 @@ import "github.com/mitchellh/mapstructure"
 // Config holds the list of entries that can serve as targets
 // for application deployments. It is the root of the actual inventory
 type Config struct {
-	Inventory []*Entry `yaml:"inventory"`
+	Inventory []*Entry `json:"inventory"`
 }
 
 // Entry is a single inventory entry representing a possible deploy
 // target.
 type Entry struct {
 	// Name to uniquely identify the entry
-	Name string `yaml:"name"`
+	Name string `json:"name"`
 	// Groups is a "least specific to most specific" ordered list of
 	// groups associated with this entry, used to compile the "values"
 	// for this entry and as selector to target entries in specific groups.
 	// Each entry is always part of the "all" group and a group
 	// with the name of the entry.
-	Groups []string `yaml:"groups"`
+	Groups []string `json:"groups"`
 	// ConfigNamespace refers to the namespace where the "cluster-inventory"
 	// ConfigMap can be found
-	ConfigNamespace string `yaml:"config_namespace"`
+	ConfigNamespace string `json:"config_namespace"`
 	// Kubeconfig holds the kubeconfig loader configuration
-	Kubeconfig *Kubeconfig `yaml:"kubeconfig"`
+	Kubeconfig *Kubeconfig `json:"kubeconfig"`
 }
 
 // Kubeconfig holds information on how / where to retrieve / generate
 // the Kubeconfig for an entry in the inventory
 type Kubeconfig struct {
-	Backend string  `yaml:"backend"`
-	Params  *Params `yaml:"params"`
+	Backend string  `json:"backend"`
+	Params  *Params `json:"params"`
 }
 
 // Params holds the parameters used by a kubeconfig backend to
@@ -60,7 +60,7 @@ func decode(data *map[string]interface{}, result interface{}) error {
 		ZeroFields:       true,
 		ErrorUnused:      false,
 		WeaklyTypedInput: true,
-		TagName:          "yaml",
+		TagName:          "json",
 		Result:           &result,
 	}
 
@@ -77,6 +77,17 @@ func decode(data *map[string]interface{}, result interface{}) error {
 func NewConfigFromMap(data *map[string]interface{}) (*Config, error) {
 	var config Config
 	err := decode(data, &config)
+	if config.Inventory == nil {
+		config.Inventory = make([]*Entry, 0)
+	}
+	for index := range config.Inventory {
+		if config.Inventory[index].Kubeconfig == nil {
+			config.Inventory[index].Kubeconfig = new(Kubeconfig)
+		}
+		if config.Inventory[index].Kubeconfig.Params == nil {
+			config.Inventory[index].Kubeconfig.Params = new(Params)
+		}
+	}
 	return &config, err
 }
 

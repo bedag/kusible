@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package inventory
+package loader
 
 import (
 	"io/ioutil"
@@ -21,30 +21,30 @@ import (
 	"testing"
 
 	"github.com/mitchellh/mapstructure"
-	"gopkg.in/yaml.v2"
 	"gotest.tools/assert"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/yaml"
 )
 
-func TestFileLoaderType(t *testing.T) {
-	loader := &kubeconfigFileLoader{}
-	assert.Equal(t, "file", loader.Type())
+func TestFileBackendType(t *testing.T) {
+	backend := &FileBackend{}
+	assert.Equal(t, "file", backend.Type())
 }
 
-func TestFileLoaderCreate(t *testing.T) {
+func TestFileBackendCreate(t *testing.T) {
 	decryptKey := "aaaaa"
 	path := "bbbbb"
 
-	loader := NewKubeconfigFileLoader(path, decryptKey)
-	if loader == nil {
-		t.Errorf("failed to create file loader")
+	backend := NewFileBackend(path, decryptKey)
+	if backend == nil {
+		t.Errorf("failed to create file backend")
 	}
 
-	assert.Equal(t, decryptKey, loader.DecryptKey)
-	assert.Equal(t, path, loader.Path)
+	assert.Equal(t, decryptKey, backend.config.DecryptKey)
+	assert.Equal(t, path, backend.config.Path)
 }
 
-func TestFileLoaderCreateParamsNoEnv(t *testing.T) {
+func TestFileBackendCreateParamsNoEnv(t *testing.T) {
 	decryptKey := "aaaaa"
 	path := "bbbbb"
 
@@ -53,16 +53,14 @@ func TestFileLoaderCreateParamsNoEnv(t *testing.T) {
 		"path":        path,
 	}
 
-	loader := NewKubeconfigFileLoaderFromParams(params)
-	if loader == nil {
-		t.Errorf("failed to create file loader")
-	}
+	backend, err := NewFileBackendFromParams(params)
+	assert.NilError(t, err)
 
-	assert.Equal(t, decryptKey, loader.DecryptKey)
-	assert.Equal(t, path, loader.Path)
+	assert.Equal(t, decryptKey, backend.config.DecryptKey)
+	assert.Equal(t, path, backend.config.Path)
 }
 
-func TestFileLoaderCreateParamsPartialEnv(t *testing.T) {
+func TestFileBackendCreateParamsPartialEnv(t *testing.T) {
 	decryptKey := "aaaaa"
 	path := "bbbbb"
 
@@ -73,16 +71,14 @@ func TestFileLoaderCreateParamsPartialEnv(t *testing.T) {
 	err := os.Setenv("EJSON_PRIVKEY", decryptKey)
 	assert.NilError(t, err, "failed to set environment %s=%s", "EJSON_PRIVKEY", decryptKey)
 
-	loader := NewKubeconfigFileLoaderFromParams(params)
-	if loader == nil {
-		t.Errorf("failed to create file loader")
-	}
+	backend, err := NewFileBackendFromParams(params)
+	assert.NilError(t, err)
 
-	assert.Equal(t, decryptKey, loader.DecryptKey)
-	assert.Equal(t, path, loader.Path)
+	assert.Equal(t, decryptKey, backend.config.DecryptKey)
+	assert.Equal(t, path, backend.config.Path)
 }
 
-func TestFileLoaderCreateParamsFullEnv(t *testing.T) {
+func TestFileBackendCreateParamsFullEnv(t *testing.T) {
 	decryptKey := "aaaaa"
 
 	params := map[string]interface{}{}
@@ -90,25 +86,23 @@ func TestFileLoaderCreateParamsFullEnv(t *testing.T) {
 	err := os.Setenv("EJSON_PRIVKEY", decryptKey)
 	assert.NilError(t, err, "failed to set environment %s=%s", "EJSON_PRIVKEY", decryptKey)
 
-	loader := NewKubeconfigFileLoaderFromParams(params)
-	if loader == nil {
-		t.Errorf("failed to create file loader")
-	}
+	backend, err := NewFileBackendFromParams(params)
+	assert.NilError(t, err)
 
-	assert.Equal(t, decryptKey, loader.DecryptKey)
-	assert.Equal(t, "kubeconfig", loader.Path)
+	assert.Equal(t, decryptKey, backend.config.DecryptKey)
+	assert.Equal(t, "kubeconfig", backend.config.Path)
 }
 
-func TestFileLoaderLoad(t *testing.T) {
+func TestFileBackendLoad(t *testing.T) {
 	decryptKey := "test123"
 	path := "testdata/kubeconfig.enc"
 
-	loader := NewKubeconfigFileLoader(path, decryptKey)
-	if loader == nil {
-		t.Errorf("failed to create file loader")
+	backend := NewFileBackend(path, decryptKey)
+	if backend == nil {
+		t.Errorf("failed to create file backend")
 	}
 
-	resultConfigBytesIn, err := loader.Load()
+	resultConfigBytesIn, err := backend.Load()
 	assert.NilError(t, err)
 	resultConfig, err := clientcmd.Load(resultConfigBytesIn)
 	assert.NilError(t, err)
@@ -132,18 +126,11 @@ func TestFileConfig(t *testing.T) {
 		"path":        "bbbbb",
 	}
 
-	loader := NewKubeconfigFileLoaderFromParams(params)
-	if loader == nil {
-		t.Errorf("failed to create file loader")
-	}
+	backend, err := NewFileBackendFromParams(params)
+	assert.NilError(t, err)
 
-	type config struct {
-		DecryptKey string `yaml:"decrypt_key"`
-		Path       string `yaml:"path"`
-	}
-
-	var expected config
-	var result config
+	var expected FileConfig
+	var result FileConfig
 
 	decoderConfig := &mapstructure.DecoderConfig{
 		Result:  &expected,
@@ -156,7 +143,7 @@ func TestFileConfig(t *testing.T) {
 	assert.NilError(t, err)
 
 	// TODO: unsafe vs. safe test
-	resultRaw, err := loader.ConfigYaml(true)
+	resultRaw, err := backend.Config().Yaml(true)
 	assert.NilError(t, err)
 
 	err = yaml.Unmarshal(resultRaw, &result)

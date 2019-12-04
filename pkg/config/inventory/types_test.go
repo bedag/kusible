@@ -19,8 +19,8 @@ package inventory
 import (
 	"testing"
 
-	"gopkg.in/yaml.v2"
 	"gotest.tools/assert"
+	"sigs.k8s.io/yaml"
 	//"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -71,4 +71,25 @@ inventory:
 	err = yaml.Unmarshal(configYaml, &resultMap)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expectedMap, resultMap)
+}
+
+func TestEmptyEntryt(t *testing.T) {
+	data := []byte(`---
+inventory:
+  - name: "testentry"
+`)
+
+	var expectedMap map[string]interface{}
+	err := yaml.Unmarshal(data, &expectedMap)
+	assert.NilError(t, err)
+
+	// ensure that the config gets parsed correctly
+	config, err := NewConfigFromMap(&expectedMap)
+	assert.NilError(t, err)
+	assert.Assert(t, config != nil)
+	assert.Assert(t, config.Inventory != nil)
+	assert.Equal(t, 1, len(config.Inventory))
+	assert.Equal(t, "testentry", config.Inventory[0].Name)
+	assert.Assert(t, config.Inventory[0].Kubeconfig != nil)
+	assert.Assert(t, config.Inventory[0].Kubeconfig.Params != nil)
 }

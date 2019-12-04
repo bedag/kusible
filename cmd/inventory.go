@@ -97,14 +97,14 @@ var inventoryKubeconfigCmd = &cobra.Command{
 			return
 		}
 
-		entry, ok := inv.Entries[name]
+		entry, ok := inv.Entries()[name]
 		if !ok {
 			log.WithFields(log.Fields{
 				"entry": name,
 			}).Fatal("Entry does not exist")
 		}
 
-		kubeconfig, err := entry.Kubeconfig.Yaml()
+		kubeconfig, err := entry.Kubeconfig().Yaml()
 		if err != nil {
 			log.WithFields(log.Fields{
 				"entry": name,
@@ -143,7 +143,7 @@ var inventoryValuesCmd = &cobra.Command{
 			return
 		}
 
-		entry, ok := inv.Entries[name]
+		entry, ok := inv.Entries()[name]
 		if !ok {
 			log.WithFields(log.Fields{
 				"entry": name,
@@ -151,7 +151,7 @@ var inventoryValuesCmd = &cobra.Command{
 		}
 
 		ejsonSettings.SkipDecrypt = skipDecrypt
-		target, err := inventory.NewTarget(&entry, groupVarsDir, &ejsonSettings)
+		target, err := inventory.NewTarget(entry, groupVarsDir, &ejsonSettings)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"entry": name,
@@ -208,13 +208,13 @@ var inventoryLoaderCmd = &cobra.Command{
 			return
 		}
 
-		entry, ok := inv.Entries[name]
+		entry, ok := inv.Entries()[name]
 		if !ok {
 			log.WithFields(log.Fields{
 				"entry": name,
 			}).Fatal("Entry does not exist")
 		}
-		loaderConfig, err := entry.Kubeconfig.Loader.ConfigYaml(unsafe)
+		loaderConfig, err := entry.Kubeconfig().Loader().Config().Yaml(unsafe)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"entry": name,
@@ -222,7 +222,7 @@ var inventoryLoaderCmd = &cobra.Command{
 			}).Fatal("Failed to get loader config")
 			return
 		}
-		fmt.Printf("Loader type: %s\n", entry.Kubeconfig.Loader.Type())
+		fmt.Printf("Loader type: %s\n", entry.Kubeconfig().Loader().Type())
 		fmt.Println("Loader config: ")
 		fmt.Printf("%4s", string(loaderConfig))
 	},
