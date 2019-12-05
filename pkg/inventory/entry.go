@@ -100,3 +100,15 @@ func (e *Entry) ValidGroups(limits []string) ([]string, error) {
 func (e *Entry) Kubeconfig() *Kubeconfig {
 	return e.kubeconfig
 }
+
+func (e *Entry) Groups() []string {
+	return e.groups
+}
+
+func (e *Entry) Name() string {
+	return e.name
+}
+
+func (e *Entry) ConfigNamespace() string {
+	return e.configNamespace
+}

@@ -14,15 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package inventory
+package target
 
 import (
 	"fmt"
 
+	inv "github.com/bedag/kusible/pkg/inventory"
 	"github.com/bedag/kusible/pkg/values"
 )
 
-func NewTargets(filter string, limits []string, valuesPath string, inventory *Inventory, ejson *values.EjsonSettings) (*Targets, error) {
+func NewTargets(filter string, limits []string, valuesPath string, inventory *inv.Inventory, ejson *values.EjsonSettings) (*Targets, error) {
 	targetNames, err := inventory.EntryNames(filter, limits)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get possible entries from inventory: %s", err)
@@ -38,8 +39,8 @@ func NewTargets(filter string, limits []string, valuesPath string, inventory *In
 	}
 
 	for _, name := range targetNames {
-		entry := inventory.entries[name]
-		target, err := NewTarget(entry, valuesPath, ejson)
+		entry := inventory.Entries()[name]
+		target, err := New(entry, valuesPath, ejson)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create target for inventory entry '%s': %s", name, err)
 		}

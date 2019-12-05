@@ -14,22 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package inventory
+package target
 
 import (
 	"fmt"
 
+	inv "github.com/bedag/kusible/pkg/inventory"
 	"github.com/bedag/kusible/pkg/values"
 )
 
-func NewTarget(entry *Entry, valuesPath string, ejson *values.EjsonSettings) (*Target, error) {
+func New(entry *inv.Entry, valuesPath string, ejson *values.EjsonSettings) (*Target, error) {
 	target := &Target{
 		entry: entry,
 	}
-	groups := entry.groups
+	groups := entry.Groups()
 	values, err := values.NewValues(valuesPath, groups, false, *ejson)
 	if err != nil {
-		return nil, fmt.Errorf("failed to compile values for target '%s': %s", entry.name, err)
+		return nil, fmt.Errorf("failed to compile values for target '%s': %s", entry.Name(), err)
 	}
 	target.values = values
 	return target, nil
@@ -39,6 +40,6 @@ func (t *Target) Values() values.Values {
 	return t.values
 }
 
-func (t *Target) Entry() *Entry {
+func (t *Target) Entry() *inv.Entry {
 	return t.entry
 }

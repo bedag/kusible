@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/bedag/kusible/pkg/inventory"
+	"github.com/bedag/kusible/pkg/target"
 	"github.com/bedag/kusible/pkg/values"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -151,7 +152,7 @@ var inventoryValuesCmd = &cobra.Command{
 		}
 
 		ejsonSettings.SkipDecrypt = skipDecrypt
-		target, err := inventory.NewTarget(entry, groupVarsDir, &ejsonSettings)
+		target, err := target.New(entry, groupVarsDir, &ejsonSettings)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"entry": name,
