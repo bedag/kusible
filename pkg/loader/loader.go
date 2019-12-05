@@ -14,25 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cmd
+package loader
 
 import (
 	"fmt"
-
-	"github.com/spf13/cobra"
+	"strings"
 )
 
-const appName = "kusible"
-const version = "v0.0.1"
+func New(backend string, params map[string]interface{}) (Loader, error) {
 
-func init() {
-	rootCmd.AddCommand(versionCmd)
-}
+	switch strings.ToLower(backend) {
+	case "s3":
+		// the default, if no specific kubeconfig backend was provided in the
+		// inventory entry, is to load the kubeconfig from s3
+		return NewS3BackendFromParams(params)
+	case "file":
+		return NewFileBackendFromParams(params)
+	default:
+		return nil, fmt.Errorf("unknown kubeconfig backend: %s", backend)
+	}
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: fmt.Sprint("Print the version number of ", appName),
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("%s %s\n", appName, version)
-	},
+	return nil, nil
 }

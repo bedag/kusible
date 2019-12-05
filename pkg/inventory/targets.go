@@ -1,16 +1,18 @@
-// Copyright © 2019 Michael Gruener
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+Copyright © 2019 Michael Gruener
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 package inventory
 
@@ -36,8 +38,8 @@ func NewTargets(filter string, limits []string, valuesPath string, inventory *In
 	}
 
 	for _, name := range targetNames {
-		entry := inventory.Entries[name]
-		target, err := NewTarget(&entry, valuesPath, ejson)
+		entry := inventory.entries[name]
+		target, err := NewTarget(entry, valuesPath, ejson)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create target for inventory entry '%s': %s", name, err)
 		}

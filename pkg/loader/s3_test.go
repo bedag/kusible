@@ -1,18 +1,20 @@
-// Copyright © 2019 Michael Gruener
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+Copyright © 2019 Michael Gruener
 
-package inventory
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package loader
 
 import (
 	"fmt"
@@ -26,17 +28,17 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
 	"github.com/mitchellh/mapstructure"
-	"gopkg.in/yaml.v2"
 	"gotest.tools/assert"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/yaml"
 )
 
-func TestS3LoaderType(t *testing.T) {
-	loader := &kubeconfigS3Loader{}
-	assert.Equal(t, "s3", loader.Type())
+func TestS3BackendType(t *testing.T) {
+	backend := &S3Backend{}
+	assert.Equal(t, "s3", backend.Type())
 }
 
-func TestS3LoaderCreate(t *testing.T) {
+func TestS3BackendCreate(t *testing.T) {
 	accessKey := "aaaaa"
 	secretKey := "bbbbb"
 	region := "ccccc"
@@ -45,21 +47,19 @@ func TestS3LoaderCreate(t *testing.T) {
 	bucket := "fffff"
 	path := "ggggg"
 
-	loader := NewKubeconfigS3Loader(accessKey, secretKey, region, server, decryptKey, bucket, path)
-	if loader == nil {
-		t.Errorf("failed to create s3 loader")
-	}
+	backend, err := NewS3Backend(accessKey, secretKey, region, server, decryptKey, bucket, path)
+	assert.NilError(t, err)
 
-	assert.Equal(t, accessKey, loader.AccessKey)
-	assert.Equal(t, secretKey, loader.SecretKey)
-	assert.Equal(t, region, loader.Region)
-	assert.Equal(t, server, loader.Server)
-	assert.Equal(t, decryptKey, loader.DecryptKey)
-	assert.Equal(t, bucket, loader.Bucket)
-	assert.Equal(t, path, loader.Path)
+	assert.Equal(t, accessKey, backend.config.AccessKey)
+	assert.Equal(t, secretKey, backend.config.SecretKey)
+	assert.Equal(t, region, backend.config.Region)
+	assert.Equal(t, server, backend.config.Server)
+	assert.Equal(t, decryptKey, backend.config.DecryptKey)
+	assert.Equal(t, bucket, backend.config.Bucket)
+	assert.Equal(t, path, backend.config.Path)
 }
 
-func TestS3LoaderCreateParamsNoEnv(t *testing.T) {
+func TestS3BackendCreateParamsNoEnv(t *testing.T) {
 	accessKey := "aaaaa"
 	secretKey := "bbbbb"
 	region := "ccccc"
@@ -78,18 +78,16 @@ func TestS3LoaderCreateParamsNoEnv(t *testing.T) {
 		"path":        path,
 	}
 
-	loader := NewKubeconfigS3LoaderFromParams(params)
-	if loader == nil {
-		t.Errorf("failed to create s3 loader")
-	}
+	backend, err := NewS3BackendFromParams(params)
+	assert.NilError(t, err)
 
-	assert.Equal(t, accessKey, loader.AccessKey)
-	assert.Equal(t, secretKey, loader.SecretKey)
-	assert.Equal(t, region, loader.Region)
-	assert.Equal(t, server, loader.Server)
-	assert.Equal(t, decryptKey, loader.DecryptKey)
-	assert.Equal(t, bucket, loader.Bucket)
-	assert.Equal(t, path, loader.Path)
+	assert.Equal(t, accessKey, backend.config.AccessKey)
+	assert.Equal(t, secretKey, backend.config.SecretKey)
+	assert.Equal(t, region, backend.config.Region)
+	assert.Equal(t, server, backend.config.Server)
+	assert.Equal(t, decryptKey, backend.config.DecryptKey)
+	assert.Equal(t, bucket, backend.config.Bucket)
+	assert.Equal(t, path, backend.config.Path)
 }
 
 func TestS3LoaderCreateParamsPartialEnv(t *testing.T) {
@@ -114,18 +112,16 @@ func TestS3LoaderCreateParamsPartialEnv(t *testing.T) {
 	err = os.Setenv("EJSON_PRIVKEY", decryptKey)
 	assert.NilError(t, err, "failed to set environment %s=%s", "EJSON_PRIVKEY", decryptKey)
 
-	loader := NewKubeconfigS3LoaderFromParams(params)
-	if loader == nil {
-		t.Errorf("failed to create s3 loader")
-	}
+	backend, err := NewS3BackendFromParams(params)
+	assert.NilError(t, err)
 
-	assert.Equal(t, accessKey, loader.AccessKey)
-	assert.Equal(t, secretKey, loader.SecretKey)
-	assert.Equal(t, region, loader.Region)
-	assert.Equal(t, server, loader.Server)
-	assert.Equal(t, decryptKey, loader.DecryptKey)
-	assert.Equal(t, "kubernetes", loader.Bucket)
-	assert.Equal(t, path, loader.Path)
+	assert.Equal(t, accessKey, backend.config.AccessKey)
+	assert.Equal(t, secretKey, backend.config.SecretKey)
+	assert.Equal(t, region, backend.config.Region)
+	assert.Equal(t, server, backend.config.Server)
+	assert.Equal(t, decryptKey, backend.config.DecryptKey)
+	assert.Equal(t, "kubernetes", backend.config.Bucket)
+	assert.Equal(t, path, backend.config.Path)
 }
 
 func TestS3LoaderCreateParamsFullEnv(t *testing.T) {
@@ -151,34 +147,16 @@ func TestS3LoaderCreateParamsFullEnv(t *testing.T) {
 	err = os.Setenv("EJSON_PRIVKEY", decryptKey)
 	assert.NilError(t, err, "failed to set environment %s=%s", "EJSON_PRIVKEY", decryptKey)
 
-	loader := NewKubeconfigS3LoaderFromParams(params)
-	if loader == nil {
-		t.Errorf("failed to create s3 loader")
-	}
+	backend, err := NewS3BackendFromParams(params)
+	assert.NilError(t, err)
 
-	assert.Equal(t, accessKey, loader.AccessKey)
-	assert.Equal(t, secretKey, loader.SecretKey)
-	assert.Equal(t, region, loader.Region)
-	assert.Equal(t, server, loader.Server)
-	assert.Equal(t, decryptKey, loader.DecryptKey)
-	assert.Equal(t, bucket, loader.Bucket)
-	assert.Equal(t, "kubeconfig/kubeconfig.enc.7z", loader.Path)
-}
-
-func TestS3LoaderEntryDefault(t *testing.T) {
-	entry := "test"
-	defaultPath := "kubeconfig/kubeconfig.enc.7z"
-	params := map[string]interface{}{
-		"_entry": entry,
-	}
-
-	expected := fmt.Sprintf("%s/%s", entry, defaultPath)
-	loader := NewKubeconfigS3LoaderFromParams(params)
-	if loader == nil {
-		t.Errorf("failed to create s3 loader")
-	}
-
-	assert.Equal(t, expected, loader.Path)
+	assert.Equal(t, accessKey, backend.config.AccessKey)
+	assert.Equal(t, secretKey, backend.config.SecretKey)
+	assert.Equal(t, region, backend.config.Region)
+	assert.Equal(t, server, backend.config.Server)
+	assert.Equal(t, decryptKey, backend.config.DecryptKey)
+	assert.Equal(t, bucket, backend.config.Bucket)
+	assert.Equal(t, "kubeconfig/kubeconfig.enc.7z", backend.config.Path)
 }
 
 type mockedS3DownloadManager struct {
@@ -204,17 +182,20 @@ func TestS3LoaderLoad(t *testing.T) {
 	bucket := "testdata"
 	path := "kubeconfig.enc"
 
-	loader := &kubeconfigS3Loader{
+	config := &S3Config{
 		AccessKey:  "foo",
 		SecretKey:  "foo",
 		Server:     "foo",
 		DecryptKey: decryptKey,
 		Bucket:     bucket,
 		Path:       path,
+	}
+	backend := &S3Backend{
+		config:     config,
 		Downloader: mockedS3DownloadManager{},
 	}
 
-	resultConfigBytesIn, err := loader.Load()
+	resultConfigBytesIn, err := backend.Load()
 	assert.NilError(t, err)
 	resultConfig, err := clientcmd.Load(resultConfigBytesIn)
 	assert.NilError(t, err)
@@ -243,23 +224,11 @@ func TestS3LoaderConfig(t *testing.T) {
 		"path":        "ggggg",
 	}
 
-	loader := NewKubeconfigS3LoaderFromParams(params)
-	if loader == nil {
-		t.Errorf("failed to create s3 loader")
-	}
+	backend, err := NewS3BackendFromParams(params)
+	assert.NilError(t, err)
 
-	type config struct {
-		AccessKey  string `yaml:"accesskey"`
-		SecretKey  string `yaml:"secretkey"`
-		Region     string `yaml:"region"`
-		Server     string `yaml:"server"`
-		DecryptKey string `yaml:"decrypt_key"`
-		Bucket     string `yaml:"bucket"`
-		Path       string `yaml:"path"`
-	}
-
-	var expected config
-	var result config
+	var expected S3Config
+	var result S3Config
 
 	decoderConfig := &mapstructure.DecoderConfig{
 		Result:  &expected,
@@ -272,7 +241,7 @@ func TestS3LoaderConfig(t *testing.T) {
 	assert.NilError(t, err)
 
 	// TODO: unsafe vs. safe test
-	resultRaw, err := loader.ConfigYaml(true)
+	resultRaw, err := backend.Config().Yaml(true)
 	assert.NilError(t, err)
 	err = yaml.Unmarshal(resultRaw, &result)
 	assert.NilError(t, err)

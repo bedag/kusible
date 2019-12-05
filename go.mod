@@ -12,7 +12,7 @@ require (
 	github.com/geofffranks/spruce v1.22.0
 	github.com/geofffranks/yaml v0.0.0-20161117152608-9f2fe4b6f295
 	github.com/go-test/deep v1.0.4
-	github.com/imdario/mergo v0.3.8 // indirect
+	github.com/imdario/mergo v0.3.8
 	github.com/kjk/lzmadec v0.0.0-20190802150927-78d187673998
 	github.com/mattn/go-isatty v0.0.8 // indirect
 	github.com/mitchellh/mapstructure v1.1.2
@@ -31,6 +31,7 @@ require (
 	k8s.io/apimachinery v0.0.0-20191121015412-41065c7a8c2a // indirect
 	k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
 	k8s.io/utils v0.0.0-20191114200735-6ca3b61696b6 // indirect
+	sigs.k8s.io/yaml v1.1.0
 )
 
 go 1.13

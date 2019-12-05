@@ -1,16 +1,18 @@
-// Copyright © 2019 Michael Gruener
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+Copyright © 2019 Michael Gruener
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 package values
 
@@ -21,7 +23,9 @@ import (
 	"github.com/geofffranks/yaml"
 )
 
-// YamlString returns the map data as yaml encoded string
+/*
+YamlString returns the map data as yaml encoded string
+*/
 func (value *ValueData) YAML() ([]byte, error) {
 	yaml, err := yaml.Marshal(value.data)
 	if err != nil {
@@ -30,7 +34,9 @@ func (value *ValueData) YAML() ([]byte, error) {
 	return yaml, nil
 }
 
-// JsonString returns the map data as yaml encoded string
+/*
+JsonString returns the map data as yaml encoded string
+*/
 func (value *ValueData) JSON() ([]byte, error) {
 	// Although we want to create a json string, first convert
 	// the data to yaml as there is no easy way to convert
@@ -48,7 +54,9 @@ func (value *ValueData) JSON() ([]byte, error) {
 	return []byte(json), nil
 }
 
-// Data returns the actual value data struct
+/*
+Data returns the actual value data struct
+*/
 func (value *ValueData) Map() *map[interface{}]interface{} {
 	return &value.data
 }

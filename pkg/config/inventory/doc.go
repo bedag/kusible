@@ -14,25 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cmd
-
-import (
-	"fmt"
-
-	"github.com/spf13/cobra"
-)
-
-const appName = "kusible"
-const version = "v0.0.1"
-
-func init() {
-	rootCmd.AddCommand(versionCmd)
-}
-
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: fmt.Sprint("Print the version number of ", appName),
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("%s %s\n", appName, version)
-	},
-}
+/*
+Package inventory describes the config format of the kusible inventory
+files.
+*/
+package inventory
