@@ -38,16 +38,3 @@ type Kubeconfig struct {
 	loader loader.Loader
 	config *clientcmdapi.Config
 }
-
-type Targets struct {
-	limits     []string
-	filter     string
-	valuesPath string
-	ejson      *values.EjsonSettings
-	targets    map[string]*Target
-}
-
-type Target struct {
-	entry  *Entry
-	values values.Values
-}
