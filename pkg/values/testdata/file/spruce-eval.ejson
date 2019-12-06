@@ -1,0 +1,16 @@
+{
+  "_public_key": "92af76c9ff646114ae9788366f43901200d131878d9285e372f43327b4067766",
+  "data": {
+    "array": [
+      "arrayValue1",
+      "arrayValue2"
+    ],
+    "dict": {
+      "dictKey1": "dictValue1",
+      "dictKey2": "dictValue2"
+    },
+    "key1": "value1",
+    "key2": "value2"
+  },
+  "eval": "(( grab data ))"
+}

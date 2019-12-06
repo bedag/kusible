@@ -25,26 +25,24 @@ type EjsonSettings struct {
 type Values interface {
 	YAML() ([]byte, error)
 	JSON() ([]byte, error)
-	Map() *map[interface{}]interface{}
+	Map() *data
 }
 
-type ValueData struct {
-	data map[interface{}]interface{}
-}
+type data map[interface{}]interface{}
 
-type valueFile struct {
-	ValueData
+type file struct {
+	data     data
 	path     string
 	ejson    EjsonSettings
 	skipEval bool
 }
 
-type valuesDirectory struct {
-	ValueData
+type directory struct {
+	data            data
 	path            string
 	groups          []string
 	ejson           EjsonSettings
 	skipEval        bool
-	valueFiles      []valueFile
+	files           []file
 	orderedFileList []string
 }

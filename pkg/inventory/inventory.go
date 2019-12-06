@@ -27,7 +27,7 @@ import (
 
 func NewInventory(path string, ejson values.EjsonSettings, skipKubeconfig bool) (*Inventory, error) {
 	// load the raw inventory yaml data
-	raw, err := values.NewValues(path, []string{}, false, ejson)
+	raw, err := values.New(path, []string{}, false, ejson)
 	if err != nil {
 		return nil, err
 	}

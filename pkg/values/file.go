@@ -30,8 +30,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func NewValueFile(path string, skipEval bool, ejsonSettings EjsonSettings) (*valueFile, error) {
-	result := &valueFile{
+func NewFile(path string, skipEval bool, ejsonSettings EjsonSettings) (*file, error) {
+	result := &file{
 		path:     path,
 		ejson:    ejsonSettings,
 		skipEval: skipEval,
@@ -40,28 +40,28 @@ func NewValueFile(path string, skipEval bool, ejsonSettings EjsonSettings) (*val
 	return result, err
 }
 
-func (valueFile *valueFile) load() ([]byte, error) {
+func (f *file) load() ([]byte, error) {
 	var data []byte
 	// Check if the current path is an ejson file and if so, try
 	// to decrypt it. If it cannot be decrypted, continue as there
 	// is no harm in using the encrypted values
-	isEjson, err := filepath.Match("*.ejson", filepath.Base(valueFile.path))
-	if err == nil && isEjson && !valueFile.ejson.SkipDecrypt {
-		file, err := os.Open(valueFile.path)
+	isEjson, err := filepath.Match("*.ejson", filepath.Base(f.path))
+	if err == nil && isEjson && !f.ejson.SkipDecrypt {
+		file, err := os.Open(f.path)
 		if err != nil {
 			return nil, err
 		}
 		defer file.Close()
 		var outBuffer bytes.Buffer
 
-		err = ejson.Decrypt(file, &outBuffer, valueFile.ejson.KeyDir, valueFile.ejson.PrivKey)
+		err = ejson.Decrypt(file, &outBuffer, f.ejson.KeyDir, f.ejson.PrivKey)
 		if err != nil {
 			log.WithFields(log.Fields{
-				"file":  valueFile.path,
+				"file":  f.path,
 				"error": err.Error(),
 			}).Warn("Failed to decrypt ejson file, continuing with encrypted data")
 
-			data, err = ioutil.ReadFile(valueFile.path)
+			data, err = ioutil.ReadFile(f.path)
 			if err != nil {
 				return nil, err
 			}
@@ -69,7 +69,7 @@ func (valueFile *valueFile) load() ([]byte, error) {
 			data = outBuffer.Bytes()
 		}
 	} else {
-		data, err = ioutil.ReadFile(valueFile.path)
+		data, err = ioutil.ReadFile(f.path)
 		if err != nil {
 			return nil, err
 		}
@@ -77,8 +77,8 @@ func (valueFile *valueFile) load() ([]byte, error) {
 	return data, nil
 }
 
-func (valueFile *valueFile) loadMap() error {
-	data, err := valueFile.load()
+func (f *file) loadMap() error {
+	data, err := f.load()
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (valueFile *valueFile) loadMap() error {
 		return err
 	}
 
-	valueFile.data, err = yamlData.Map()
+	f.data, err = yamlData.Map()
 	if err != nil {
 		return err
 	}
@@ -96,11 +96,23 @@ func (valueFile *valueFile) loadMap() error {
 	// if we want to skip the spruce evaluation, skip the evaluator
 	// alltogether as an Evaluator with SkipEval: true only prunes / cherrypicks,
 	// something we do not need here
-	if !valueFile.skipEval {
-		evaluator := &spruce.Evaluator{Tree: valueFile.data, SkipEval: false}
+	if !f.skipEval {
+		evaluator := &spruce.Evaluator{Tree: f.data, SkipEval: false}
 		err = evaluator.Run(nil, nil)
-		valueFile.data = evaluator.Tree
+		f.data = evaluator.Tree
 		return StripAnsiError(err)
 	}
 	return nil
+}
+
+func (f *file) Map() *data {
+	return &f.data
+}
+
+func (f *file) YAML() ([]byte, error) {
+	return f.data.YAML()
+}
+
+func (f *file) JSON() ([]byte, error) {
+	return f.data.JSON()
 }

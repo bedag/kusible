@@ -1,0 +1,11 @@
+---
+data:
+  key1: value1
+  key2: value2
+  array:
+    - arrayValue1
+    - arrayValue2
+  dict:
+    dictKey1: dictValue1
+    dictKey2: dictValue2
+eval: (( grab data ))

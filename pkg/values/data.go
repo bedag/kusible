@@ -26,8 +26,8 @@ import (
 /*
 YamlString returns the map data as yaml encoded string
 */
-func (value *ValueData) YAML() ([]byte, error) {
-	yaml, err := yaml.Marshal(value.data)
+func (d *data) YAML() ([]byte, error) {
+	yaml, err := yaml.Marshal(d)
 	if err != nil {
 		return nil, err
 	}
@@ -37,12 +37,12 @@ func (value *ValueData) YAML() ([]byte, error) {
 /*
 JsonString returns the map data as yaml encoded string
 */
-func (value *ValueData) JSON() ([]byte, error) {
+func (d *data) JSON() ([]byte, error) {
 	// Although we want to create a json string, first convert
 	// the data to yaml as there is no easy way to convert
 	// a map that can have non-string keys to json. Then
 	// convert the yaml data to json with the help of spruce
-	yaml, err := yaml.Marshal(value.data)
+	yaml, err := yaml.Marshal(d)
 	if err != nil {
 		return nil, err
 	}
@@ -52,11 +52,4 @@ func (value *ValueData) JSON() ([]byte, error) {
 		return nil, StripAnsiError(err)
 	}
 	return []byte(json), nil
-}
-
-/*
-Data returns the actual value data struct
-*/
-func (value *ValueData) Map() *map[interface{}]interface{} {
-	return &value.data
 }

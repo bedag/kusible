@@ -22,7 +22,7 @@ import (
 	groupsfilter "github.com/bedag/kusible/pkg/groups"
 )
 
-func NewValues(path string, groups []string, skipEval bool, ejsonSettings EjsonSettings) (Values, error) {
+func New(path string, groups []string, skipEval bool, ejsonSettings EjsonSettings) (Values, error) {
 	var result Values
 	var err error
 
@@ -34,7 +34,7 @@ func NewValues(path string, groups []string, skipEval bool, ejsonSettings EjsonS
 	if stat.Mode().IsRegular() {
 		// the path provided is a file, treat it as a single value
 		// file, thus loading it with ejson and spruc operator support
-		result, err = NewValueFile(path, false, ejsonSettings)
+		result, err = NewFile(path, false, ejsonSettings)
 		if err != nil {
 			return nil, err
 		}
@@ -50,7 +50,7 @@ func NewValues(path string, groups []string, skipEval bool, ejsonSettings EjsonS
 				return nil, err
 			}
 		}
-		result, err = NewValuesDirectory(path, dirGroups, false, ejsonSettings)
+		result, err = NewDirectory(path, dirGroups, false, ejsonSettings)
 		if err != nil {
 			return nil, err
 		}

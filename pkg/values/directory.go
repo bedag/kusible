@@ -25,8 +25,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func NewValuesDirectory(path string, groups []string, skipEval bool, ejsonSettings EjsonSettings) (*valuesDirectory, error) {
-	result := &valuesDirectory{
+func NewDirectory(path string, groups []string, skipEval bool, ejsonSettings EjsonSettings) (*directory, error) {
+	result := &directory{
 		path:     path,
 		ejson:    ejsonSettings,
 		skipEval: skipEval,
@@ -70,8 +70,8 @@ Files can make use of spruce operators (https://github.com/geofffranks/spruce/bl
 *.ejson will be treated as ejson (https://github.com/Shopify/ejson) encrypted
 and decrypted before merging if a matching private key was provided.
 */
-func (values *valuesDirectory) load() error {
-	if len(values.data) > 0 {
+func (d *directory) load() error {
+	if len(d.data) > 0 {
 		return nil
 	}
 	// List of keys that should be pruned when running the merged data
@@ -79,28 +79,28 @@ func (values *valuesDirectory) load() error {
 	//   * _public_key: only present in encrypted ejson files to identify the correct private key
 	//                  not required in resulting document
 	pruneKeys := []string{"_public_key"}
-	values.data = make(map[interface{}]interface{})
+	d.data = make(data)
 
 	var err error
 	// get the list of files that should be merged
-	values.orderedFileList, err = values.OrderedDataFileList()
+	d.orderedFileList, err = d.OrderedDataFileList()
 	if err != nil {
 		return err
 	}
 
 	log.WithFields(log.Fields{
-		"files": strings.Join(values.orderedFileList[:], " "),
+		"files": strings.Join(d.orderedFileList[:], " "),
 	}).Debug("Ordered list of files to merge")
 
 	// merge everything while decrypting any ejson files encountered
 	merger := &spruce.Merger{AppendByDefault: false}
-	for _, path := range values.orderedFileList {
-		file, err := NewValueFile(path, true, values.ejson)
+	for _, path := range d.orderedFileList {
+		file, err := NewFile(path, true, d.ejson)
 		if err != nil {
 			return err
 		}
 		doc := file.Map()
-		merger.Merge(values.data, *doc)
+		merger.Merge(d.data, *doc)
 	}
 
 	if merger.Error() != nil {
@@ -108,9 +108,9 @@ func (values *valuesDirectory) load() error {
 		return StripAnsiError(merger.Error())
 	}
 
-	evaluator := &spruce.Evaluator{Tree: values.data, SkipEval: values.skipEval}
+	evaluator := &spruce.Evaluator{Tree: d.data, SkipEval: d.skipEval}
 	err = evaluator.Run(pruneKeys, nil)
-	values.data = evaluator.Tree
+	d.data = evaluator.Tree
 	return StripAnsiError(err)
 }
 
@@ -118,14 +118,14 @@ func (values *valuesDirectory) load() error {
 GetOrderedDataFileList traverses the given directory and returns a list of
 files according to the rules described for the Compile method
 */
-func (values *valuesDirectory) OrderedDataFileList() ([]string, error) {
-	if len(values.orderedFileList) > 0 {
-		return values.orderedFileList, nil
+func (d *directory) OrderedDataFileList() ([]string, error) {
+	if len(d.orderedFileList) > 0 {
+		return d.orderedFileList, nil
 	}
 
-	for _, group := range values.groups {
+	for _, group := range d.groups {
 		var orderedGroupFileList []string
-		groupDirectory := filepath.Join(values.path, group)
+		groupDirectory := filepath.Join(d.path, group)
 
 		if stat, err := os.Stat(groupDirectory); err == nil && stat.Mode().IsDir() {
 			// TODO: this adds directories in revers alphabetical order (files are fine though)
@@ -151,18 +151,30 @@ func (values *valuesDirectory) OrderedDataFileList() ([]string, error) {
 		}
 		// add all files contained in subdirectories of the group directory
 		// e.g. <directory>/<group>/**/*.{yml,yaml,json,ejson}
-		values.orderedFileList = append(values.orderedFileList, orderedGroupFileList...)
+		d.orderedFileList = append(d.orderedFileList, orderedGroupFileList...)
 
 		// add all files contained in the group directory
 		// e.g. <directory>/<group>/*.{yml,yaml,json,ejson}
 		files, _ := DirectoryDataFiles(groupDirectory, "*")
-		values.orderedFileList = append(values.orderedFileList, files...)
+		d.orderedFileList = append(d.orderedFileList, files...)
 
 		// add all group files
 		// e.g. <directory>/<group>.{yml,yaml,json,ejson}
-		files, _ = DirectoryDataFiles(values.path, group)
-		values.orderedFileList = append(values.orderedFileList, files...)
+		files, _ = DirectoryDataFiles(d.path, group)
+		d.orderedFileList = append(d.orderedFileList, files...)
 	}
 
-	return values.orderedFileList, nil
+	return d.orderedFileList, nil
+}
+
+func (d *directory) Map() *data {
+	return &d.data
+}
+
+func (d *directory) YAML() ([]byte, error) {
+	return d.data.YAML()
+}
+
+func (d *directory) JSON() ([]byte, error) {
+	return d.data.JSON()
 }
