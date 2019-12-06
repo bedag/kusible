@@ -22,7 +22,7 @@ import (
 
 	"github.com/bedag/kusible/pkg/loader"
 
-	invconfig "github.com/bedag/kusible/pkg/config/inventory"
+	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"gotest.tools/assert"
 	"k8s.io/client-go/tools/clientcmd"
 )

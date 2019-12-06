@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 /*
-Package inventory describes the config format of the kusible inventory
+Package config describes the config format of the kusible inventory
 files.
 */
-package inventory
+package config

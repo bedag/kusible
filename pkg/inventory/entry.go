@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"regexp"
 
-	invconfig "github.com/bedag/kusible/pkg/config/inventory"
 	"github.com/bedag/kusible/pkg/groups"
+	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/imdario/mergo"
 )
 

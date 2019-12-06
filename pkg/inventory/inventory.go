@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"regexp"
 
-	invconfig "github.com/bedag/kusible/pkg/config/inventory"
+	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/values"
 	"github.com/mitchellh/mapstructure"
 )
