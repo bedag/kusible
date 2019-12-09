@@ -1,0 +1,7 @@
+img[alt=Kusible-Logo] {
+    width: 300px;
+}
+
+.sidebar>h1>a img {
+    width: 100px;
+}
