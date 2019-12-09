@@ -20,6 +20,7 @@ import (
 	"bytes"
 
 	"github.com/geofffranks/spruce"
+	// TODO switch to "sigs.k8s.io/yaml"
 	"github.com/geofffranks/yaml"
 )
 

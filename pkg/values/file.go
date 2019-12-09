@@ -25,6 +25,7 @@ import (
 	// Use geofffranks yaml library instead of go-yaml
 	// to ensure compatibility with spruce
 	"github.com/Shopify/ejson"
+	// TODO switch to "sigs.k8s.io/yaml"
 	"github.com/geofffranks/simpleyaml"
 	"github.com/geofffranks/spruce"
 	log "github.com/sirupsen/logrus"
