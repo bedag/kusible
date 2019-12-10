@@ -22,7 +22,6 @@ import (
 
 	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/values"
-	"github.com/mitchellh/mapstructure"
 )
 
 func NewInventory(path string, ejson values.EjsonSettings, skipKubeconfig bool) (*Inventory, error) {
@@ -31,8 +30,8 @@ func NewInventory(path string, ejson values.EjsonSettings, skipKubeconfig bool) 
 	if err != nil {
 		return nil, err
 	}
-	var data map[string]interface{}
-	err = mapstructure.Decode(raw.Map(), &data)
+
+	data, err := raw.Map()
 	if err != nil {
 		return nil, err
 	}

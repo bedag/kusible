@@ -1,0 +1,12 @@
+{
+  "root1":{
+    "data1":{
+      "json": "json-01-03",
+      "ejson": "json-01-03"
+    },
+    "data2": {
+      "json": "json-01-03",
+      "ejson": "json-01-03"
+    }
+  }
+}

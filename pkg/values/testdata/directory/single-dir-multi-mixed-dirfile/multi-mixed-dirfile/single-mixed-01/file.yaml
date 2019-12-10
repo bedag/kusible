@@ -1,0 +1,28 @@
+---
+root1:
+  data1:
+    yaml: "yaml-01-01"
+    json: "yaml-01-01"
+    ejson: "yaml-01-01"
+  data2:
+    yaml: "yaml-01-01"
+    json: "yaml-01-01"
+    ejson: "yaml-01-01"
+root2:
+  data1:
+    yaml: "yaml-01-01"
+    json: "yaml-01-01"
+    ejson: "yaml-01-01"
+  data2:
+    yaml: "yaml-01-01"
+    json: "yaml-01-01"
+    ejson: "yaml-01-01"
+root3:
+  data1:
+    yaml: "yaml-01-01"
+    json: "yaml-01-01"
+    ejson: "yaml-01-01"
+  data2:
+    yaml: "yaml-01-01"
+    json: "yaml-01-01"
+    ejson: "yaml-01-01"

@@ -1,0 +1,10 @@
+---
+root1:
+  data1:
+    yaml: "yaml-01-03"
+    json: "yaml-01-03"
+    ejson: "yaml-01-03"
+  data2:
+    yaml: "yaml-01-03"
+    json: "yaml-01-03"
+    ejson: "yaml-01-03"

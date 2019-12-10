@@ -25,7 +25,8 @@ type EjsonSettings struct {
 type Values interface {
 	YAML() ([]byte, error)
 	JSON() ([]byte, error)
-	Map() *data
+	Map() (map[string]interface{}, error)
+	Raw() *data
 }
 
 type data map[interface{}]interface{}

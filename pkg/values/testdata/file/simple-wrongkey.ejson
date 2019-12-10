@@ -1,0 +1,15 @@
+{
+  "_public_key": "xxx",
+  "data": {
+    "array": [
+      "EJ[1:7et5RPxqiT24RcazonSns5QdaNGQtm//wMnSF0+dnFE=:KcOauPM+6ZSJ0ZPmXuKf/KQvrL55yqOP:4aTXbMgy2HlbKBiNn3/0RO/1QadEe4jNTTNX]",
+      "EJ[1:7et5RPxqiT24RcazonSns5QdaNGQtm//wMnSF0+dnFE=:NEeAgptCyfIRlwB8ucRQXvSYEL2yUKRd:BvYhPM+XDq927rbcXe8i59Oxl42tHSkChpQn]"
+    ],
+    "dict": {
+      "dictKey1": "EJ[1:7et5RPxqiT24RcazonSns5QdaNGQtm//wMnSF0+dnFE=:6zXBg3plJiJRo2bHLCQlr608Rb+XuY/O:Kc2tOLM3634T0L3GmAg9ZGzlJ7amXrWJdbs=]",
+      "dictKey2": "EJ[1:7et5RPxqiT24RcazonSns5QdaNGQtm//wMnSF0+dnFE=:OWHfFxMGnbtWvml8RVaaMf5sMz186oBV:KhlugYKui/awpcCIzBK5iKn34ydnjgrSBLo=]"
+    },
+    "key1": "EJ[1:7et5RPxqiT24RcazonSns5QdaNGQtm//wMnSF0+dnFE=:375m3/ZxJuQCH5hXgP7UsSFBDBbEIJES:pZCzfI0PujXp3EjC8jtq9jZsbBNJoQ==]",
+    "key2": "EJ[1:7et5RPxqiT24RcazonSns5QdaNGQtm//wMnSF0+dnFE=:ian0jiPJmHOfRn+lMWKboccNTv3qXwWp:TvL/trcajACI83JubpPxKjrj4mMk7w==]"
+  }
+}

@@ -25,6 +25,8 @@ import (
 	// Use geofffranks yaml library instead of go-yaml
 	// to ensure compatibility with spruce
 	"github.com/Shopify/ejson"
+	"github.com/mitchellh/mapstructure"
+
 	// TODO switch to "sigs.k8s.io/yaml"
 	"github.com/geofffranks/simpleyaml"
 	"github.com/geofffranks/spruce"
@@ -106,8 +108,14 @@ func (f *file) loadMap() error {
 	return nil
 }
 
-func (f *file) Map() *data {
+func (f *file) Raw() *data {
 	return &f.data
+}
+
+func (f *file) Map() (map[string]interface{}, error) {
+	var result map[string]interface{}
+	err := mapstructure.Decode(f.data, &result)
+	return result, err
 }
 
 func (f *file) YAML() ([]byte, error) {

@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/geofffranks/spruce"
+	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -99,7 +100,7 @@ func (d *directory) load() error {
 		if err != nil {
 			return err
 		}
-		doc := file.Map()
+		doc := file.Raw()
 		merger.Merge(d.data, *doc)
 	}
 
@@ -167,8 +168,14 @@ func (d *directory) OrderedDataFileList() ([]string, error) {
 	return d.orderedFileList, nil
 }
 
-func (d *directory) Map() *data {
+func (d *directory) Raw() *data {
 	return &d.data
+}
+
+func (d *directory) Map() (map[string]interface{}, error) {
+	var result map[string]interface{}
+	err := mapstructure.Decode(d.data, &result)
+	return result, err
 }
 
 func (d *directory) YAML() ([]byte, error) {

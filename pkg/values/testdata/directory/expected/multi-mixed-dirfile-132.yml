@@ -1,0 +1,34 @@
+root1:
+  data1:
+    ejson: ejson-02-02
+    json: json-02-02
+    yaml: yaml-02-02
+    yml: yml-02-02
+  data2:
+    ejson: ejson-01-02
+    json: json-01-02
+    yaml: yaml-01-02
+    yml: yml-01-02
+root2:
+  data1:
+    ejson: ejson-02-02
+    json: json-02-02
+    yaml: yaml-02-02
+    yml: yml-02-02
+  data2:
+    ejson: ejson-01-02
+    json: json-01-02
+    yaml: yaml-01-02
+    yml: yml-01-02
+root3:
+  data1:
+    ejson: ejson-02-01
+    json: json-02-01
+    yaml: yaml-02-01
+    yml: yml-02-01
+  data2:
+    ejson: ejson-01-01
+    json: json-01-01
+    yaml: yaml-01-01
+    yml: yml-01-01
+
