@@ -40,7 +40,7 @@ LoadMap method are considered. The operation is non-recursive.
 The pattern syntax is the same as the one for fmt.Match.
 */
 func DirectoryDataFiles(directory string, pattern string) ([]string, bool) {
-	dataFileExt := [...]string{".yaml", ".yml", ".json", ".ejson"}
+	dataFileExt := [...]string{".yml", ".yaml", ".json", ".ejson"}
 	var dataFileGlobs []string
 
 	for _, ext := range dataFileExt {

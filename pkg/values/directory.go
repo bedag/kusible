@@ -44,9 +44,13 @@ where the file names / directory names on the top level of the directory
 match the given group names.
 
 Each group in the list may match either
+
  * directories
- * *.yaml, *.yml, *.json
+ * *.yml
+ * *.yaml
+ * *.json
  * *.ejson
+
 in the given directory. It is not required that a group has any matching
 files / directories.
 
@@ -61,11 +65,12 @@ If an entry in the given directory is itself a directory, its contents
 All files / directories belonging to the same group or having the same
 basename (foo/, foo.yaml, foo.json all have the same basename) will
 be merged with the following priority (least to most specific)
+
  * directories
- * *.yaml, *.yml, *.json
+ * *.yml
+ * *.yaml
+ * *.json
  * *.ejson
-Note: *.yaml, *.yml, *.json have the same priority so no guarantees
-for the merge order are made.
 
 Files can make use of spruce operators (https://github.com/geofffranks/spruce/blob/master/doc/operators.md).
 *.ejson will be treated as ejson (https://github.com/Shopify/ejson) encrypted
