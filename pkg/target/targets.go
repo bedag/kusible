@@ -33,6 +33,7 @@ func NewTargets(filter string, limits []string, valuesPath string, inventory *in
 		limits:     limits,
 		filter:     filter,
 		valuesPath: valuesPath,
+		targets:    make(map[string]*Target, len(targetNames)),
 	}
 	if len(targetNames) <= 0 {
 		return targets, nil
@@ -47,6 +48,15 @@ func NewTargets(filter string, limits []string, valuesPath string, inventory *in
 		targets.targets[name] = target
 	}
 	return targets, nil
+}
+
+func (t *Targets) Names() []string {
+	result := []string{}
+
+	for name := range t.targets {
+		result = append(result, name)
+	}
+	return result
 }
 
 func (t *Targets) Targets() map[string]*Target {
