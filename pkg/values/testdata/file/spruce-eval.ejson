@@ -1,0 +1,16 @@
+{
+  "_public_key": "92af76c9ff646114ae9788366f43901200d131878d9285e372f43327b4067766",
+  "data": {
+    "array": [
+      "EJ[1:GOLcw53a3nzfhw60gNB2OjWVMSw5hYien4LVotnuqGY=:+16zfHmHlM4tCvV3nQHwFyJWFhlOIQsg:PdyJPGekqAiLdYNVvgkHToVmGAw1vn/FnvQ1]",
+      "EJ[1:GOLcw53a3nzfhw60gNB2OjWVMSw5hYien4LVotnuqGY=:XBjaVnQz2M/LBr0DgTsUW7aOAtmc78vY:sCsSPauB32ukjIo5gqFyrKpeCbyIKNenVqXj]"
+    ],
+    "dict": {
+      "dictKey1": "EJ[1:GOLcw53a3nzfhw60gNB2OjWVMSw5hYien4LVotnuqGY=:bPcdDGt/0d2ExrCJegZOaajlkDzE68sF:YFIH9wgiUMSF/v1jotW7IPooCDELRLyyk04=]",
+      "dictKey2": "EJ[1:GOLcw53a3nzfhw60gNB2OjWVMSw5hYien4LVotnuqGY=:hph621JcPloWXIHOpDoc0DJCn8cG0A7Q:9yJe+l/6BRqE/Hw+cqfs/Xu0AIkoev0RFP8=]"
+    },
+    "key1": "EJ[1:GOLcw53a3nzfhw60gNB2OjWVMSw5hYien4LVotnuqGY=:4JmZYyNvI+ZY4vQ5FNR2JsaUZ7ooCvDZ:0FLuCGQNbBjYrRSTJ0JJPEeX+Mr8XQ==]",
+    "key2": "EJ[1:GOLcw53a3nzfhw60gNB2OjWVMSw5hYien4LVotnuqGY=:a+eGBNI6KhROJquyN0vF3K28a8EayCKj:GAXZyen8aaket8mktZkVXh1w7m08Rg==]"
+  },
+  "eval": "EJ[1:GOLcw53a3nzfhw60gNB2OjWVMSw5hYien4LVotnuqGY=:/HojdAFJgjzobLuEU0cJTrvH1Mqtxoow:X4G1GLAGSszmqQayG2DR9SVPU1qROJfOfBgjD3AG/w==]"
+}

@@ -1,0 +1,11 @@
+---
+data1:
+  yml: "yml-01"
+  yaml: "yml-01"
+  json: "yml-01"
+  ejson: "yml-01"
+data2:
+  yml: "yml-01"
+  yaml: "yml-01"
+  json: "yml-01"
+  ejson: "yml-01"

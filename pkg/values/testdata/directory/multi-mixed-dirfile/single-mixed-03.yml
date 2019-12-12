@@ -1,0 +1,7 @@
+---
+root1:
+  data1:
+    yml: "yml-02-03"
+    yaml: "yml-02-03"
+    json: "yml-02-03"
+    ejson: "yml-02-03"

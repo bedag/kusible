@@ -20,19 +20,18 @@ import (
 	"fmt"
 	"regexp"
 
-	invconfig "github.com/bedag/kusible/pkg/config/inventory"
+	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/values"
-	"github.com/mitchellh/mapstructure"
 )
 
 func NewInventory(path string, ejson values.EjsonSettings, skipKubeconfig bool) (*Inventory, error) {
 	// load the raw inventory yaml data
-	raw, err := values.NewValues(path, []string{}, false, ejson)
+	raw, err := values.New(path, []string{}, false, ejson)
 	if err != nil {
 		return nil, err
 	}
-	var data map[string]interface{}
-	err = mapstructure.Decode(raw.Map(), &data)
+
+	data, err := raw.Map()
 	if err != nil {
 		return nil, err
 	}

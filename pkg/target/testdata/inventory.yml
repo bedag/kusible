@@ -1,0 +1,6 @@
+---
+inventory:
+  - name: cluster-01
+    groups: [group-01]
+  - name: cluster-02
+    groups: [group-01,group-03]

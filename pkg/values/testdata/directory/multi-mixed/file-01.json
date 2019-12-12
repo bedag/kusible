@@ -1,0 +1,14 @@
+{
+  "data1": {
+    "json": "json-01",
+    "ejson": "json-01"
+  },
+  "data2": {
+    "json": "json-01",
+    "ejson": "json-01"
+  },
+  "data3": {
+    "json": "json-01",
+    "ejson": "json-01"
+  }
+}

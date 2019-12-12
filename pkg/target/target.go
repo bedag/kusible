@@ -28,7 +28,7 @@ func New(entry *inv.Entry, valuesPath string, ejson *values.EjsonSettings) (*Tar
 		entry: entry,
 	}
 	groups := entry.Groups()
-	values, err := values.NewValues(valuesPath, groups, false, *ejson)
+	values, err := values.New(valuesPath, groups, false, *ejson)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile values for target '%s': %s", entry.Name(), err)
 	}

@@ -33,6 +33,4 @@ func New(backend string, params map[string]interface{}) (Loader, error) {
 	default:
 		return nil, fmt.Errorf("unknown kubeconfig backend: %s", backend)
 	}
-
-	return nil, nil
 }

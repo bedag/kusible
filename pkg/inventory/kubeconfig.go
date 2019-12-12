@@ -19,7 +19,7 @@ package inventory
 import (
 	"fmt"
 
-	invconfig "github.com/bedag/kusible/pkg/config/inventory"
+	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/loader"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
