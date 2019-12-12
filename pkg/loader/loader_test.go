@@ -17,20 +17,29 @@ limitations under the License.
 package loader
 
 import (
-	"fmt"
-	"strings"
+	"testing"
+
+	"gotest.tools/assert"
 )
 
-func New(backend string, params map[string]interface{}) (Loader, error) {
+func TestLoader(t *testing.T) {
+	tests := map[string]struct {
+		backend     string
+		errExpected bool
+	}{
+		"file":    {backend: "file", errExpected: false},
+		"s3":      {backend: "s3", errExpected: false},
+		"unknown": {backend: "unknown", errExpected: true},
+		"empty":   {backend: "", errExpected: true},
+	}
 
-	switch strings.ToLower(backend) {
-	case "s3":
-		// the default, if no specific kubeconfig backend was provided in the
-		// inventory entry, is to load the kubeconfig from s3
-		return NewS3BackendFromParams(params)
-	case "file":
-		return NewFileBackendFromParams(params)
-	default:
-		return nil, fmt.Errorf("unknown kubeconfig backend: %s", backend)
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			ldr, err := New(tc.backend, map[string]interface{}{})
+			assert.Equal(t, tc.errExpected, err != nil)
+			if !tc.errExpected {
+				assert.Equal(t, tc.backend, ldr.Type())
+			}
+		})
 	}
 }
