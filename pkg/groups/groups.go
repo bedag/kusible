@@ -100,7 +100,7 @@ func Groups(directory string, filter string, limits []string) ([]string, error) 
 // LimitGroups applies a list of limits (each treated as regex) to a list
 // of groups and returns only groups matching at least one of the given limits
 func LimitGroups(groups []string, limits []string) ([]string, error) {
-	var result []string
+	result := []string{}
 
 	for _, group := range groups {
 		valid, err := groupRegexMatch(limits, group)
