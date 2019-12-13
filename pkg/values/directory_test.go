@@ -20,10 +20,9 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/geofffranks/simpleyaml"
-	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 	"gotest.tools/assert"
+	"sigs.k8s.io/yaml"
 )
 
 func TestDirectory(t *testing.T) {
@@ -37,21 +36,12 @@ func TestDirectory(t *testing.T) {
 			return nil, err
 		}
 
-		yamlData, err := simpleyaml.NewYaml(data)
-		if err != nil {
-			return nil, err
-		}
-
-		raw, err := yamlData.Map()
-		if err != nil {
-			return nil, err
-		}
-
 		var result map[string]interface{}
-		err = mapstructure.Decode(raw, &result)
+		err = yaml.Unmarshal(data, &result)
 		if err != nil {
 			return nil, err
 		}
+
 		return result, nil
 	}
 
@@ -94,7 +84,7 @@ func TestDirectory(t *testing.T) {
 		//"single-dir-multi-dir-multi-file":  {groupVarsDir: "single-dir-multi-dir-multi-file", expectedFile: "single-dir-multi-dir-multi-file.yml", groups: []string{"multi-dir-multi-file"}},
 		//"single-dir-multi-dir-single-file": {groupVarsDir: "single-dir-multi-dir-single-file", expectedFile: "single-dir-multi-dir-single-file.yml", groups: []string{"multi-dir-single-file"}},
 		"single-dir-multi-file": {groupVarsDir: "single-dir-multi-file", expectedFile: "single-dir-multi-file.yml", groups: []string{"multi-file"}},
-		// TODO: fix subdirectory merge order
+		//TODO: fix subdirectory merge order
 		//"single-dir-multi-mixed-dirfile":   {groupVarsDir: "single-dir-multi-mixed-dirfile", expectedFile: "single-dir-multi-mixed-dirfile.yml", groups: []string{"multi-mixed-dirfile"}},
 		"single-dir-multi-mixed":          {groupVarsDir: "single-dir-multi-mixed", expectedFile: "single-dir-multi-mixed.yml", groups: []string{"multi-mixed"}},
 		"single-dir-single-file":          {groupVarsDir: "single-dir-single-file", expectedFile: "single-dir-single-file.yml", groups: []string{"single-file"}},
@@ -109,7 +99,7 @@ func TestDirectory(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			d, err := NewDirectory("testdata/directory/"+tc.groupVarsDir, tc.groups, true, EjsonSettings{})
 			assert.NilError(t, err)
-			got, err := d.Map()
+			got := d.Map()
 			assert.NilError(t, err)
 
 			want, err := loadYaml("testdata/directory/expected/" + tc.expectedFile)

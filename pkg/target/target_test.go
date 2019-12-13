@@ -42,7 +42,6 @@ func TestTarget(t *testing.T) {
 	assert.NilError(t, err)
 	target, err := New(entry, "testdata/group_vars", &values.EjsonSettings{})
 	assert.NilError(t, err)
-	gotValues, err := target.Values().Map()
-	assert.NilError(t, err)
+	gotValues := target.Values().Map()
 	assert.DeepEqual(t, wantValues, gotValues)
 }

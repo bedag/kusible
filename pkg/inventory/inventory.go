@@ -31,10 +31,7 @@ func NewInventory(path string, ejson values.EjsonSettings, skipKubeconfig bool) 
 		return nil, err
 	}
 
-	data, err := raw.Map()
-	if err != nil {
-		return nil, err
-	}
+	data := raw.Map()
 
 	// parse the yaml data into the inventory config
 	inventoryConfig, err := invconfig.NewConfigFromMap(&data)

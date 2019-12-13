@@ -17,13 +17,14 @@ limitations under the License.
 package values
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/geofffranks/spruce"
-	"github.com/mitchellh/mapstructure"
+	"github.com/imdario/mergo"
 	log "github.com/sirupsen/logrus"
+	"sigs.k8s.io/yaml"
 )
 
 func NewDirectory(path string, groups []string, skipEval bool, ejsonSettings EjsonSettings) (*directory, error) {
@@ -85,7 +86,6 @@ func (d *directory) load() error {
 	//   * _public_key: only present in encrypted ejson files to identify the correct private key
 	//                  not required in resulting document
 	pruneKeys := []string{"_public_key"}
-	d.data = make(data)
 
 	var err error
 	// get the list of files that should be merged
@@ -99,25 +99,20 @@ func (d *directory) load() error {
 	}).Debug("Ordered list of files to merge")
 
 	// merge everything while decrypting any ejson files encountered
-	merger := &spruce.Merger{AppendByDefault: false}
 	for _, path := range d.orderedFileList {
 		file, err := NewFile(path, true, d.ejson)
 		if err != nil {
 			return err
 		}
-		doc := file.Raw()
-		merger.Merge(d.data, *doc)
+		doc := file.Map()
+		err = mergo.Merge(&d.data, doc, mergo.WithOverride)
+		if err != nil {
+			return err
+		}
 	}
 
-	if merger.Error() != nil {
-		// spruce error messages can contain ansi colors
-		return StripAnsiError(merger.Error())
-	}
-
-	evaluator := &spruce.Evaluator{Tree: d.data, SkipEval: d.skipEval}
-	err = evaluator.Run(pruneKeys, nil)
-	d.data = evaluator.Tree
-	return StripAnsiError(err)
+	err = SpruceEval(&d.data, d.skipEval, pruneKeys)
+	return err
 }
 
 /*
@@ -173,20 +168,14 @@ func (d *directory) OrderedDataFileList() ([]string, error) {
 	return d.orderedFileList, nil
 }
 
-func (d *directory) Raw() *data {
-	return &d.data
-}
-
-func (d *directory) Map() (map[string]interface{}, error) {
-	var result map[string]interface{}
-	err := mapstructure.Decode(d.data, &result)
-	return result, err
+func (d *directory) Map() map[string]interface{} {
+	return d.data
 }
 
 func (d *directory) YAML() ([]byte, error) {
-	return d.data.YAML()
+	return yaml.Marshal(d.data)
 }
 
 func (d *directory) JSON() ([]byte, error) {
-	return d.data.JSON()
+	return json.Marshal(d.data)
 }
