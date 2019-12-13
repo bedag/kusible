@@ -129,7 +129,6 @@ func (d *directory) OrderedDataFileList() ([]string, error) {
 		groupDirectory := filepath.Join(d.path, group)
 
 		if stat, err := os.Stat(groupDirectory); err == nil && stat.Mode().IsDir() {
-			// TODO: this adds directories in revers alphabetical order (files are fine though)
 			err := filepath.Walk(groupDirectory, func(path string, info os.FileInfo, err error) error {
 				if err != nil {
 					log.WithFields(log.Fields{
@@ -140,7 +139,7 @@ func (d *directory) OrderedDataFileList() ([]string, error) {
 
 				if info.IsDir() && path != groupDirectory {
 					files, _ := DirectoryDataFiles(path, "*")
-					orderedGroupFileList = append(files, orderedGroupFileList...)
+					orderedGroupFileList = append(orderedGroupFileList, files...)
 					return nil
 				}
 
