@@ -20,9 +20,8 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/geofffranks/simpleyaml"
-	"github.com/mitchellh/mapstructure"
 	"gotest.tools/assert"
+	"sigs.k8s.io/yaml"
 )
 
 func TestValues(t *testing.T) {
@@ -32,21 +31,12 @@ func TestValues(t *testing.T) {
 			return nil, err
 		}
 
-		yamlData, err := simpleyaml.NewYaml(data)
-		if err != nil {
-			return nil, err
-		}
-
-		raw, err := yamlData.Map()
-		if err != nil {
-			return nil, err
-		}
-
 		var result map[string]interface{}
-		err = mapstructure.Decode(raw, &result)
+		err = yaml.Unmarshal(data, &result)
 		if err != nil {
 			return nil, err
 		}
+
 		return result, nil
 	}
 
@@ -55,8 +45,7 @@ func TestValues(t *testing.T) {
 		expected string
 	}{
 		"file": {input: "file/spruce-eval.yml", expected: "file/spruce-eval.expected.yml"},
-		// TODO: Fix handling of empty yaml files
-		//"dir":  {input: "file", expected: "file/spruce-eval.expected.yml"},
+		"dir":  {input: "file", expected: "file/spruce-eval.expected.yml"},
 	}
 
 	ejsonSettings := EjsonSettings{
@@ -67,7 +56,7 @@ func TestValues(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			d, err := New("testdata/"+tc.input, []string{}, false, ejsonSettings)
 			assert.NilError(t, err)
-			got, err := d.Map()
+			got := d.Map()
 			assert.NilError(t, err)
 			delete(got, "_public_key")
 

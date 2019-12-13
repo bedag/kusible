@@ -23,7 +23,7 @@ import (
 	"gotest.tools/assert"
 )
 
-func TestUtil(t *testing.T) {
+func TestUtilDataFiles(t *testing.T) {
 	files, ok := DirectoryDataFiles("testdata/util", "test-*")
 	assert.Assert(t, ok)
 	assert.Equal(t, 8, len(files))
@@ -40,4 +40,40 @@ func TestUtil(t *testing.T) {
 	sort.Strings(expected)
 	sort.Strings(files)
 	assert.DeepEqual(t, expected, files)
+}
+
+func TestUtilSpruceEval(t *testing.T) {
+	tests := map[string]struct {
+		data     map[string]interface{}
+		skip     bool
+		prune    []string
+		expected map[string]interface{}
+	}{
+		"simple-eval": {
+			data:     map[string]interface{}{"key1": "test", "key2": "(( grab key1 ))"},
+			skip:     false,
+			prune:    []string{},
+			expected: map[string]interface{}{"key1": "test", "key2": "test"},
+		},
+		"skip-eval": {
+			data:     map[string]interface{}{"key1": "test", "key2": "(( grab key1 ))"},
+			skip:     true,
+			prune:    []string{},
+			expected: map[string]interface{}{"key1": "test", "key2": "(( grab key1 ))"},
+		},
+		"prune-key": {
+			data:     map[string]interface{}{"key1": "test", "key2": "(( grab key1 ))"},
+			skip:     false,
+			prune:    []string{"key1"},
+			expected: map[string]interface{}{"key2": "test"},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := SpruceEval(&tc.data, tc.skip, tc.prune)
+			assert.NilError(t, err)
+			assert.DeepEqual(t, tc.expected, tc.data)
+		})
+	}
 }

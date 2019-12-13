@@ -21,9 +21,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/geofffranks/simpleyaml"
-	"github.com/mitchellh/mapstructure"
 	"gotest.tools/assert"
+	"sigs.k8s.io/yaml"
 )
 
 func TestFile(t *testing.T) {
@@ -33,21 +32,12 @@ func TestFile(t *testing.T) {
 			return nil, err
 		}
 
-		yamlData, err := simpleyaml.NewYaml(data)
-		if err != nil {
-			return nil, err
-		}
-
-		raw, err := yamlData.Map()
-		if err != nil {
-			return nil, err
-		}
-
 		var result map[string]interface{}
-		err = mapstructure.Decode(raw, &result)
+		err = yaml.Unmarshal(data, &result)
 		if err != nil {
 			return nil, err
 		}
+
 		return result, nil
 	}
 
@@ -61,10 +51,9 @@ func TestFile(t *testing.T) {
 		"spruce-eval":           {input: "spruce-eval.yml", expected: "spruce-eval.expected.yml"},
 		"spruce-eval-ejson":     {input: "spruce-eval.ejson", expected: "spruce-eval.expected.yml"},
 		"simple-ejson-wrongkey": {input: "simple-wrongkey.ejson", expected: "simple-wrongkey.ejson"},
-		// TODO: Fix handling of empty yaml files
-		//"fully-empty":           {input: "fully-empty.yml", expected: "empty.yml"},
-		//"empty-yaml":            {input: "empty.yml", expected: "empty.yml"},
-		//"empty-json":            {input: "empty.json", expected: "empty.yml"},
+		"fully-empty":           {input: "fully-empty.yml", expected: "empty.yml"},
+		"empty-yaml":            {input: "empty.yml", expected: "empty.yml"},
+		"empty-json":            {input: "empty.json", expected: "empty.yml"},
 	}
 
 	ejsonSettings := EjsonSettings{
@@ -75,7 +64,7 @@ func TestFile(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			f, err := NewFile("testdata/file/"+tc.input, false, ejsonSettings)
 			assert.NilError(t, err)
-			got, err := f.Map()
+			got := f.Map()
 			assert.NilError(t, err)
 			delete(got, "_public_key")
 
@@ -92,7 +81,7 @@ func TestFile(t *testing.T) {
 				// cast nil to error
 				assert.Assert(t, r[1].Interface() == nil)
 
-				_, err = simpleyaml.NewYaml(resultBytes)
+				err = yaml.Unmarshal(resultBytes, map[string]interface{}{})
 				assert.NilError(t, err)
 			}
 		})

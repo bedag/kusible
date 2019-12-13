@@ -18,6 +18,7 @@ package values
 
 import (
 	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -25,12 +26,9 @@ import (
 	// Use geofffranks yaml library instead of go-yaml
 	// to ensure compatibility with spruce
 	"github.com/Shopify/ejson"
-	"github.com/mitchellh/mapstructure"
 
-	// TODO switch to "sigs.k8s.io/yaml"
-	"github.com/geofffranks/simpleyaml"
-	"github.com/geofffranks/spruce"
 	log "github.com/sirupsen/logrus"
+	"sigs.k8s.io/yaml"
 )
 
 func NewFile(path string, skipEval bool, ejsonSettings EjsonSettings) (*file, error) {
@@ -86,42 +84,33 @@ func (f *file) loadMap() error {
 		return err
 	}
 
-	yamlData, err := simpleyaml.NewYaml(data)
+	err = yaml.Unmarshal(data, &f.data)
 	if err != nil {
 		return err
 	}
 
-	f.data, err = yamlData.Map()
-	if err != nil {
-		return err
+	if f.data == nil {
+		f.data = make(map[string]interface{})
 	}
 
 	// if we want to skip the spruce evaluation, skip the evaluator
 	// alltogether as an Evaluator with SkipEval: true only prunes / cherrypicks,
 	// something we do not need here
 	if !f.skipEval {
-		evaluator := &spruce.Evaluator{Tree: f.data, SkipEval: false}
-		err = evaluator.Run(nil, nil)
-		f.data = evaluator.Tree
-		return StripAnsiError(err)
+		err := SpruceEval(&f.data, false, []string{})
+		return err
 	}
 	return nil
 }
 
-func (f *file) Raw() *data {
-	return &f.data
-}
-
-func (f *file) Map() (map[string]interface{}, error) {
-	var result map[string]interface{}
-	err := mapstructure.Decode(f.data, &result)
-	return result, err
+func (f *file) Map() map[string]interface{} {
+	return f.data
 }
 
 func (f *file) YAML() ([]byte, error) {
-	return f.data.YAML()
+	return yaml.Marshal(f.data)
 }
 
 func (f *file) JSON() ([]byte, error) {
-	return f.data.JSON()
+	return json.Marshal(f.data)
 }

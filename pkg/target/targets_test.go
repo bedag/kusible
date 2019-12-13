@@ -134,8 +134,7 @@ func TestTargets(t *testing.T) {
 				assert.DeepEqual(t, wantNames, gotNames)
 				for name, gotTarget := range gotTargets {
 					wantValues := tc.expected.values[name]
-					gotValues, err := gotTarget.Values().Map()
-					assert.NilError(t, err)
+					gotValues := gotTarget.Values().Map()
 					assert.DeepEqual(t, wantValues, gotValues)
 				}
 			}

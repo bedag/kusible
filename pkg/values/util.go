@@ -20,6 +20,8 @@ import (
 	"errors"
 	"path/filepath"
 
+	"github.com/geofffranks/spruce"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pborman/ansi"
 	log "github.com/sirupsen/logrus"
 )
@@ -63,4 +65,33 @@ func DirectoryDataFiles(directory string, pattern string) ([]string, bool) {
 	}
 
 	return fileList, ok
+}
+
+// SpruceEval is a wrapper around the Evaluator of https://github.com/geofffranks/spruce
+// that handles the necessary type conversion
+func SpruceEval(data *map[string]interface{}, skipEval bool, pruneKeys []string) error {
+	var spruceMap map[interface{}]interface{}
+
+	err := mapstructure.Decode(data, &spruceMap)
+	if err != nil {
+		return err
+	}
+
+	evaluator := &spruce.Evaluator{Tree: spruceMap, SkipEval: skipEval}
+	err = evaluator.Run(pruneKeys, nil)
+	if err != nil {
+		return StripAnsiError(err)
+	}
+
+	decoderConfig := &mapstructure.DecoderConfig{ZeroFields: true, Result: data}
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	if err != nil {
+		return err
+	}
+
+	err = decoder.Decode(evaluator.Tree)
+	if err != nil {
+		return err
+	}
+	return nil
 }
