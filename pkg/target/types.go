@@ -17,6 +17,7 @@ limitations under the License.
 package target
 
 import (
+	"github.com/bedag/kusible/pkg/ejson"
 	inv "github.com/bedag/kusible/pkg/inventory"
 	"github.com/bedag/kusible/pkg/values"
 )
@@ -25,7 +26,7 @@ type Targets struct {
 	limits     []string
 	filter     string
 	valuesPath string
-	ejson      *values.EjsonSettings
+	ejson      *ejson.Settings
 	targets    map[string]*Target
 }
 

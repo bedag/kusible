@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/bedag/kusible/pkg/ejson"
 	"gotest.tools/assert"
 	"sigs.k8s.io/yaml"
 )
@@ -56,7 +57,7 @@ func TestFile(t *testing.T) {
 		"empty-json":            {input: "empty.json", expected: "empty.yml"},
 	}
 
-	ejsonSettings := EjsonSettings{
+	ejsonSettings := ejson.Settings{
 		KeyDir: "testdata/keydir",
 	}
 

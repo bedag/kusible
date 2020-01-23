@@ -19,11 +19,11 @@ package target
 import (
 	"fmt"
 
+	"github.com/bedag/kusible/pkg/ejson"
 	inv "github.com/bedag/kusible/pkg/inventory"
-	"github.com/bedag/kusible/pkg/values"
 )
 
-func NewTargets(filter string, limits []string, valuesPath string, inventory *inv.Inventory, ejson *values.EjsonSettings) (*Targets, error) {
+func NewTargets(filter string, limits []string, valuesPath string, inventory *inv.Inventory, skipEval bool, ejson *ejson.Settings) (*Targets, error) {
 	targetNames, err := inventory.EntryNames(filter, limits)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get possible entries from inventory: %s", err)
@@ -41,7 +41,7 @@ func NewTargets(filter string, limits []string, valuesPath string, inventory *in
 
 	for _, name := range targetNames {
 		entry := inventory.Entries()[name]
-		target, err := New(entry, valuesPath, ejson)
+		target, err := New(entry, valuesPath, skipEval, ejson)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create target for inventory entry '%s': %s", name, err)
 		}
@@ -71,7 +71,7 @@ func (t *Targets) ValuesPath() string {
 	return t.valuesPath
 }
 
-func (t *Targets) EJSON() *values.EjsonSettings {
+func (t *Targets) EJSON() *ejson.Settings {
 	return t.ejson
 }
 

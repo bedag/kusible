@@ -19,16 +19,17 @@ package target
 import (
 	"fmt"
 
+	"github.com/bedag/kusible/pkg/ejson"
 	inv "github.com/bedag/kusible/pkg/inventory"
 	"github.com/bedag/kusible/pkg/values"
 )
 
-func New(entry *inv.Entry, valuesPath string, ejson *values.EjsonSettings) (*Target, error) {
+func New(entry *inv.Entry, valuesPath string, skipEval bool, ejson *ejson.Settings) (*Target, error) {
 	target := &Target{
 		entry: entry,
 	}
 	groups := entry.Groups()
-	values, err := values.New(valuesPath, groups, false, *ejson)
+	values, err := values.New(valuesPath, groups, skipEval, *ejson)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile values for target '%s': %s", entry.Name(), err)
 	}

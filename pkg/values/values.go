@@ -19,10 +19,11 @@ package values
 import (
 	"os"
 
+	"github.com/bedag/kusible/pkg/ejson"
 	groupsfilter "github.com/bedag/kusible/pkg/groups"
 )
 
-func New(path string, groups []string, skipEval bool, ejsonSettings EjsonSettings) (Values, error) {
+func New(path string, groups []string, skipEval bool, ejsonSettings ejson.Settings) (Values, error) {
 	var result Values
 	var err error
 

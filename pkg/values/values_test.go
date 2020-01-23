@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/bedag/kusible/pkg/ejson"
 	"gotest.tools/assert"
 	"sigs.k8s.io/yaml"
 )
@@ -49,7 +50,7 @@ func TestValues(t *testing.T) {
 		"dir": {input: "file", expected: "file/spruce-eval.expected.yml"},
 	}
 
-	ejsonSettings := EjsonSettings{
+	ejsonSettings := ejson.Settings{
 		KeyDir: "testdata/keydir",
 	}
 

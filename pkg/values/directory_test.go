@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/bedag/kusible/pkg/ejson"
 	log "github.com/sirupsen/logrus"
 	"gotest.tools/assert"
 	"sigs.k8s.io/yaml"
@@ -97,7 +98,7 @@ func TestDirectory(t *testing.T) {
 	marshalMethods := []string{"JSON", "YAML"}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			d, err := NewDirectory("testdata/directory/"+tc.groupVarsDir, tc.groups, true, EjsonSettings{})
+			d, err := NewDirectory("testdata/directory/"+tc.groupVarsDir, tc.groups, true, ejson.Settings{})
 			assert.NilError(t, err)
 			got := d.Map()
 			assert.NilError(t, err)

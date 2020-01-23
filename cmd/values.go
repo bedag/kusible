@@ -19,6 +19,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/bedag/kusible/pkg/ejson"
 	"github.com/bedag/kusible/pkg/values"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -44,7 +45,7 @@ var valuesCmd = &cobra.Command{
 		ejsonPrivKey := viper.GetString("ejson-privkey")
 		ejsonKeyDir := viper.GetString("ejson-key-dir")
 
-		ejsonSettings := values.EjsonSettings{
+		ejsonSettings := ejson.Settings{
 			PrivKey:     ejsonPrivKey,
 			KeyDir:      ejsonKeyDir,
 			SkipDecrypt: skipDecrypt,
