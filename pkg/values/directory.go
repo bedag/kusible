@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bedag/kusible/pkg/spruce"
 	"github.com/imdario/mergo"
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
@@ -111,7 +112,7 @@ func (d *directory) load() error {
 		}
 	}
 
-	err = SpruceEval(&d.data, d.skipEval, pruneKeys)
+	err = spruce.Eval(&d.data, d.skipEval, pruneKeys)
 	return err
 }
 
