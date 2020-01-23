@@ -19,9 +19,19 @@ Package config implements the playbook config format
 */
 package config
 
+import (
+	"encoding/json"
+)
+
 // Config holds a list of plays
 type Config struct {
 	Plays []*Play `json:"plays"`
+}
+
+// BaseConfig holds a list of plays but only
+// the Name and Groups field are decoded
+type BaseConfig struct {
+	Plays []*BasePlay `json:"plays"`
 }
 
 // Play defines which charts are deployed from which
@@ -31,6 +41,18 @@ type Play struct {
 	Groups []string `json:"groups"`
 	Charts []*Chart `json:"charts"`
 	Repos  []*Repo  `json:"repos"`
+}
+
+// BasePlay holds the same information as a play,
+// but only the Name and the Groups are decoded
+// Used to select the plays relevant for a given
+// target and to delay decoding of the remaining
+// play data
+type BasePlay struct {
+	Name   string           `json:"name"`
+	Groups []string         `json:"groups"`
+	Charts *json.RawMessage `json:"charts,omitempty"`
+	Repos  *json.RawMessage `json:"repos,omitempty"`
 }
 
 // Chart holds all information to deploy a helm chart
