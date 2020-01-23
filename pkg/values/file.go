@@ -26,6 +26,7 @@ import (
 	// Use geofffranks yaml library instead of go-yaml
 	// to ensure compatibility with spruce
 	"github.com/Shopify/ejson"
+	"github.com/bedag/kusible/pkg/spruce"
 
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
@@ -97,7 +98,7 @@ func (f *file) loadMap() error {
 	// alltogether as an Evaluator with SkipEval: true only prunes / cherrypicks,
 	// something we do not need here
 	if !f.skipEval {
-		err := SpruceEval(&f.data, false, []string{})
+		err := spruce.Eval(&f.data, false, []string{})
 		return err
 	}
 	return nil
