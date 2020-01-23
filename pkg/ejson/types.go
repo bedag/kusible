@@ -14,29 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package values
+package ejson
 
-import "github.com/bedag/kusible/pkg/ejson"
-
-type Values interface {
-	YAML() ([]byte, error)
-	JSON() ([]byte, error)
-	Map() map[string]interface{}
-}
-
-type file struct {
-	data     map[string]interface{}
-	path     string
-	ejson    ejson.Settings
-	skipEval bool
-}
-
-type directory struct {
-	data            map[string]interface{}
-	path            string
-	groups          []string
-	ejson           ejson.Settings
-	skipEval        bool
-	files           []file
-	orderedFileList []string
+type Settings struct {
+	KeyDir      string
+	PrivKey     string
+	SkipDecrypt bool
 }

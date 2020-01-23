@@ -17,22 +17,17 @@ limitations under the License.
 package values
 
 import (
-	"bytes"
 	"encoding/json"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
-	// Use geofffranks yaml library instead of go-yaml
-	// to ensure compatibility with spruce
-	"github.com/Shopify/ejson"
+	"github.com/bedag/kusible/pkg/ejson"
 	"github.com/bedag/kusible/pkg/spruce"
 
-	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
 )
 
-func NewFile(path string, skipEval bool, ejsonSettings EjsonSettings) (*file, error) {
+func NewFile(path string, skipEval bool, ejsonSettings ejson.Settings) (*file, error) {
 	result := &file{
 		path:     path,
 		ejson:    ejsonSettings,
@@ -48,33 +43,16 @@ func (f *file) load() ([]byte, error) {
 	// to decrypt it. If it cannot be decrypted, continue as there
 	// is no harm in using the encrypted values
 	isEjson, err := filepath.Match("*.ejson", filepath.Base(f.path))
-	if err == nil && isEjson && !f.ejson.SkipDecrypt {
-		file, err := os.Open(f.path)
-		if err != nil {
-			return nil, err
-		}
-		defer file.Close()
-		var outBuffer bytes.Buffer
-
-		err = ejson.Decrypt(file, &outBuffer, f.ejson.KeyDir, f.ejson.PrivKey)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"file":  f.path,
-				"error": err.Error(),
-			}).Warn("Failed to decrypt ejson file, continuing with encrypted data")
-
-			data, err = ioutil.ReadFile(f.path)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			data = outBuffer.Bytes()
-		}
+	if err != nil {
+		return nil, err
+	}
+	if isEjson {
+		data, err = ejson.ReadFile(f.path, f.ejson)
 	} else {
 		data, err = ioutil.ReadFile(f.path)
-		if err != nil {
-			return nil, err
-		}
+	}
+	if err != nil {
+		return nil, err
 	}
 	return data, nil
 }

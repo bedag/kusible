@@ -19,9 +19,9 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/bedag/kusible/pkg/ejson"
 	"github.com/bedag/kusible/pkg/inventory"
 	"github.com/bedag/kusible/pkg/target"
-	"github.com/bedag/kusible/pkg/values"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -42,7 +42,7 @@ var inventoryListCmd = &cobra.Command{
 		inventoryPath := viper.GetString("inventory")
 		ejsonPrivKey := viper.GetString("ejson-privkey")
 		ejsonKeyDir := viper.GetString("ejson-key-dir")
-		ejsonSettings := values.EjsonSettings{
+		ejsonSettings := ejson.Settings{
 			PrivKey:     ejsonPrivKey,
 			KeyDir:      ejsonKeyDir,
 			SkipDecrypt: false,
@@ -81,7 +81,7 @@ var inventoryKubeconfigCmd = &cobra.Command{
 		ejsonPrivKey := viper.GetString("ejson-privkey")
 		ejsonKeyDir := viper.GetString("ejson-key-dir")
 
-		ejsonSettings := values.EjsonSettings{
+		ejsonSettings := ejson.Settings{
 			PrivKey:     ejsonPrivKey,
 			KeyDir:      ejsonKeyDir,
 			SkipDecrypt: false,
@@ -125,10 +125,11 @@ var inventoryValuesCmd = &cobra.Command{
 		groupVarsDir := viper.GetString("group-vars-dir")
 		inventoryPath := viper.GetString("inventory")
 		skipDecrypt := viper.GetBool("skip-decrypt")
+		skipEval := viper.GetBool("skip-eval")
 		ejsonPrivKey := viper.GetString("ejson-privkey")
 		ejsonKeyDir := viper.GetString("ejson-key-dir")
 
-		ejsonSettings := values.EjsonSettings{
+		ejsonSettings := ejson.Settings{
 			PrivKey:     ejsonPrivKey,
 			KeyDir:      ejsonKeyDir,
 			SkipDecrypt: false,
@@ -152,7 +153,7 @@ var inventoryValuesCmd = &cobra.Command{
 		}
 
 		ejsonSettings.SkipDecrypt = skipDecrypt
-		target, err := target.New(entry, groupVarsDir, &ejsonSettings)
+		target, err := target.New(entry, groupVarsDir, skipEval, &ejsonSettings)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"entry": name,
@@ -193,7 +194,7 @@ var inventoryLoaderCmd = &cobra.Command{
 		ejsonPrivKey := viper.GetString("ejson-privkey")
 		ejsonKeyDir := viper.GetString("ejson-key-dir")
 
-		ejsonSettings := values.EjsonSettings{
+		ejsonSettings := ejson.Settings{
 			PrivKey:     ejsonPrivKey,
 			KeyDir:      ejsonKeyDir,
 			SkipDecrypt: false,
@@ -232,9 +233,11 @@ var inventoryLoaderCmd = &cobra.Command{
 func init() {
 	inventoryValuesCmd.Flags().BoolP("json", "j", false, "Output json instead of yaml")
 	inventoryValuesCmd.Flags().BoolP("skip-decrypt", "", false, "Skip ejson decryption")
+	inventoryValuesCmd.Flags().BoolP("skip-eval", "", false, "Skip spruce evaluation")
 	inventoryLoaderCmd.Flags().BoolP("unsafe", "", false, "Show confidential loader info")
 	viper.BindPFlag("json", inventoryValuesCmd.Flags().Lookup("json"))
 	viper.BindPFlag("skip-decrypt", inventoryValuesCmd.Flags().Lookup("skip-decrypt"))
+	viper.BindPFlag("skip-eval", inventoryValuesCmd.Flags().Lookup("skip-eval"))
 	viper.BindPFlag("unsafe", inventoryLoaderCmd.Flags().Lookup("unsafe"))
 
 	inventoryCmd.AddCommand(inventoryListCmd)

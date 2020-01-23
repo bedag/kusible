@@ -22,13 +22,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bedag/kusible/pkg/ejson"
 	"github.com/bedag/kusible/pkg/spruce"
 	"github.com/imdario/mergo"
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
 )
 
-func NewDirectory(path string, groups []string, skipEval bool, ejsonSettings EjsonSettings) (*directory, error) {
+func NewDirectory(path string, groups []string, skipEval bool, ejsonSettings ejson.Settings) (*directory, error) {
 	result := &directory{
 		path:     path,
 		ejson:    ejsonSettings,

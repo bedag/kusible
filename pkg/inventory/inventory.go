@@ -20,11 +20,12 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/bedag/kusible/pkg/ejson"
 	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/values"
 )
 
-func NewInventory(path string, ejson values.EjsonSettings, skipKubeconfig bool) (*Inventory, error) {
+func NewInventory(path string, ejson ejson.Settings, skipKubeconfig bool) (*Inventory, error) {
 	// load the raw inventory yaml data
 	raw, err := values.New(path, []string{}, false, ejson)
 	if err != nil {

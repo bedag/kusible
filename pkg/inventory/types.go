@@ -17,14 +17,14 @@ limitations under the License.
 package inventory
 
 import (
+	"github.com/bedag/kusible/pkg/ejson"
 	"github.com/bedag/kusible/pkg/loader"
-	"github.com/bedag/kusible/pkg/values"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 type Inventory struct {
 	entries map[string]*Entry
-	ejson   *values.EjsonSettings
+	ejson   *ejson.Settings
 }
 
 type Entry struct {

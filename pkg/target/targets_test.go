@@ -20,13 +20,13 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/bedag/kusible/pkg/ejson"
 	"github.com/bedag/kusible/pkg/inventory"
-	"github.com/bedag/kusible/pkg/values"
 	"gotest.tools/assert"
 )
 
 func TestTargets(t *testing.T) {
-	ejsonSettings := values.EjsonSettings{}
+	ejsonSettings := ejson.Settings{}
 
 	inv, err := inventory.NewInventory("testdata/inventory.yml", ejsonSettings, true)
 	assert.NilError(t, err)
@@ -122,7 +122,7 @@ func TestTargets(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			targets, err := NewTargets(tc.filter, tc.limits, "testdata/group_vars", inv, &ejsonSettings)
+			targets, err := NewTargets(tc.filter, tc.limits, "testdata/group_vars", inv, false, &ejsonSettings)
 			assert.Equal(t, tc.expected.error, err != nil)
 			if !tc.expected.error {
 				gotTargets := targets.Targets()

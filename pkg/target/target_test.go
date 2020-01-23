@@ -19,9 +19,9 @@ package target
 import (
 	"testing"
 
+	"github.com/bedag/kusible/pkg/ejson"
 	"github.com/bedag/kusible/pkg/inventory"
 	invconf "github.com/bedag/kusible/pkg/inventory/config"
-	"github.com/bedag/kusible/pkg/values"
 	"gotest.tools/assert"
 )
 
@@ -40,7 +40,7 @@ func TestTarget(t *testing.T) {
 	}
 	entry, err := inventory.NewEntryFromConfig(config)
 	assert.NilError(t, err)
-	target, err := New(entry, "testdata/group_vars", &values.EjsonSettings{})
+	target, err := New(entry, "testdata/group_vars", false, &ejson.Settings{})
 	assert.NilError(t, err)
 	gotValues := target.Values().Map()
 	assert.DeepEqual(t, wantValues, gotValues)

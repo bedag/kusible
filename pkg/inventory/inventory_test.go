@@ -21,14 +21,14 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/bedag/kusible/pkg/ejson"
 	"github.com/bedag/kusible/pkg/loader"
-	"github.com/bedag/kusible/pkg/values"
 	"github.com/go-test/deep"
 	"gotest.tools/assert"
 )
 
 func basicInventoryTest(path string, filter string, limits []string, skip bool, expected []string) (*Inventory, error) {
-	ejsonSettings := values.EjsonSettings{
+	ejsonSettings := ejson.Settings{
 		PrivKey:     "",
 		KeyDir:      "",
 		SkipDecrypt: false,
