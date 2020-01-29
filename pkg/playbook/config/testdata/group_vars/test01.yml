@@ -1,0 +1,9 @@
+---
+vars:
+  REPOS:
+    - name: test01-repo
+      url: https://example01.x/repo
+  VERSIONS:
+    chart01: '>0.0.0-0'
+  CHART01_VALUES:
+    key01: value01
