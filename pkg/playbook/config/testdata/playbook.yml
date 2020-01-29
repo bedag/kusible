@@ -1,0 +1,10 @@
+---
+plays:
+  - name: test01
+    groups: [test01,enabled]
+  - name: test02
+    groups: [test02]
+  - name: test03
+    groups: [test03,enabled]
+  - name: regexp-test
+    groups: [prod-.*]

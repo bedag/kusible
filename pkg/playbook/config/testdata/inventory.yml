@@ -1,0 +1,32 @@
+---
+inventory:
+  - name: testentry01
+    groups: [test01,enabled]
+    kubeconfig:
+      backend: "file"
+      params:
+        path: testdata/kubeconfig
+  - name: testentry02
+    groups: [test02,enabled]
+    kubeconfig:
+      backend: "file"
+      params:
+        path: testdata/kubeconfig
+  - name: testentry03
+    groups: [test03,enabled]
+    kubeconfig:
+      backend: "file"
+      params:
+        path: testdata/kubeconfig
+  - name: testentry04
+    groups: [test01,test03,enabled]
+    kubeconfig:
+      backend: "file"
+      params:
+        path: testdata/kubeconfig
+  - name: testentry04
+    groups: [test01,test02,test03]
+    kubeconfig:
+      backend: "file"
+      params:
+        path: testdata/kubeconfig

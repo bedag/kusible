@@ -20,10 +20,11 @@ Package config implements the playbook config format
 package config
 
 import (
-	"bufio"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 
-	"github.com/standupdev/strset"
 	"sigs.k8s.io/yaml"
 )
 
@@ -35,15 +36,15 @@ func NewBaseConfigFromFile(path string) (*BaseConfig, error) {
 		return nil, err
 	}
 	defer file.Close()
-	return NewBaseConfigFromReader(bufio.NewReader(file))
+	return NewBaseConfigFromReader(file)
 }
 
 // NewBaseConfigFromReader loads a playbook base config from the given
 // bufio.Reader. The reader must point to yaml data.
-func NewBaseConfigFromReader(reader *bufio.Reader) (*BaseConfig, error) {
+func NewBaseConfigFromReader(reader io.Reader) (*BaseConfig, error) {
 	data := []byte{}
 	var result BaseConfig
-	_, err := reader.Read(data)
+	data, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}
@@ -55,20 +56,27 @@ func NewBaseConfigFromReader(reader *bufio.Reader) (*BaseConfig, error) {
 	return &result, nil
 }
 
-func (bc *BaseConfig) FilterApplicable(targetGroups []string) *BaseConfig {
-	targetSet := strset.Make(targetGroups...)
-
-	applicablePlays := []*BasePlay{}
-
-	for _, play := range bc.Plays {
-		playSet := strset.Make(play.Groups...)
-		if playSet.Len() > targetSet.Len() {
-			continue
-		}
-		if playSet.SubsetOf(targetSet) {
-			applicablePlays = append(applicablePlays, play)
-		}
+func (bc *BaseConfig) GetApplicable(targetGroups []string) (*BaseConfig, error) {
+	if len(targetGroups) <= 0 {
+		return bc, nil
 	}
 
-	return &BaseConfig{Plays: applicablePlays}
+	result := []*BasePlay{}
+
+	for _, play := range bc.Plays {
+		v := Validator{}
+		for _, expr := range play.Groups {
+			pattern, err := NewPattern(expr, targetGroups)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse pattern expression '%s': %s", expr, err)
+			}
+			v.Add(pattern)
+		}
+		if v.Valid() {
+			result = append(result, play)
+		}
+
+	}
+
+	return &BaseConfig{Plays: result}, nil
 }
