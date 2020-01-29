@@ -27,32 +27,43 @@ func TestUtilSpruceEval(t *testing.T) {
 		data     map[string]interface{}
 		skip     bool
 		prune    []string
+		err      bool
 		expected map[string]interface{}
 	}{
 		"simple-eval": {
 			data:     map[string]interface{}{"key1": "test", "key2": "(( grab key1 ))"},
 			skip:     false,
 			prune:    []string{},
+			err:      false,
 			expected: map[string]interface{}{"key1": "test", "key2": "test"},
 		},
 		"skip-eval": {
 			data:     map[string]interface{}{"key1": "test", "key2": "(( grab key1 ))"},
 			skip:     true,
 			prune:    []string{},
+			err:      false,
 			expected: map[string]interface{}{"key1": "test", "key2": "(( grab key1 ))"},
 		},
 		"prune-key": {
 			data:     map[string]interface{}{"key1": "test", "key2": "(( grab key1 ))"},
 			skip:     false,
 			prune:    []string{"key1"},
+			err:      false,
 			expected: map[string]interface{}{"key2": "test"},
+		},
+		"error": {
+			data:     map[string]interface{}{"key1": "test", "key2": "(( grab key3 ))"},
+			skip:     false,
+			prune:    []string{},
+			err:      true,
+			expected: map[string]interface{}{"key1": "test", "key2": "(( grab key3 ))"},
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			err := Eval(&tc.data, tc.skip, tc.prune)
-			assert.NilError(t, err)
+			assert.Equal(t, tc.err, err != nil)
 			assert.DeepEqual(t, tc.expected, tc.data)
 		})
 	}
