@@ -19,9 +19,11 @@ package spruce
 import (
 	"errors"
 
+	"github.com/geofffranks/simpleyaml"
 	"github.com/geofffranks/spruce"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pborman/ansi"
+	"sigs.k8s.io/yaml"
 )
 
 func stripAnsiError(err error) error {
@@ -35,18 +37,37 @@ func stripAnsiError(err error) error {
 // Eval is a wrapper around the Evaluator of https://github.com/geofffranks/spruce
 // that handles the necessary type conversion
 func Eval(data *map[string]interface{}, skipEval bool, pruneKeys []string) error {
-	var spruceMap map[interface{}]interface{}
+	// To function, the spruce evaluator expects its data in a very specific
+	// structure, which (from what I understand right now), will only be created
+	// by https://github.com/geofffranks/simpleyaml/blob/master/simpleyaml.go and
+	// the yaml library it uses.
+	// To make the evaluator work as expected, we have to convert the input
+	// datastructure to the expected format (Marshal with yaml, unmarshal with simpleyaml)
+	// eval it and then convert everything back.
 
-	err := mapstructure.Decode(data, &spruceMap)
+	// convert to expected datastructure
+	raw, err := yaml.Marshal(data)
+	if err != nil {
+		return err
+	}
+	y, err := simpleyaml.NewYaml(raw)
+	if err != nil {
+		return err
+	}
+	doc, err := y.Map()
 	if err != nil {
 		return err
 	}
 
-	evaluator := &spruce.Evaluator{Tree: spruceMap, SkipEval: skipEval}
+	// eval
+	evaluator := &spruce.Evaluator{Tree: doc, SkipEval: skipEval}
 	err = evaluator.Run(pruneKeys, nil)
 	if err != nil {
 		return stripAnsiError(err)
 	}
+
+	// convert back
+	di, err := deinterface(evaluator.Tree, true)
 
 	decoderConfig := &mapstructure.DecoderConfig{ZeroFields: true, Result: data}
 	decoder, err := mapstructure.NewDecoder(decoderConfig)
@@ -54,9 +75,10 @@ func Eval(data *map[string]interface{}, skipEval bool, pruneKeys []string) error
 		return err
 	}
 
-	err = decoder.Decode(evaluator.Tree)
+	err = decoder.Decode(di)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
