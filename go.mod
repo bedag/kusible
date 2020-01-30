@@ -8,7 +8,7 @@ require (
 	github.com/cloudfoundry-community/vaultkv v0.0.0-20190624205921-5a0520111914 // indirect
 	github.com/dustin/gojson v0.0.0-20160307161227-2e71ec9dd5ad // indirect
 	github.com/gabriel-vasile/mimetype v0.3.16
-	github.com/geofffranks/simpleyaml v0.0.0-20161109204137-c9320f076de5 // indirect
+	github.com/geofffranks/simpleyaml v0.0.0-20161109204137-c9320f076de5
 	github.com/geofffranks/spruce v1.22.0
 	github.com/geofffranks/yaml v0.0.0-20161117152608-9f2fe4b6f295 // indirect
 	github.com/go-test/deep v1.0.4
@@ -22,7 +22,6 @@ require (
 	github.com/smartystreets/goconvey v0.0.0-20190731233626-505e41936337 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
-	github.com/standupdev/strset v0.0.0-20180716214044-1e63e6f95f09
 	github.com/starkandwayne/goutils v0.0.0-20190115202530-896b8a6904be // indirect
 	github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect

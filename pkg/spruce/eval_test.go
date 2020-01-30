@@ -22,7 +22,7 @@ import (
 	"gotest.tools/assert"
 )
 
-func TestUtilSpruceEval(t *testing.T) {
+func TestEval(t *testing.T) {
 	tests := map[string]struct {
 		data     map[string]interface{}
 		skip     bool
@@ -36,6 +36,27 @@ func TestUtilSpruceEval(t *testing.T) {
 			prune:    []string{},
 			err:      false,
 			expected: map[string]interface{}{"key1": "test", "key2": "test"},
+		},
+		"deep-eval": {
+			data: map[string]interface{}{
+				"key1": map[string]interface{}{
+					"data": "test",
+				},
+				"key2": map[string]interface{}{
+					"data": "(( grab key1.data ))",
+				},
+			},
+			skip:  false,
+			prune: []string{},
+			err:   false,
+			expected: map[string]interface{}{
+				"key1": map[string]interface{}{
+					"data": "test",
+				},
+				"key2": map[string]interface{}{
+					"data": "test",
+				},
+			},
 		},
 		"skip-eval": {
 			data:     map[string]interface{}{"key1": "test", "key2": "(( grab key1 ))"},
