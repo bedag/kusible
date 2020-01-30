@@ -21,8 +21,8 @@ import (
 
 	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/loader"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 func NewKubeconfigFromConfig(config *invconfig.Kubeconfig) (*Kubeconfig, error) {
@@ -55,11 +55,15 @@ func NewKubeconfigFromLoader(ldr loader.Loader) (*Kubeconfig, error) {
 }
 
 func (k *Kubeconfig) Yaml() ([]byte, error) {
-	config, err := k.Config()
+	clientConfig, err := k.Config()
 	if err != nil {
 		return nil, err
 	}
-	data, err := clientcmd.Write(*config)
+	rawConfig, err := clientConfig.RawConfig()
+	if err != nil {
+		return nil, err
+	}
+	data, err := clientcmd.Write(rawConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +74,7 @@ func (k *Kubeconfig) Loader() loader.Loader {
 	return k.loader
 }
 
-func (k *Kubeconfig) Config() (*clientcmdapi.Config, error) {
+func (k *Kubeconfig) Config() (clientcmd.ClientConfig, error) {
 	if k.config == nil {
 		err := k.loadConfig()
 		if err != nil {
@@ -81,21 +85,23 @@ func (k *Kubeconfig) Config() (*clientcmdapi.Config, error) {
 }
 
 func (k *Kubeconfig) loadConfig() error {
-	rawConfig, err := k.loader.Load()
+	configData, err := k.loader.Load()
 	if err != nil {
 		return err
 	}
 
-	clientConfig, err := clientcmd.Load(rawConfig)
+	rawConfig, err := clientcmd.Load(configData)
 	if err != nil {
 		return err
 	}
-	if clientConfig.CurrentContext == "" {
-		for name := range clientConfig.Contexts {
-			clientConfig.CurrentContext = name
+	if rawConfig.CurrentContext == "" {
+		for name := range rawConfig.Contexts {
+			rawConfig.CurrentContext = name
 			break
 		}
 	}
+
+	clientConfig := clientcmd.NewDefaultClientConfig(*rawConfig, nil)
 
 	k.config = clientConfig
 	return nil
