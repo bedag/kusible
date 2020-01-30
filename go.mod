@@ -28,7 +28,7 @@ require (
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	gopkg.in/yaml.v2 v2.2.7
 	gotest.tools v2.2.0+incompatible
-	k8s.io/apimachinery v0.0.0-20191121015412-41065c7a8c2a // indirect
+	k8s.io/apimachinery v0.0.0-20191121015412-41065c7a8c2a
 	k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
 	k8s.io/utils v0.0.0-20191114200735-6ca3b61696b6 // indirect
 	sigs.k8s.io/yaml v1.1.0

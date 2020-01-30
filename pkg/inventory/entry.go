@@ -22,6 +22,9 @@ import (
 	"github.com/bedag/kusible/pkg/groups"
 	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/imdario/mergo"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/yaml"
 )
 
 func NewEntryFromConfig(config *invconfig.Entry) (*Entry, error) {
@@ -111,4 +114,39 @@ func (e *Entry) Name() string {
 
 func (e *Entry) ConfigNamespace() string {
 	return e.configNamespace
+}
+
+func (e *Entry) ClusterInventory() (*map[string]interface{}, error) {
+	config, err := e.kubeconfig.Config()
+	if err != nil {
+		return nil, err
+	}
+	clientConfig, err := config.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+	clientset, err := kubernetes.NewForConfig(clientConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	configMap, err := clientset.CoreV1().ConfigMaps(e.configNamespace).Get("cluster-inventory", metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	rawData, ok := configMap.Data["inventory"]
+	if !ok {
+		return nil, fmt.Errorf("wrong cluster-inventory format: expecting 'inventory' key in configmap data")
+	}
+	var data map[string]interface{}
+	err = yaml.Unmarshal([]byte(rawData), &data)
+	if err != nil {
+		return nil, err
+	}
+	result := map[string]interface{}{
+		"vars": data,
+	}
+
+	return &result, nil
 }
