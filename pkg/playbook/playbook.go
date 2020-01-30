@@ -14,17 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
+package playbook
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 
 	config "github.com/bedag/kusible/pkg/playbook/config"
 	"github.com/bedag/kusible/pkg/spruce"
 	"github.com/bedag/kusible/pkg/target"
 	"github.com/imdario/mergo"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 /*
@@ -60,40 +61,57 @@ func NewFromReader(reader *bufio.Reader, targets *target.Targets, skipEval bool)
 		return nil, err
 	}
 
+	result := []*config.Config{}
+
 	for _, target := range targets.Targets() {
 		// TODO: this should be the data of the cluster inventory ConfigMap
-		result := map[string]interface{}{}
+		var mergeResult map[string]interface{}
 		// Based on the groups of the target and the groups of each play,
 		// generate a new base config containing only the plays relevant
 		// for the current target
-		applicableBaseConfig := baseConfig.FilterApplicable(target.Entry().Groups())
+		targetBaseConfig, err := baseConfig.GetApplicable(target.Entry().Groups())
+		if err != nil {
+			return nil, err
+		}
 
 		// convert the base config to a simple map to perpare the merge of the
 		// remaining plays with the cluster inventory config and the target values
 		var playbookMap map[string]interface{}
-		data, err := yaml.Marshal(applicableBaseConfig)
+		data, err := yaml.Marshal(targetBaseConfig)
 		if err != nil {
 			return nil, err
 		}
+
 		err = yaml.Unmarshal(data, &playbookMap)
 		if err != nil {
 			return nil, err
 		}
 
-		values := target.Values().Map()
-		err = mergo.Merge(&result, playbookMap, mergo.WithOverride)
+		err = mergo.Merge(&mergeResult, playbookMap, mergo.WithOverride)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed merge cluster-inventory and playbook for target '%s': %s", target.Entry().Name(), err)
 		}
-		err = mergo.Merge(&result, values, mergo.WithOverride)
-		if err != nil {
-			return nil, err
-		}
-		err = spruce.Eval(&result, skipEval, []string{})
 
-		// TODO: Marshal back to a complete playbook datastructure and append
-		// to the list of playbook configs for this playbook
+		values := target.Values().Map()
+		err = mergo.Merge(&mergeResult, values, mergo.WithOverride)
+		if err != nil {
+			return nil, fmt.Errorf("failed merge values and playbook for target '%s': %s", target.Entry().Name(), err)
+		}
+
+		err = spruce.Eval(&mergeResult, false, []string{})
+		if err != nil {
+			// TODO: add optional way to dump the unevaluated yaml here
+			//doc, _ := yaml.Marshal(mergeResult)
+			//fmt.Printf("%s\n", string(doc))
+			return nil, fmt.Errorf("failed evaluate playbook config for target '%s': %s", target.Entry().Name(), err)
+		}
+
+		targetConfig, err := config.NewConfigFromMap(&mergeResult)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create playbook config for target '%s': %s", target.Entry().Name(), err)
+		}
+		result = append(result, targetConfig)
 	}
 
-	return nil, nil
+	return result, nil
 }

@@ -1,0 +1,12 @@
+---
+plays:
+  - name: test01
+    groups: [test01]
+    charts:
+      - name: release01
+        repo: (( grab vars.REPOS.0.name ))
+        chart: chart01
+        version: (( grab vars.VERSIONS.chart01 ))
+        namespace: namespace01
+        values: (( grab vars.CHART01_VALUES ))
+    repos: (( grab vars.REPOS ))

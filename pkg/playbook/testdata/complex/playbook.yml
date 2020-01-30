@@ -1,0 +1,40 @@
+---
+plays:
+  - name: test01
+    groups: [test01,"&enabled"]
+    charts:
+      - name: release01
+        repo: (( grab vars.REPOS.0.name ))
+        chart: chart01
+        version: (( grab vars.VERSIONS.chart01 ))
+        namespace: namespace01
+        values: (( grab vars.CHART01_VALUES ))
+    repos: (( grab vars.REPOS ))
+
+  - name: test02
+    groups: [test02,"&prod-.*"]
+    charts:
+      - name: release02
+        repo: (( grab vars.REPOS.0.name ))
+        chart: chart02
+        version: (( grab vars.VERSIONS.chart02 ))
+        namespace: namespace02
+        values: (( grab vars.CHART02_VALUES ))
+    repos: (( grab vars.REPOS ))
+
+  - name: test03
+    groups: [test03,"&enabled"]
+    charts:
+      - name: release03
+        repo: (( grab vars.REPOS.0.name ))
+        chart: chart03
+        version: (( grab vars.VERSIONS.chart03 ))
+        namespace: namespace03
+        values: (( grab vars.CHART03_VALUES ))
+      - name: release04
+        repo: (( grab vars.REPOS.0.name ))
+        chart: chart04
+        version: (( grab vars.VERSIONS.chart04 ))
+        namespace: namespace04
+        values: (( grab vars.CHART04_VALUES ))
+    repos: (( grab vars.REPOS ))
