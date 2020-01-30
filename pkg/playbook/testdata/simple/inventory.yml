@@ -1,0 +1,8 @@
+---
+inventory:
+  - name: testentry01
+    groups: [test01]
+    kubeconfig:
+      backend: "file"
+      params:
+        path: testdata/kubeconfig

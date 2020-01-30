@@ -24,7 +24,7 @@ inventory:
       backend: "file"
       params:
         path: testdata/kubeconfig
-  - name: testentry04
+  - name: testentry05
     groups: [test01,test02,test03]
     kubeconfig:
       backend: "file"
