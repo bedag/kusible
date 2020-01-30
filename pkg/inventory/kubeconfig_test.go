@@ -43,7 +43,9 @@ func TestNewKubeconfigFromConfig(t *testing.T) {
 	assert.NilError(t, err)
 	resultClientConfig, err := kubeconfig.Config()
 	assert.NilError(t, err)
-	resultCurrentContext := resultClientConfig.CurrentContext
+	resultRawConfig, err := resultClientConfig.RawConfig()
+	assert.NilError(t, err)
+	resultCurrentContext := resultRawConfig.CurrentContext
 	assert.Assert(t, resultCurrentContext != "")
 
 	expectedConfigPath := "testdata/kubeconfig"
@@ -76,7 +78,9 @@ func TestNewKubeconfigFromLoader(t *testing.T) {
 	assert.NilError(t, err)
 	resultClientConfig, err := kubeconfig.Config()
 	assert.NilError(t, err)
-	resultCurrentContext := resultClientConfig.CurrentContext
+	resultRawConfig, err := resultClientConfig.RawConfig()
+	assert.NilError(t, err)
+	resultCurrentContext := resultRawConfig.CurrentContext
 	assert.Assert(t, resultCurrentContext != "")
 
 	expectedConfigPath := "testdata/kubeconfig"

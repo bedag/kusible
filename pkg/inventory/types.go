@@ -19,7 +19,7 @@ package inventory
 import (
 	"github.com/bedag/kusible/pkg/ejson"
 	"github.com/bedag/kusible/pkg/loader"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 type Inventory struct {
@@ -36,5 +36,5 @@ type Entry struct {
 
 type Kubeconfig struct {
 	loader loader.Loader
-	config *clientcmdapi.Config
+	config clientcmd.ClientConfig
 }
