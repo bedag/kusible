@@ -25,21 +25,22 @@ import (
 	"github.com/bedag/kusible/pkg/spruce"
 	"github.com/bedag/kusible/pkg/target"
 	"github.com/imdario/mergo"
-	"sigs.k8s.io/yaml"
 )
 
 /*
-Each run-relevant inventory entry has its own "view" on the given playbook containting
+Each run-relevant inventory entry (target) has its own "view" on the given playbook containting
 only the relevant plays for its groups.
 
-Given a list of groups, the playbook loader
+Given a list of targets, the playbook loader
 
 * loads the playbook (without evaluation)
-* filters the plays based on the given groups
-* loads the values relevant for the given groups (without evaluation)
-* merges the filtered playbook and values
-* evaluates the result
-* unmarshalls the merged/evaluated playbook/value map into a valid playbook config structure
+* for each target
+	* filters the plays based on the given groups
+	* retrieves the cluster-inventory of the target (optional)
+	* loads the values relevant for the given groups (without evaluation)
+	* merges the cluster-inventory data, the target values and the filtered playbook
+	* evaluates the result
+	* unmarshalls the merged/evaluated playbook/value map into a valid playbook config structure
 */
 
 func New(path string, targets *target.Targets, skipEval bool) ([]*config.Config, error) {
@@ -68,23 +69,12 @@ func NewFromReader(reader *bufio.Reader, targets *target.Targets, skipEval bool)
 		var mergeResult map[string]interface{}
 		// Based on the groups of the target and the groups of each play,
 		// generate a new base config containing only the plays relevant
-		// for the current target
-		targetBaseConfig, err := baseConfig.GetApplicable(target.Entry().Groups())
+		// for the current target. As we have to merge the result with
+		// data structures in the next step, retrieve a map instead of the
+		// base config itself
+		playbookMap, err := baseConfig.ApplicableMap(target.Entry().Groups())
 		if err != nil {
-			return nil, err
-		}
-
-		// convert the base config to a simple map to perpare the merge of the
-		// remaining plays with the cluster inventory config and the target values
-		var playbookMap map[string]interface{}
-		data, err := yaml.Marshal(targetBaseConfig)
-		if err != nil {
-			return nil, err
-		}
-
-		err = yaml.Unmarshal(data, &playbookMap)
-		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get plays for target '%s': %s", target.Entry().Name(), err)
 		}
 
 		err = mergo.Merge(&mergeResult, playbookMap, mergo.WithOverride)
