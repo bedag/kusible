@@ -14,9 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-Package config implements the playbook config format
-*/
 package config
 
 import (
@@ -56,8 +53,10 @@ func NewBaseConfigFromReader(reader io.Reader) (*BaseConfig, error) {
 	return &result, nil
 }
 
-func (bc *BaseConfig) GetApplicable(targetGroups []string) (*BaseConfig, error) {
-	if len(targetGroups) <= 0 {
+// Applicable returns a BaseConfig that contains only the plays where
+// the groups value of the play matches the groups given as parameter
+func (bc *BaseConfig) Applicable(groups []string) (*BaseConfig, error) {
+	if len(groups) <= 0 {
 		return bc, nil
 	}
 
@@ -66,9 +65,9 @@ func (bc *BaseConfig) GetApplicable(targetGroups []string) (*BaseConfig, error) 
 	for _, play := range bc.Plays {
 		v := Validator{}
 		for _, expr := range play.Groups {
-			pattern, err := NewPattern(expr, targetGroups)
+			pattern, err := NewPattern(expr, groups)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse pattern expression '%s': %s", expr, err)
+				return nil, fmt.Errorf("failed to parse pattern expression '%s' of play '%s': %s", expr, play.Name, err)
 			}
 			v.Add(pattern)
 		}
@@ -79,4 +78,25 @@ func (bc *BaseConfig) GetApplicable(targetGroups []string) (*BaseConfig, error) 
 	}
 
 	return &BaseConfig{Plays: result}, nil
+}
+
+// ApplicableMap returns a map of the BaseConfig that contains only the plays where
+// the groups value of the play matches the groups given as parameter
+func (bc *BaseConfig) ApplicableMap(groups []string) (*map[string]interface{}, error) {
+	config, err := bc.Applicable(groups)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := yaml.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	var m map[string]interface{}
+	err = yaml.Unmarshal(data, &m)
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
 }

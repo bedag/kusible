@@ -99,7 +99,7 @@ func TestBaseConfigFilter(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			result, err := config.GetApplicable(tc.groups)
+			result, err := config.Applicable(tc.groups)
 			assert.NilError(t, err)
 			assert.Equal(t, tc.plays, len(result.Plays))
 			playNames := []string{}
