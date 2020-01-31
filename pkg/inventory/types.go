@@ -19,6 +19,7 @@ package inventory
 import (
 	"github.com/bedag/kusible/pkg/ejson"
 	"github.com/bedag/kusible/pkg/loader"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -37,4 +38,5 @@ type Entry struct {
 type Kubeconfig struct {
 	loader loader.Loader
 	config clientcmd.ClientConfig
+	client kubernetes.Interface // *kubernetes.Clientset
 }

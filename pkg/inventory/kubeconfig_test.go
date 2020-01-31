@@ -20,10 +20,12 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/bedag/kusible/pkg/loader"
-
 	invconfig "github.com/bedag/kusible/pkg/inventory/config"
+	"github.com/bedag/kusible/pkg/loader"
 	"gotest.tools/assert"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -95,4 +97,26 @@ func TestNewKubeconfigFromLoader(t *testing.T) {
 	expectedConfigBytes, err := clientcmd.Write(*expectedConfig)
 	assert.NilError(t, err)
 	assert.Equal(t, string(expectedConfigBytes), string(resultConfigBytes))
+}
+
+func TestSetClient(t *testing.T) {
+	clientset := fake.NewSimpleClientset(&v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "fake-pod",
+			Namespace:   "default",
+			Annotations: map[string]string{},
+		},
+	})
+	assert.Assert(t, clientset != nil)
+
+	k := &Kubeconfig{
+		loader: nil,
+		config: nil,
+		client: nil,
+	}
+
+	k.SetClient(clientset)
+	resultClientset, err := k.Client()
+	assert.NilError(t, err)
+	assert.Equal(t, clientset, resultClientset)
 }

@@ -21,6 +21,7 @@ import (
 
 	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/loader"
+	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -82,6 +83,37 @@ func (k *Kubeconfig) Config() (clientcmd.ClientConfig, error) {
 		}
 	}
 	return k.config, nil
+}
+
+func (k *Kubeconfig) SetClient(clientset kubernetes.Interface) {
+	k.client = clientset
+}
+
+// Client returns a clientset for the current kubeconfig. If no client
+// currently exists, a new one will be created
+func (k *Kubeconfig) Client() (kubernetes.Interface, error) {
+	if k.client != nil {
+		return k.client, nil
+	}
+
+	config, err := k.Config()
+	if err != nil {
+		return nil, err
+	}
+
+	clientConfig, err := config.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	clientset, err := kubernetes.NewForConfig(clientConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	k.SetClient(clientset)
+
+	return clientset, nil
 }
 
 func (k *Kubeconfig) loadConfig() error {

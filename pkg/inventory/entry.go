@@ -23,7 +23,6 @@ import (
 	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/imdario/mergo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
 )
 
@@ -117,15 +116,7 @@ func (e *Entry) ConfigNamespace() string {
 }
 
 func (e *Entry) ClusterInventory() (*map[string]interface{}, error) {
-	config, err := e.kubeconfig.Config()
-	if err != nil {
-		return nil, err
-	}
-	clientConfig, err := config.ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-	clientset, err := kubernetes.NewForConfig(clientConfig)
+	clientset, err := e.kubeconfig.Client()
 	if err != nil {
 		return nil, err
 	}
