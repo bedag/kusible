@@ -82,14 +82,18 @@ var playbookCmd = &cobra.Command{
 			}).Fatal("Failed to compile playbooks.")
 		}
 
-		for _, config := range playbooks {
-			result, err := config.YAML()
-			if err != nil {
-				log.WithFields(log.Fields{
-					"error": err.Error(),
-				}).Fatal("Failed to convert playbook entry to yaml.")
+		for name, config := range playbooks {
+			if len(config.Plays) > 0 {
+				result, err := config.YAML()
+				if err != nil {
+					log.WithFields(log.Fields{
+						"entry": name,
+						"error": err.Error(),
+					}).Fatal("Failed to convert playbook entry to yaml.")
+				}
+				fmt.Printf("======= Plays for %s =======\n", name)
+				fmt.Printf("%s", string(result))
 			}
-			fmt.Printf("%s", string(result))
 		}
 	},
 }

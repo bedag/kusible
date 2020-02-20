@@ -43,7 +43,7 @@ Given a list of targets, the playbook loader
 	* unmarshalls the merged/evaluated playbook/value map into a valid playbook config structure
 */
 
-func New(path string, targets *target.Targets, skipEval bool) ([]*config.Config, error) {
+func New(path string, targets *target.Targets, skipEval bool) (map[string]*config.Config, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func New(path string, targets *target.Targets, skipEval bool) ([]*config.Config,
 	return NewFromReader(bufio.NewReader(file), targets, skipEval)
 }
 
-func NewFromReader(reader *bufio.Reader, targets *target.Targets, skipEval bool) ([]*config.Config, error) {
+func NewFromReader(reader *bufio.Reader, targets *target.Targets, skipEval bool) (map[string]*config.Config, error) {
 	// Get the base config of the given playbook
 	// The base config contains all playbook data but only the name and groups of
 	// each play are required and parsed. We need the groups of the plays
@@ -62,7 +62,7 @@ func NewFromReader(reader *bufio.Reader, targets *target.Targets, skipEval bool)
 		return nil, err
 	}
 
-	result := []*config.Config{}
+	result := make(map[string]*config.Config)
 
 	for _, target := range targets.Targets() {
 		// TODO: this should be the data of the cluster inventory ConfigMap
@@ -96,11 +96,18 @@ func NewFromReader(reader *bufio.Reader, targets *target.Targets, skipEval bool)
 			return nil, fmt.Errorf("failed evaluate playbook config for target '%s': %s", target.Entry().Name(), err)
 		}
 
+		// TODO: if playbookMap does not contain any plays, but
+		//       the targetConfig here is not empty, emit at least a warning
+		//       because that means we have plays that were not part of
+		//       the playbook but part of the values or cluster config map
+		//       and therefore if was not tested if the play should actually be
+		//       executed for the given inventory entry
 		targetConfig, err := config.NewConfigFromMap(&mergeResult)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create playbook config for target '%s': %s", target.Entry().Name(), err)
 		}
-		result = append(result, targetConfig)
+
+		result[target.Entry().Name()] = targetConfig
 	}
 
 	return result, nil
