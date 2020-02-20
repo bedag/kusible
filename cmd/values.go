@@ -83,9 +83,7 @@ var valuesCmd = &cobra.Command{
 
 func init() {
 	valuesCmd.Flags().BoolP("json", "j", false, "Output json instead of yaml")
-	valuesCmd.Flags().BoolP("skip-decrypt", "", false, "Skip ejson decryption")
 	viper.BindPFlag("json", valuesCmd.Flags().Lookup("json"))
-	viper.BindPFlag("skip-decrypt", valuesCmd.Flags().Lookup("skip-decrypt"))
 
 	rootCmd.AddCommand(valuesCmd)
 }
