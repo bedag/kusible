@@ -19,7 +19,12 @@ Package config implements the playbook config format
 */
 package config
 
-import "github.com/mitchellh/mapstructure"
+import (
+	"encoding/json"
+
+	"github.com/mitchellh/mapstructure"
+	"sigs.k8s.io/yaml"
+)
 
 // decode the given data with the default decoder settings
 func decode(data *map[string]interface{}, result interface{}) error {
@@ -52,4 +57,12 @@ func NewConfig() *Config {
 	return &Config{
 		Plays: make([]*Play, 0),
 	}
+}
+
+func (c *Config) YAML() ([]byte, error) {
+	return yaml.Marshal(c)
+}
+
+func (c *Config) JSON() ([]byte, error) {
+	return json.Marshal(c)
 }
