@@ -230,12 +230,8 @@ var inventoryLoaderCmd = &cobra.Command{
 
 func init() {
 	inventoryValuesCmd.Flags().BoolP("json", "j", false, "Output json instead of yaml")
-	inventoryValuesCmd.Flags().BoolP("skip-decrypt", "", false, "Skip ejson decryption")
-	inventoryValuesCmd.Flags().BoolP("skip-eval", "", false, "Skip spruce evaluation")
 	inventoryLoaderCmd.Flags().BoolP("unsafe", "", false, "Show confidential loader info")
 	viper.BindPFlag("json", inventoryValuesCmd.Flags().Lookup("json"))
-	viper.BindPFlag("skip-decrypt", inventoryValuesCmd.Flags().Lookup("skip-decrypt"))
-	viper.BindPFlag("skip-eval", inventoryValuesCmd.Flags().Lookup("skip-eval"))
 	viper.BindPFlag("unsafe", inventoryLoaderCmd.Flags().Lookup("unsafe"))
 
 	inventoryCmd.AddCommand(inventoryListCmd)

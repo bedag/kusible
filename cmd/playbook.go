@@ -95,9 +95,7 @@ var playbookCmd = &cobra.Command{
 }
 
 func init() {
-	playbookCmd.Flags().BoolP("skip-decrypt", "", false, "Skip ejson decryption")
 	playbookCmd.Flags().BoolP("skip-cluster-inventory", "", false, "Skips downloading the cluster inventory ConfigMap")
-	viper.BindPFlag("skip-decrypt", playbookCmd.Flags().Lookup("skip-decrypt"))
 	viper.BindPFlag("skip-cluster-inventory", playbookCmd.Flags().Lookup("skip-cluster-inventory"))
 	rootCmd.AddCommand(playbookCmd)
 }
