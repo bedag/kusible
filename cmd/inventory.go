@@ -207,7 +207,6 @@ var inventoryLoaderCmd = &cobra.Command{
 			log.WithFields(log.Fields{
 				"error": err.Error(),
 			}).Fatal("Failed to compile inventory.")
-			return
 		}
 
 		entry, ok := inv.Entries()[name]
@@ -222,7 +221,6 @@ var inventoryLoaderCmd = &cobra.Command{
 				"entry": name,
 				"error": err.Error(),
 			}).Fatal("Failed to get loader config")
-			return
 		}
 		fmt.Printf("Loader type: %s\n", entry.Kubeconfig().Loader().Type())
 		fmt.Println("Loader config: ")

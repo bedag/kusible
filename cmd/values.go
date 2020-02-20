@@ -56,7 +56,6 @@ var valuesCmd = &cobra.Command{
 			log.WithFields(log.Fields{
 				"error": err.Error(),
 			}).Fatal("Failed to compile group vars.")
-			return
 		}
 
 		var result []byte
