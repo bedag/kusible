@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bedag/kusible/internal/third_party/deepcopy"
 	"github.com/bedag/kusible/internal/wrapper/spruce"
 	config "github.com/bedag/kusible/pkg/playbook/config"
 	"github.com/bedag/kusible/pkg/target"
@@ -65,8 +66,6 @@ func NewFromReader(reader *bufio.Reader, targets *target.Targets, skipEval bool)
 	result := make(map[string]*config.Config)
 
 	for _, target := range targets.Targets() {
-		// TODO: this should be the data of the cluster inventory ConfigMap
-		var mergeResult map[string]interface{}
 		// Based on the groups of the target and the groups of each play,
 		// generate a new base config containing only the plays relevant
 		// for the current target. As we have to merge the result with
@@ -75,6 +74,19 @@ func NewFromReader(reader *bufio.Reader, targets *target.Targets, skipEval bool)
 		playbookMap, err := baseConfig.ApplicableMap(target.Entry().Groups())
 		if err != nil {
 			return nil, fmt.Errorf("failed to get plays for target '%s': %s", target.Entry().Name(), err)
+		}
+
+		// TODO: this should be the data of the cluster inventory ConfigMap
+		var mergeResult map[string]interface{}
+
+		clusterInventory, err := target.Entry().ClusterInventory()
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve cluster-inventory for target '%s': %s", target.Entry().Name(), err)
+		}
+
+		mergeResult, err = deepcopy.Map(*clusterInventory)
+		if err != nil {
+			return nil, fmt.Errorf("failed to copy cluster-inventory")
 		}
 
 		err = mergo.Merge(&mergeResult, playbookMap, mergo.WithOverride)
