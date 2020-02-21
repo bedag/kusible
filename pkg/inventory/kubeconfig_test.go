@@ -40,28 +40,7 @@ func TestNewKubeconfigFromConfig(t *testing.T) {
 
 	kubeconfig, err := NewKubeconfigFromConfig(kubeconfigConfig)
 	assert.NilError(t, err)
-	assert.Equal(t, "file", kubeconfig.loader.Type())
-	resultConfigBytes, err := kubeconfig.Yaml()
-	assert.NilError(t, err)
-	resultClientConfig, err := kubeconfig.Config()
-	assert.NilError(t, err)
-	resultRawConfig, err := resultClientConfig.RawConfig()
-	assert.NilError(t, err)
-	resultCurrentContext := resultRawConfig.CurrentContext
-	assert.Assert(t, resultCurrentContext != "")
-
-	expectedConfigPath := "testdata/kubeconfig"
-	assert.NilError(t, err)
-	expectedConfigBytesIn, err := ioutil.ReadFile(expectedConfigPath)
-	assert.NilError(t, err)
-	expectedConfig, err := clientcmd.Load(expectedConfigBytesIn)
-	assert.NilError(t, err)
-	if expectedConfig.CurrentContext == "" {
-		expectedConfig.CurrentContext = resultCurrentContext
-	}
-	expectedConfigBytes, err := clientcmd.Write(*expectedConfig)
-	assert.NilError(t, err)
-	assert.Equal(t, string(expectedConfigBytes), string(resultConfigBytes))
+	verifyKubeconfig(t, kubeconfig)
 }
 
 func TestNewKubeconfigFromLoader(t *testing.T) {
@@ -75,6 +54,11 @@ func TestNewKubeconfigFromLoader(t *testing.T) {
 
 	kubeconfig, err := NewKubeconfigFromLoader(ldr)
 	assert.NilError(t, err)
+
+	verifyKubeconfig(t, kubeconfig)
+}
+
+func verifyKubeconfig(t *testing.T, kubeconfig *Kubeconfig) {
 	assert.Equal(t, "file", kubeconfig.loader.Type())
 	resultConfigBytes, err := kubeconfig.Yaml()
 	assert.NilError(t, err)
@@ -119,4 +103,18 @@ func TestSetClient(t *testing.T) {
 	resultClientset, err := k.Client()
 	assert.NilError(t, err)
 	assert.Equal(t, clientset, resultClientset)
+}
+
+func TestClientFromKubeconfig(t *testing.T) {
+	kubeconfigConfig := &invconfig.Kubeconfig{
+		Backend: "file",
+		Params: &invconfig.Params{
+			"path": "testdata/kubeconfig",
+		},
+	}
+
+	kubeconfig, err := NewKubeconfigFromConfig(kubeconfigConfig)
+	assert.NilError(t, err)
+	_, err = kubeconfig.Client()
+	assert.NilError(t, err)
 }

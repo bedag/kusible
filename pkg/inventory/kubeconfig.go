@@ -133,7 +133,7 @@ func (k *Kubeconfig) loadConfig() error {
 		}
 	}
 
-	clientConfig := clientcmd.NewDefaultClientConfig(*rawConfig, nil)
+	clientConfig := clientcmd.NewDefaultClientConfig(*rawConfig, &clientcmd.ConfigOverrides{})
 
 	k.config = clientConfig
 	return nil

@@ -19,6 +19,9 @@ import (
 	"testing"
 
 	"gotest.tools/assert"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestEntryMatchLimits(t *testing.T) {
@@ -48,4 +51,98 @@ func TestEntryValidGroups(t *testing.T) {
 	result, err := entry.ValidGroups(limits)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, limits, result)
+}
+
+func TestClusterInventory(t *testing.T) {
+	configNamespace := "kube-system"
+	tests := map[string]struct {
+		configmap   *v1.ConfigMap
+		errExpected bool
+	}{
+		"working empty": {
+			configmap: &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "cluster-inventory",
+					Namespace:   configNamespace,
+					Annotations: map[string]string{},
+				},
+				Data: map[string]string{
+					"inventory": "{}",
+				},
+			},
+			errExpected: false,
+		},
+		"missing inventory": {
+			configmap: &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "cluster-inventory",
+					Namespace:   configNamespace,
+					Annotations: map[string]string{},
+				},
+				Data: map[string]string{},
+			},
+			errExpected: true,
+		},
+		"inventory unparsable": {
+			configmap: &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "cluster-inventory",
+					Namespace:   configNamespace,
+					Annotations: map[string]string{},
+				},
+				Data: map[string]string{
+					"inventory": "{",
+				},
+			},
+			errExpected: true,
+		},
+		"wrong namespace": {
+			configmap: &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "cluster-inventory",
+					Namespace:   "wrong",
+					Annotations: map[string]string{},
+				},
+				Data: map[string]string{
+					"inventory": "{}",
+				},
+			},
+			errExpected: true,
+		},
+		"wrong ConfigMap": {
+			configmap: &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "some-inventory",
+					Namespace:   configNamespace,
+					Annotations: map[string]string{},
+				},
+				Data: map[string]string{
+					"inventory": "{}",
+				},
+			},
+			errExpected: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			clientset := fake.NewSimpleClientset(tc.configmap)
+			assert.Assert(t, clientset != nil)
+
+			k := &Kubeconfig{
+				loader: nil,
+				config: nil,
+				client: clientset,
+			}
+
+			entry := &Entry{
+				name:            "test",
+				groups:          []string{"test"},
+				configNamespace: configNamespace,
+				kubeconfig:      k,
+			}
+			_, err := entry.ClusterInventory()
+			assert.Equal(t, tc.errExpected, err != nil)
+		})
+	}
 }
