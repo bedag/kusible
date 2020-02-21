@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bedag/kusible/internal/wrapper/spruce"
 	config "github.com/bedag/kusible/pkg/playbook/config"
-	"github.com/bedag/kusible/pkg/spruce"
 	"github.com/bedag/kusible/pkg/target"
 	"github.com/imdario/mergo"
 )

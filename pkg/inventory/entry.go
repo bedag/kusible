@@ -54,7 +54,7 @@ func NewEntryFromConfig(config *invconfig.Entry) (*Entry, error) {
 
 	// using mergo just for this would be overkill
 	if entry.configNamespace == "" {
-		entry.configNamespace = "kube-config"
+		entry.configNamespace = "kube-system"
 	}
 
 	return entry, nil

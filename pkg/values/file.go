@@ -21,8 +21,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/bedag/kusible/pkg/ejson"
-	"github.com/bedag/kusible/pkg/spruce"
+	"github.com/bedag/kusible/internal/wrapper/ejson"
+	"github.com/bedag/kusible/internal/wrapper/spruce"
 
 	"sigs.k8s.io/yaml"
 )

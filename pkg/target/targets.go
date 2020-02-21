@@ -19,7 +19,7 @@ package target
 import (
 	"fmt"
 
-	"github.com/bedag/kusible/pkg/ejson"
+	"github.com/bedag/kusible/internal/wrapper/ejson"
 	inv "github.com/bedag/kusible/pkg/inventory"
 )
 

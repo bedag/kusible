@@ -22,8 +22,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bedag/kusible/pkg/ejson"
-	"github.com/bedag/kusible/pkg/spruce"
+	"github.com/bedag/kusible/internal/wrapper/ejson"
+	"github.com/bedag/kusible/internal/wrapper/spruce"
 	"github.com/imdario/mergo"
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"

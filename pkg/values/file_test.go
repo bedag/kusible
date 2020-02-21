@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/bedag/kusible/pkg/ejson"
+	"github.com/bedag/kusible/internal/wrapper/ejson"
 	"gotest.tools/assert"
 	"sigs.k8s.io/yaml"
 )

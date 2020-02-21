@@ -19,7 +19,7 @@ package playbook
 import (
 	"testing"
 
-	"github.com/bedag/kusible/pkg/ejson"
+	"github.com/bedag/kusible/internal/wrapper/ejson"
 	"github.com/bedag/kusible/pkg/inventory"
 	"github.com/bedag/kusible/pkg/target"
 	"gotest.tools/assert"

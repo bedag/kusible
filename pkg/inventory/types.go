@@ -17,7 +17,7 @@ limitations under the License.
 package inventory
 
 import (
-	"github.com/bedag/kusible/pkg/ejson"
+	"github.com/bedag/kusible/internal/wrapper/ejson"
 	"github.com/bedag/kusible/pkg/loader"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"

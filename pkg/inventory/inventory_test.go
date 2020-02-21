@@ -21,7 +21,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/bedag/kusible/pkg/ejson"
+	"github.com/bedag/kusible/internal/wrapper/ejson"
 	"github.com/bedag/kusible/pkg/loader"
 	"github.com/go-test/deep"
 	"gotest.tools/assert"
@@ -72,7 +72,7 @@ func TestInventoryBare(t *testing.T) {
 	assert.Equal(t, "s3", entry.kubeconfig.loader.Type())
 	assert.Equal(t, "all", entry.groups[0])
 	assert.Equal(t, "test", entry.groups[1])
-	assert.Equal(t, "kube-config", entry.configNamespace)
+	assert.Equal(t, "kube-system", entry.configNamespace)
 	expectedPath := fmt.Sprintf("%s/%s", expected[0], "kubeconfig/kubeconfig.enc.7z")
 	backendConfig := entry.kubeconfig.loader.Config().(*loader.S3Config)
 	assert.Equal(t, expectedPath, backendConfig.Path)
