@@ -7,3 +7,4 @@ vars:
     chart01: '>0.0.0-0'
   CHART01_VALUES:
     key01: value01
+    key02: (( grab vars.foo ))

@@ -23,6 +23,9 @@ import (
 	"github.com/bedag/kusible/pkg/inventory"
 	"github.com/bedag/kusible/pkg/target"
 	"gotest.tools/assert"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestPlaybook(t *testing.T) {
@@ -55,6 +58,25 @@ func TestPlaybook(t *testing.T) {
 
 			targets, err := target.NewTargets(".*", []string{}, tc.vars, inv, skipEval, &ejsonSettings)
 			assert.NilError(t, err)
+			// create fake clients for each target so we can simulate
+			// retrieving the cluster-inventory for each
+			for _, tgt := range targets.Targets() {
+				clientset := fake.NewSimpleClientset(&v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "cluster-inventory",
+						Namespace:   tgt.Entry().ConfigNamespace(),
+						Annotations: map[string]string{},
+					},
+					Data: map[string]string{
+						"inventory": `{
+							"vars": {
+								"foo": "bar"
+							}
+						}`,
+					},
+				})
+				tgt.Entry().Kubeconfig().SetClient(clientset)
+			}
 
 			playbooks, err := New(tc.playbook, targets, false)
 			assert.NilError(t, err)

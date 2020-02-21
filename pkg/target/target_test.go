@@ -37,6 +37,7 @@ func TestTarget(t *testing.T) {
 		"key1": "file-02",
 		"key2": "file-02",
 		"key3": "file-01",
+		"eval": "file-02",
 	}
 	entry, err := inventory.NewEntryFromConfig(config)
 	assert.NilError(t, err)

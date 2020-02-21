@@ -39,11 +39,13 @@ func TestTargets(t *testing.T) {
 	tests := map[string]struct {
 		filter   string
 		limits   []string
+		skipEval bool
 		expected expected
 	}{
 		"all": {
-			filter: ".*",
-			limits: []string{},
+			filter:   ".*",
+			limits:   []string{},
+			skipEval: false,
 			expected: expected{
 				entries: []string{"cluster-01", "cluster-02"},
 				values: map[string]interface{}{
@@ -51,6 +53,30 @@ func TestTargets(t *testing.T) {
 						"key1": "file-01",
 						"key2": "file-01",
 						"key3": "file-01",
+						"eval": "file-01",
+					},
+					"cluster-02": map[string]interface{}{
+						"key1": "file-03",
+						"key2": "file-01",
+						"key3": "file-01",
+						"eval": "file-03",
+					},
+				},
+				error: false,
+			},
+		},
+		"skip-eval": {
+			filter:   ".*",
+			limits:   []string{},
+			skipEval: true,
+			expected: expected{
+				entries: []string{"cluster-01", "cluster-02"},
+				values: map[string]interface{}{
+					"cluster-01": map[string]interface{}{
+						"key1": "file-01",
+						"key2": "file-01",
+						"key3": "file-01",
+						"eval": "(( grab key1 ))",
 					},
 					"cluster-02": map[string]interface{}{
 						"key1": "file-03",
@@ -62,8 +88,9 @@ func TestTargets(t *testing.T) {
 			},
 		},
 		"none(empty)": {
-			filter: "",
-			limits: []string{},
+			filter:   "",
+			limits:   []string{},
+			skipEval: false,
 			expected: expected{
 				entries: []string{},
 				values:  map[string]interface{}{},
@@ -71,8 +98,9 @@ func TestTargets(t *testing.T) {
 			},
 		},
 		"none(unknown)": {
-			filter: "unknown",
-			limits: []string{},
+			filter:   "unknown",
+			limits:   []string{},
+			skipEval: false,
 			expected: expected{
 				entries: []string{},
 				values:  map[string]interface{}{},
@@ -80,8 +108,9 @@ func TestTargets(t *testing.T) {
 			},
 		},
 		"limited": {
-			filter: ".*",
-			limits: []string{"group-03"},
+			filter:   ".*",
+			limits:   []string{"group-03"},
+			skipEval: false,
 			expected: expected{
 				entries: []string{"cluster-02"},
 				values: map[string]interface{}{
@@ -89,14 +118,16 @@ func TestTargets(t *testing.T) {
 						"key1": "file-03",
 						"key2": "file-01",
 						"key3": "file-01",
+						"eval": "file-03",
 					},
 				},
 				error: false,
 			},
 		},
 		"filtered": {
-			filter: ".*-01",
-			limits: []string{},
+			filter:   ".*-01",
+			limits:   []string{},
+			skipEval: false,
 			expected: expected{
 				entries: []string{"cluster-01"},
 				values: map[string]interface{}{
@@ -104,14 +135,16 @@ func TestTargets(t *testing.T) {
 						"key1": "file-01",
 						"key2": "file-01",
 						"key3": "file-01",
+						"eval": "file-01",
 					},
 				},
 				error: false,
 			},
 		},
 		"contradicting": {
-			filter: ".*-01",
-			limits: []string{"group-03"},
+			filter:   ".*-01",
+			limits:   []string{"group-03"},
+			skipEval: false,
 			expected: expected{
 				entries: []string{},
 				values:  map[string]interface{}{},
@@ -122,7 +155,7 @@ func TestTargets(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			targets, err := NewTargets(tc.filter, tc.limits, "testdata/group_vars", inv, false, &ejsonSettings)
+			targets, err := NewTargets(tc.filter, tc.limits, "testdata/group_vars", inv, tc.skipEval, &ejsonSettings)
 			assert.Equal(t, tc.expected.error, err != nil)
 			if !tc.expected.error {
 				gotTargets := targets.Targets()
