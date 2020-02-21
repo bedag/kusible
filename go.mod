@@ -23,6 +23,7 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
 	github.com/starkandwayne/goutils v0.0.0-20190115202530-896b8a6904be // indirect
+	github.com/stretchr/testify v1.4.0
 	github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect

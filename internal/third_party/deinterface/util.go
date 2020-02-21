@@ -21,14 +21,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-Copied as-is from https://github.com/geofffranks/spruce/blob/a17d090c935bb2252af1bf84c1220f24e791e9c3/json.go
+Based on https://github.com/geofffranks/spruce/blob/a17d090c935bb2252af1bf84c1220f24e791e9c3/json.go
 */
 
-package spruce
+package deinterface
 
 import "fmt"
 
-func deinterface(o interface{}, strict bool) (interface{}, error) {
+func Map(o interface{}, strict bool) (interface{}, error) {
 	switch o.(type) {
 	case map[interface{}]interface{}:
 		return deinterfaceMap(o.(map[interface{}]interface{}), strict)
@@ -46,7 +46,7 @@ func addKeyToMap(m map[string]interface{}, k interface{}, v interface{}, strict 
 		//NewWarningError(eContextAll, "@Y{Duplicate key detected: %s}", vs).Warn()
 		return nil
 	}
-	dv, err := deinterface(v, strict)
+	dv, err := Map(v, strict)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func deinterfaceMap(o map[interface{}]interface{}, strict bool) (map[string]inte
 func deinterfaceList(o []interface{}, strict bool) ([]interface{}, error) {
 	l := make([]interface{}, len(o))
 	for i, v := range o {
-		v_, err := deinterface(v, strict)
+		v_, err := Map(v, strict)
 		if err != nil {
 			return nil, err
 		}

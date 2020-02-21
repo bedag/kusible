@@ -19,6 +19,7 @@ package spruce
 import (
 	"errors"
 
+	"github.com/bedag/kusible/internal/third_party/deinterface"
 	"github.com/geofffranks/simpleyaml"
 	"github.com/geofffranks/spruce"
 	"github.com/mitchellh/mapstructure"
@@ -67,7 +68,7 @@ func Eval(data *map[string]interface{}, skipEval bool, pruneKeys []string) error
 	}
 
 	// convert back
-	di, err := deinterface(evaluator.Tree, true)
+	di, err := deinterface.Map(evaluator.Tree, true)
 
 	decoderConfig := &mapstructure.DecoderConfig{ZeroFields: true, Result: data}
 	decoder, err := mapstructure.NewDecoder(decoderConfig)
