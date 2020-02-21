@@ -120,6 +120,19 @@ func TestFileBackendLoad(t *testing.T) {
 	assert.Equal(t, string(expectedConfigBytes), string(resultConfigBytes))
 }
 
+func TestFileBackendNonexisting(t *testing.T) {
+	decryptKey := "test123"
+	path := "nonexistingxxx"
+
+	backend := NewFileBackend(path, decryptKey)
+	if backend == nil {
+		t.Errorf("failed to create file backend")
+	}
+
+	_, err := backend.Load()
+	assert.Assert(t, err != nil)
+}
+
 func TestFileConfig(t *testing.T) {
 	params := map[string]interface{}{
 		"decrypt_key": "aaaaa",
