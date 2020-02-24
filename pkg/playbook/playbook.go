@@ -44,16 +44,16 @@ Given a list of targets, the playbook loader
 	* unmarshalls the merged/evaluated playbook/value map into a valid playbook config structure
 */
 
-func New(path string, targets *target.Targets, skipEval bool) (map[string]*config.Config, error) {
+func New(path string, targets *target.Targets) (map[string]*config.Config, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
-	return NewFromReader(bufio.NewReader(file), targets, skipEval)
+	return NewFromReader(bufio.NewReader(file), targets)
 }
 
-func NewFromReader(reader *bufio.Reader, targets *target.Targets, skipEval bool) (map[string]*config.Config, error) {
+func NewFromReader(reader *bufio.Reader, targets *target.Targets) (map[string]*config.Config, error) {
 	// Get the base config of the given playbook
 	// The base config contains all playbook data but only the name and groups of
 	// each play are required and parsed. We need the groups of the plays
@@ -85,7 +85,7 @@ func NewFromReader(reader *bufio.Reader, targets *target.Targets, skipEval bool)
 
 		mergeResult, err = deepcopy.Map(*clusterInventory)
 		if err != nil {
-			return nil, fmt.Errorf("failed to copy cluster-inventory")
+			return nil, fmt.Errorf("failed to copy cluster-inventory for target '%s': %s", target.Entry().Name(), err)
 		}
 
 		err = mergo.Merge(&mergeResult, playbookMap, mergo.WithOverride)
