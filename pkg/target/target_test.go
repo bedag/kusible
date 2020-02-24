@@ -33,16 +33,40 @@ func TestTarget(t *testing.T) {
 			Params: new(invconf.Params),
 		},
 	}
-	wantValues := map[string]interface{}{
-		"key1": "file-02",
-		"key2": "file-02",
-		"key3": "file-01",
-		"eval": "file-02",
+
+	tests := map[string]struct {
+		skipEval bool
+		want     map[string]interface{}
+	}{
+		"with-eval": {
+			skipEval: false,
+			want: map[string]interface{}{
+				"key1": "file-02",
+				"key2": "file-02",
+				"key3": "file-01",
+				"eval": "file-02",
+			},
+		},
+		"without-eval": {
+			skipEval: true,
+			want: map[string]interface{}{
+				"key1": "file-02",
+				"key2": "file-02",
+				"key3": "file-01",
+				"eval": "(( grab key1 ))",
+			},
+		},
 	}
-	entry, err := inventory.NewEntryFromConfig(config)
-	assert.NilError(t, err)
-	target, err := New(entry, "testdata/group_vars", false, &ejson.Settings{})
-	assert.NilError(t, err)
-	gotValues := target.Values().Map()
-	assert.DeepEqual(t, wantValues, gotValues)
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			entry, err := inventory.NewEntryFromConfig(config)
+			assert.NilError(t, err)
+			target, err := New(entry, "testdata/group_vars", tc.skipEval, &ejson.Settings{})
+			assert.NilError(t, err)
+			got := target.Values().Map()
+			assert.DeepEqual(t, tc.want, got)
+		})
+	}
+
 }

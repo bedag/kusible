@@ -45,16 +45,18 @@ func TestFile(t *testing.T) {
 	marshalMethods := []string{"JSON", "YAML"}
 	tests := map[string]struct {
 		input    string
+		skipEval bool
 		expected string
 	}{
-		"simple":                {input: "simple.yml", expected: "simple.expected.yml"},
-		"simple-ejson":          {input: "simple.ejson", expected: "simple.expected.yml"},
-		"spruce-eval":           {input: "spruce-eval.yml", expected: "spruce-eval.expected.yml"},
-		"spruce-eval-ejson":     {input: "spruce-eval.ejson", expected: "spruce-eval.expected.yml"},
-		"simple-ejson-wrongkey": {input: "simple-wrongkey.ejson", expected: "simple-wrongkey.ejson"},
-		"fully-empty":           {input: "fully-empty.yml", expected: "empty.yml"},
-		"empty-yaml":            {input: "empty.yml", expected: "empty.yml"},
-		"empty-json":            {input: "empty.json", expected: "empty.yml"},
+		"simple":                {input: "simple.yml", skipEval: false, expected: "simple.expected.yml"},
+		"simple-ejson":          {input: "simple.ejson", skipEval: false, expected: "simple.expected.yml"},
+		"spruce-eval":           {input: "spruce-eval.yml", skipEval: false, expected: "spruce-eval.expected.yml"},
+		"spruce-skip-eval":      {input: "spruce-eval.yml", skipEval: true, expected: "spruce-eval.yml"},
+		"spruce-eval-ejson":     {input: "spruce-eval.ejson", skipEval: false, expected: "spruce-eval.expected.yml"},
+		"simple-ejson-wrongkey": {input: "simple-wrongkey.ejson", skipEval: false, expected: "simple-wrongkey.ejson"},
+		"fully-empty":           {input: "fully-empty.yml", skipEval: false, expected: "empty.yml"},
+		"empty-yaml":            {input: "empty.yml", skipEval: false, expected: "empty.yml"},
+		"empty-json":            {input: "empty.json", skipEval: false, expected: "empty.yml"},
 	}
 
 	ejsonSettings := ejson.Settings{
@@ -63,7 +65,7 @@ func TestFile(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			f, err := NewFile("testdata/file/"+tc.input, false, ejsonSettings)
+			f, err := NewFile("testdata/file/"+tc.input, tc.skipEval, ejsonSettings)
 			assert.NilError(t, err)
 			got := f.Map()
 			assert.NilError(t, err)
