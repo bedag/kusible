@@ -76,7 +76,7 @@ func TestPlaybook(t *testing.T) {
 				tgt.Entry().Kubeconfig().SetClient(clientset)
 			}
 
-			playbooks, err := New(tc.playbook, targets, false)
+			playbooks, err := New(tc.playbook, targets)
 			assert.NilError(t, err)
 			assert.Equal(t, len(targets.Targets()), len(playbooks))
 		})

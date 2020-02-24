@@ -37,9 +37,7 @@ var playbookCmd = &cobra.Command{
 		limits := viper.GetStringSlice("limit")
 		groupVarsDir := viper.GetString("group-vars-dir")
 		inventoryPath := viper.GetString("inventory")
-		skipEval := viper.GetBool("skip-eval")
 		skipDecrypt := viper.GetBool("skip-decrypt")
-		skipClusterInventory := viper.GetBool("skip-cluster-inventory")
 		ejsonPrivKey := viper.GetString("ejson-privkey")
 		ejsonKeyDir := viper.GetString("ejson-key-dir")
 
@@ -49,7 +47,7 @@ var playbookCmd = &cobra.Command{
 			// if we want to retrieve the cluster inventory ConfigMap
 			// we need a kubeconfig to retrieve it, so we cannot skip
 			// the decryption of the inventory settings
-			SkipDecrypt: !skipClusterInventory,
+			SkipDecrypt: false,
 		}
 
 		tgtEjsonSettings := ejson.Settings{
@@ -60,22 +58,21 @@ var playbookCmd = &cobra.Command{
 
 		// if we do not retrieve the cluster inventory ConfigMap, we do not need to retrieve
 		// the kubeconfig
-		skipKubeconfig := skipClusterInventory
-		inventory, err := inventory.NewInventory(inventoryPath, invEjsonSettings, skipKubeconfig)
+		inventory, err := inventory.NewInventory(inventoryPath, invEjsonSettings, false)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
 			}).Fatal("Failed to compile inventory.")
 		}
 
-		targets, err := target.NewTargets(".*", limits, groupVarsDir, inventory, skipEval, &tgtEjsonSettings)
+		targets, err := target.NewTargets(".*", limits, groupVarsDir, inventory, true, &tgtEjsonSettings)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
 			}).Fatal("Failed to compile values for inventory entries.")
 		}
 
-		playbooks, err := playbook.New(playbookFile, targets, skipEval)
+		playbooks, err := playbook.New(playbookFile, targets)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
@@ -99,7 +96,5 @@ var playbookCmd = &cobra.Command{
 }
 
 func init() {
-	playbookCmd.Flags().BoolP("skip-cluster-inventory", "", false, "Skips downloading the cluster inventory ConfigMap")
-	viper.BindPFlag("skip-cluster-inventory", playbookCmd.Flags().Lookup("skip-cluster-inventory"))
 	rootCmd.AddCommand(playbookCmd)
 }
