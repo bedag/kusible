@@ -69,9 +69,7 @@ func TestPlaybook(t *testing.T) {
 					},
 					Data: map[string]string{
 						"inventory": `{
-							"vars": {
-								"foo": "bar"
-							}
+							"foo": "bar"
 						}`,
 					},
 				})
