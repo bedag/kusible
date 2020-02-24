@@ -76,7 +76,6 @@ func NewFromReader(reader *bufio.Reader, targets *target.Targets, skipEval bool)
 			return nil, fmt.Errorf("failed to get plays for target '%s': %s", target.Entry().Name(), err)
 		}
 
-		// TODO: this should be the data of the cluster inventory ConfigMap
 		var mergeResult map[string]interface{}
 
 		clusterInventory, err := target.Entry().ClusterInventory()
