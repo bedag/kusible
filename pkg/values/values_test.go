@@ -43,11 +43,14 @@ func TestValues(t *testing.T) {
 
 	tests := map[string]struct {
 		input    string
+		skipEval bool
 		expected string
 	}{
-		"file": {input: "file/spruce-eval.yml", expected: "file/spruce-eval.expected.yml"},
+		"file":           {input: "file/spruce-eval.yml", skipEval: false, expected: "file/spruce-eval.expected.yml"},
+		"file-skip-eval": {input: "file/spruce-eval.yml", skipEval: true, expected: "file/spruce-eval.yml"},
 		// TODO: possible race condition? Execute multiple times uncached
-		"dir": {input: "file", expected: "file/spruce-eval.expected.yml"},
+		"dir":           {input: "file", skipEval: false, expected: "file/spruce-eval.expected.yml"},
+		"dir-skip-eval": {input: "file", skipEval: true, expected: "file/spruce-eval.yml"},
 	}
 
 	ejsonSettings := ejson.Settings{
@@ -56,7 +59,7 @@ func TestValues(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			d, err := New("testdata/"+tc.input, []string{}, false, ejsonSettings)
+			d, err := New("testdata/"+tc.input, []string{}, tc.skipEval, ejsonSettings)
 			assert.NilError(t, err)
 			got := d.Map()
 			assert.NilError(t, err)

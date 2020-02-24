@@ -35,7 +35,7 @@ func New(path string, groups []string, skipEval bool, ejsonSettings ejson.Settin
 	if stat.Mode().IsRegular() {
 		// the path provided is a file, treat it as a single value
 		// file, thus loading it with ejson and spruc operator support
-		result, err = NewFile(path, false, ejsonSettings)
+		result, err = NewFile(path, skipEval, ejsonSettings)
 		if err != nil {
 			return nil, err
 		}
@@ -51,7 +51,7 @@ func New(path string, groups []string, skipEval bool, ejsonSettings ejson.Settin
 				return nil, err
 			}
 		}
-		result, err = NewDirectory(path, dirGroups, false, ejsonSettings)
+		result, err = NewDirectory(path, dirGroups, skipEval, ejsonSettings)
 		if err != nil {
 			return nil, err
 		}

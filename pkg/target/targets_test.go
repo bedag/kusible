@@ -82,6 +82,7 @@ func TestTargets(t *testing.T) {
 						"key1": "file-03",
 						"key2": "file-01",
 						"key3": "file-01",
+						"eval": "(( grab key1 ))",
 					},
 				},
 				error: false,
