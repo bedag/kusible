@@ -72,16 +72,17 @@ var playbookCmd = &cobra.Command{
 			}).Fatal("Failed to compile values for inventory entries.")
 		}
 
-		playbooks, err := playbook.New(playbookFile, targets)
+		// TODO: add parameter to skip eval and skip cluster inventory
+		playbookSet, err := playbook.NewSet(playbookFile, targets, false, false)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
 			}).Fatal("Failed to compile playbooks.")
 		}
 
-		for name, config := range playbooks {
-			if len(config.Plays) > 0 {
-				result, err := config.YAML()
+		for name, playbook := range playbookSet {
+			if len(playbook.Config.Plays) > 0 {
+				result, err := playbook.Config.YAML()
 				if err != nil {
 					log.WithFields(log.Fields{
 						"entry": name,
