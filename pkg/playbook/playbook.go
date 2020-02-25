@@ -17,94 +17,61 @@ limitations under the License.
 package playbook
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 
 	"github.com/bedag/kusible/internal/third_party/deepcopy"
 	"github.com/bedag/kusible/internal/wrapper/spruce"
-	config "github.com/bedag/kusible/pkg/playbook/config"
+	"github.com/bedag/kusible/pkg/playbook/config"
 	"github.com/bedag/kusible/pkg/target"
 	"github.com/imdario/mergo"
 )
 
-/*
-Each run-relevant inventory entry (target) has its own "view" on the given playbook containting
-only the relevant plays for its groups.
-
-Given a list of targets, the playbook loader
-
-* loads the playbook (without evaluation)
-* for each target
-	* filters the plays based on the given groups
-	* retrieves the cluster-inventory of the target (optional)
-	* loads the values relevant for the given groups (without evaluation)
-	* merges the cluster-inventory data, the target values and the filtered playbook
-	* evaluates the result
-	* unmarshalls the merged/evaluated playbook/value map into a valid playbook config structure
-*/
-
-func New(path string, targets *target.Targets) (map[string]*config.Config, error) {
-	file, err := os.Open(path)
+func New(baseConfig *config.BaseConfig, target *target.Target, skipEval bool, skipClusterInv bool) (*Playbook, error) {
+	// Based on the groups of the target and the groups of each play,
+	// generate a new base config containing only the plays relevant
+	// for the current target. As we have to merge the result with
+	// data structures in the next step, retrieve a map instead of the
+	// base config itself
+	playbookMap, err := baseConfig.ApplicableMap(target.Entry().Groups())
 	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	return NewFromReader(bufio.NewReader(file), targets)
-}
-
-func NewFromReader(reader *bufio.Reader, targets *target.Targets) (map[string]*config.Config, error) {
-	// Get the base config of the given playbook
-	// The base config contains all playbook data but only the name and groups of
-	// each play are required and parsed. We need the groups of the plays
-	// to generate a unique set of plays applicable to each target
-	baseConfig, err := config.NewBaseConfigFromReader(reader)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get plays: %s", err)
 	}
 
-	result := make(map[string]*config.Config)
+	var mergeResult map[string]interface{}
 
-	for _, target := range targets.Targets() {
-		// Based on the groups of the target and the groups of each play,
-		// generate a new base config containing only the plays relevant
-		// for the current target. As we have to merge the result with
-		// data structures in the next step, retrieve a map instead of the
-		// base config itself
-		playbookMap, err := baseConfig.ApplicableMap(target.Entry().Groups())
-		if err != nil {
-			return nil, fmt.Errorf("failed to get plays for target '%s': %s", target.Entry().Name(), err)
-		}
-
-		var mergeResult map[string]interface{}
-
+	if !skipClusterInv {
 		clusterInventory, err := target.Entry().ClusterInventory()
 		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve cluster-inventory for target '%s': %s", target.Entry().Name(), err)
+			return nil, fmt.Errorf("failed to retrieve cluster-inventory: %s", err)
 		}
 
 		mergeResult, err = deepcopy.Map(*clusterInventory)
 		if err != nil {
-			return nil, fmt.Errorf("failed to copy cluster-inventory for target '%s': %s", target.Entry().Name(), err)
+			return nil, fmt.Errorf("failed to copy cluster-inventory: %s", err)
 		}
+	}
 
-		err = mergo.Merge(&mergeResult, playbookMap, mergo.WithOverride)
-		if err != nil {
-			return nil, fmt.Errorf("failed merge cluster-inventory and playbook for target '%s': %s", target.Entry().Name(), err)
-		}
+	err = mergo.Merge(&mergeResult, playbookMap, mergo.WithOverride)
+	if err != nil {
+		return nil, fmt.Errorf("failed merge cluster-inventory and playbook: %s", err)
+	}
 
-		values := target.Values().Map()
-		err = mergo.Merge(&mergeResult, values, mergo.WithOverride)
-		if err != nil {
-			return nil, fmt.Errorf("failed merge values and playbook for target '%s': %s", target.Entry().Name(), err)
-		}
+	values := target.Values().Map()
+	err = mergo.Merge(&mergeResult, values, mergo.WithOverride)
+	if err != nil {
+		return nil, fmt.Errorf("failed merge values and playbook: %s", err)
+	}
 
+	result := &Playbook{
+		Raw: mergeResult,
+	}
+	if !skipEval {
 		err = spruce.Eval(&mergeResult, false, []string{})
 		if err != nil {
 			// TODO: add optional way to dump the unevaluated yaml here
 			//doc, _ := yaml.Marshal(mergeResult)
 			//fmt.Printf("%s\n", string(doc))
-			return nil, fmt.Errorf("failed evaluate playbook config for target '%s': %s", target.Entry().Name(), err)
+			return nil, fmt.Errorf("failed evaluate playbook config: %s", err)
 		}
 
 		// TODO: if playbookMap does not contain any plays, but
@@ -115,10 +82,9 @@ func NewFromReader(reader *bufio.Reader, targets *target.Targets) (map[string]*c
 		//       executed for the given inventory entry
 		targetConfig, err := config.NewConfigFromMap(&mergeResult)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create playbook config for target '%s': %s", target.Entry().Name(), err)
+			return nil, fmt.Errorf("failed to create playbook config: %s", err)
 		}
-
-		result[target.Entry().Name()] = targetConfig
+		result.Config = targetConfig
 	}
 
 	return result, nil

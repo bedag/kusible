@@ -30,19 +30,49 @@ import (
 
 func TestPlaybook(t *testing.T) {
 	tests := map[string]struct {
-		inventory string
-		vars      string
-		playbook  string
+		inventory      string
+		vars           string
+		playbook       string
+		skipEval       bool
+		skipClusterInv bool
+		hasConfig      bool
+		hasClusterData bool
 	}{
 		"simple": {
-			inventory: "testdata/simple/inventory.yml",
-			vars:      "testdata/simple/group_vars",
-			playbook:  "testdata/simple/playbook.yml",
+			inventory:      "testdata/simple/inventory.yml",
+			vars:           "testdata/simple/group_vars",
+			playbook:       "testdata/simple/playbook.yml",
+			skipEval:       false,
+			skipClusterInv: false,
+			hasConfig:      true,
+			hasClusterData: true,
+		},
+		"skipEval": {
+			inventory:      "testdata/simple/inventory.yml",
+			vars:           "testdata/simple/group_vars",
+			playbook:       "testdata/simple/playbook.yml",
+			skipEval:       true,
+			skipClusterInv: false,
+			hasConfig:      false,
+			hasClusterData: true,
+		},
+		"skipClusterData": {
+			inventory:      "testdata/simple/inventory.yml",
+			vars:           "testdata/simple/group_vars",
+			playbook:       "testdata/simple/playbook.yml",
+			skipEval:       true,
+			skipClusterInv: true,
+			hasConfig:      false,
+			hasClusterData: false,
 		},
 		"complex": {
-			inventory: "testdata/complex/inventory.yml",
-			vars:      "testdata/complex/group_vars",
-			playbook:  "testdata/complex/playbook.yml",
+			inventory:      "testdata/complex/inventory.yml",
+			vars:           "testdata/complex/group_vars",
+			playbook:       "testdata/complex/playbook.yml",
+			skipEval:       false,
+			skipClusterInv: false,
+			hasConfig:      true,
+			hasClusterData: true,
 		},
 	}
 
@@ -76,9 +106,20 @@ func TestPlaybook(t *testing.T) {
 				tgt.Entry().Kubeconfig().SetClient(clientset)
 			}
 
-			playbooks, err := New(tc.playbook, targets)
+			playbookSet, err := NewSet(tc.playbook, targets, tc.skipEval, tc.skipClusterInv)
 			assert.NilError(t, err)
-			assert.Equal(t, len(targets.Targets()), len(playbooks))
+			assert.Equal(t, len(targets.Targets()), len(playbookSet))
+			for name, playbook := range playbookSet {
+				t.Run(name, func(t *testing.T) {
+					assert.Assert(t, playbook.Raw != nil)
+					assert.Equal(t, tc.hasConfig, playbook.Config != nil)
+					v := playbook.Raw["vars"]
+					vars, ok := v.(map[string]interface{})
+					assert.Assert(t, ok)
+					_, ok = vars["foo"]
+					assert.Equal(t, tc.hasClusterData, ok)
+				})
+			}
 		})
 	}
 }

@@ -123,7 +123,7 @@ func (e *Entry) ClusterInventory() (*map[string]interface{}, error) {
 
 	configMap, err := clientset.CoreV1().ConfigMaps(e.configNamespace).Get("cluster-inventory", metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ConfigMap %s/cluster-inventory: %s", e.configNamespace, err)
 	}
 
 	rawData, ok := configMap.Data["inventory"]
@@ -133,7 +133,7 @@ func (e *Entry) ClusterInventory() (*map[string]interface{}, error) {
 	var data map[string]interface{}
 	err = yaml.Unmarshal([]byte(rawData), &data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse cluster-inventory as yaml/json: %s", err)
 	}
 	result := map[string]interface{}{
 		"vars": data,
