@@ -17,6 +17,7 @@ limitations under the License.
 package playbook
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/bedag/kusible/internal/third_party/deepcopy"
@@ -24,8 +25,11 @@ import (
 	"github.com/bedag/kusible/pkg/playbook/config"
 	"github.com/bedag/kusible/pkg/target"
 	"github.com/imdario/mergo"
+	"gopkg.in/yaml.v2"
 )
 
+// New creates a Playbook for one specific target. For a given BaseConfig, each target
+// as an individual list of plays, based on the groups of the target and the plays.
 func New(baseConfig *config.BaseConfig, target *target.Target, skipEval bool, skipClusterInv bool) (*Playbook, error) {
 	// Based on the groups of the target and the groups of each play,
 	// generate a new base config containing only the plays relevant
@@ -88,4 +92,40 @@ func New(baseConfig *config.BaseConfig, target *target.Target, skipEval bool, sk
 	}
 
 	return result, nil
+}
+
+func (p *Playbook) YAML(raw bool) ([]byte, error) {
+	// we want the raw, unevaluated config
+	if raw {
+		return yaml.Marshal(p.Raw)
+	}
+
+	// we want the evaluated config, but only if it
+	// contains at least one play
+	if p.Config != nil && (len(p.Config.Plays) > 0) {
+		return p.Config.YAML()
+	}
+
+	// we neither want the unevaluated config nor do
+	// we have an evaluated config that contains at
+	// least one play
+	return []byte{}, nil
+}
+
+func (p *Playbook) JSON(raw bool) ([]byte, error) {
+	// we want the raw, unevaluated config
+	if raw {
+		return json.Marshal(p.Raw)
+	}
+
+	// we want the evaluated config, but only if it
+	// contains at least one play
+	if p.Config != nil && (len(p.Config.Plays) > 0) {
+		return p.Config.JSON()
+	}
+
+	// we neither want the unevaluated config nor do
+	// we have an evaluated config that contains at
+	// least one play
+	return []byte{}, nil
 }

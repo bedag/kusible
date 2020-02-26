@@ -37,6 +37,8 @@ var playbookCmd = &cobra.Command{
 		limits := viper.GetStringSlice("limit")
 		groupVarsDir := viper.GetString("group-vars-dir")
 		inventoryPath := viper.GetString("inventory")
+		skipEval := viper.GetBool("skip-eval")
+		skipClusterInv := viper.GetBool("skip-cluster-inventory")
 		skipDecrypt := viper.GetBool("skip-decrypt")
 		ejsonPrivKey := viper.GetString("ejson-privkey")
 		ejsonKeyDir := viper.GetString("ejson-key-dir")
@@ -72,8 +74,7 @@ var playbookCmd = &cobra.Command{
 			}).Fatal("Failed to compile values for inventory entries.")
 		}
 
-		// TODO: add parameter to skip eval and skip cluster inventory
-		playbookSet, err := playbook.NewSet(playbookFile, targets, false, false)
+		playbookSet, err := playbook.NewSet(playbookFile, targets, skipEval, skipClusterInv)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
@@ -81,14 +82,14 @@ var playbookCmd = &cobra.Command{
 		}
 
 		for name, playbook := range playbookSet {
-			if len(playbook.Config.Plays) > 0 {
-				result, err := playbook.Config.YAML()
-				if err != nil {
-					log.WithFields(log.Fields{
-						"entry": name,
-						"error": err.Error(),
-					}).Fatal("Failed to convert playbook entry to yaml.")
-				}
+			result, err := playbook.YAML(skipEval)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"entry": name,
+					"error": err.Error(),
+				}).Fatal("Failed to convert playbook entry to yaml.")
+			}
+			if len(result) > 0 {
 				fmt.Printf("======= Plays for %s =======\n", name)
 				fmt.Printf("%s", string(result))
 			}
@@ -97,5 +98,7 @@ var playbookCmd = &cobra.Command{
 }
 
 func init() {
+	playbookCmd.Flags().BoolP("skip-cluster-inventory", "", false, "Skip downloading the cluster-inventory ConfigMap")
+	viper.BindPFlag("skip-cluster-inventory", playbookCmd.Flags().Lookup("skip-cluster-inventory"))
 	rootCmd.AddCommand(playbookCmd)
 }
