@@ -17,6 +17,7 @@ package inventory
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 
 	"github.com/bedag/kusible/pkg/groups"
@@ -54,7 +55,11 @@ func NewEntryFromConfig(config *invconfig.Entry) (*Entry, error) {
 
 	// using mergo just for this would be overkill
 	if entry.configNamespace == "" {
-		entry.configNamespace = "kube-system"
+		if env, ok := os.LookupEnv("CONFIG_NAMESPACE_DEFAULT"); ok {
+			entry.configNamespace = env
+		} else {
+			entry.configNamespace = "kube-system"
+		}
 	}
 
 	return entry, nil

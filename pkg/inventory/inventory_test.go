@@ -18,6 +18,7 @@ package inventory
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"testing"
 
@@ -77,6 +78,25 @@ func TestInventoryBare(t *testing.T) {
 	backendConfig := entry.kubeconfig.loader.Config().(*loader.S3Config)
 	assert.Equal(t, expectedPath, backendConfig.Path)
 	assert.Assert(t, backendConfig.Region != "")
+}
+
+func TestConfigNamespaceEnv(t *testing.T) {
+	inventoryPath := "testdata/clusters_bare.yaml"
+	skipKubeconfig := true
+	filter := ".*"
+	limits := []string{}
+	expected := []string{
+		"test",
+	}
+
+	envNamespace := "inventory-ns"
+	err := os.Setenv("CONFIG_NAMESPACE_DEFAULT", envNamespace)
+	assert.NilError(t, err, "failed to set environment %s=%s", "CONFIG_NAMESPACE_DEFAULT", envNamespace)
+
+	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
+	assert.NilError(t, err)
+	entry := inventory.entries["test"]
+	assert.Equal(t, envNamespace, entry.configNamespace)
 }
 
 func TestInventoryEntriesFull(t *testing.T) {
