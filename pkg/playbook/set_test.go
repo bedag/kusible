@@ -28,7 +28,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func TestPlaybook(t *testing.T) {
+func TestSet(t *testing.T) {
 	tests := map[string]struct {
 		inventory      string
 		vars           string
@@ -76,9 +76,6 @@ func TestPlaybook(t *testing.T) {
 		},
 	}
 
-	// skip spruce eval for target values, as this happens later
-	// during the playbook creation
-	skipEval := true
 	ejsonSettings := ejson.Settings{}
 
 	for name, tc := range tests {
@@ -86,7 +83,7 @@ func TestPlaybook(t *testing.T) {
 			inv, err := inventory.NewInventory(tc.inventory, ejsonSettings, true)
 			assert.NilError(t, err)
 
-			targets, err := target.NewTargets(".*", []string{}, tc.vars, inv, skipEval, &ejsonSettings)
+			targets, err := target.NewTargets(".*", []string{}, tc.vars, inv, true, &ejsonSettings)
 			assert.NilError(t, err)
 			// create fake clients for each target so we can simulate
 			// retrieving the cluster-inventory for each
