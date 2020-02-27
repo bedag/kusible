@@ -147,7 +147,7 @@ func TestFileConfig(t *testing.T) {
 
 	decoderConfig := &mapstructure.DecoderConfig{
 		Result:  &expected,
-		TagName: "yaml",
+		TagName: "json",
 	}
 
 	decoder, err := mapstructure.NewDecoder(decoderConfig)
