@@ -18,7 +18,7 @@ package loader
 
 import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 // Loader defines the loader interface

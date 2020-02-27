@@ -25,7 +25,7 @@ import (
 	"github.com/bedag/kusible/pkg/playbook/config"
 	"github.com/bedag/kusible/pkg/target"
 	"github.com/imdario/mergo"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 // New creates a Playbook for one specific target. For a given BaseConfig, each target
