@@ -31,10 +31,12 @@ import (
 
 func NewDirectory(path string, groups []string, skipEval bool, ejsonSettings ejson.Settings) (*directory, error) {
 	result := &directory{
-		path:     path,
-		ejson:    ejsonSettings,
-		skipEval: skipEval,
-		groups:   groups,
+		path:            path,
+		ejson:           ejsonSettings,
+		skipEval:        skipEval,
+		groups:          groups,
+		orderedFileList: []string{},
+		data:            map[string]interface{}{},
 	}
 	err := result.load()
 	return result, err
@@ -91,7 +93,7 @@ func (d *directory) load() error {
 
 	var err error
 	// get the list of files that should be merged
-	d.orderedFileList, err = d.OrderedDataFileList()
+	err = d.createOrderedDataFileList()
 	if err != nil {
 		return err
 	}
@@ -117,15 +119,7 @@ func (d *directory) load() error {
 	return err
 }
 
-/*
-GetOrderedDataFileList traverses the given directory and returns a list of
-files according to the rules described for the Compile method
-*/
-func (d *directory) OrderedDataFileList() ([]string, error) {
-	if len(d.orderedFileList) > 0 {
-		return d.orderedFileList, nil
-	}
-
+func (d *directory) createOrderedDataFileList() error {
 	for _, group := range d.groups {
 		var orderedGroupFileList []string
 		groupDirectory := filepath.Join(d.path, group)
@@ -148,7 +142,7 @@ func (d *directory) OrderedDataFileList() ([]string, error) {
 				return nil
 			})
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
 		// add all files contained in subdirectories of the group directory
@@ -165,8 +159,15 @@ func (d *directory) OrderedDataFileList() ([]string, error) {
 		files, _ = DirectoryDataFiles(d.path, group)
 		d.orderedFileList = append(d.orderedFileList, files...)
 	}
+	return nil
+}
 
-	return d.orderedFileList, nil
+/*
+OrderedDataFileList traverses the given directory and returns a list of
+files according to the rules described for the Compile method
+*/
+func (d *directory) OrderedDataFileList() []string {
+	return d.orderedFileList
 }
 
 func (d *directory) Map() map[string]interface{} {

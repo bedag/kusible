@@ -46,7 +46,7 @@ func New(path string, groups []string, skipEval bool, ejsonSettings ejson.Settin
 		// get a list of all groups in the given directory
 		dirGroups := groups
 		if len(dirGroups) <= 0 {
-			dirGroups, err = groupsfilter.Groups(path, ".*", []string{})
+			dirGroups, err = groupsfilter.SortedGroups(path, ".*", []string{})
 			if err != nil {
 				return nil, err
 			}

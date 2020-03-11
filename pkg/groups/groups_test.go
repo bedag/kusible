@@ -40,10 +40,9 @@ func TestGroups(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotGroups, err := Groups("testdata", tc.filter, tc.limits)
+			gotGroups, err := SortedGroups("testdata", tc.filter, tc.limits)
 			assert.NilError(t, err)
 			wantGroups := tc.expected
-			sort.Strings(gotGroups)
 			sort.Strings(wantGroups)
 			assert.DeepEqual(t, wantGroups, gotGroups)
 		})
