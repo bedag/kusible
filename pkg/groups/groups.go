@@ -21,14 +21,15 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 )
 
 /*
-Groups returns a list of available group in the given directory
+Groups returns an unsorted list of available group in the given directory
 limited by the provided filter. Each element of the list given
-in filter will be treated as a regex and only group matching
+in filter will be treated as a regex and only groups matching
 any (!) of the filters will be returned. The regexp will be treated
-as matching the whole group name, e.h. they are implicitely wrapped
+as matching the whole group name, e.g. they are implicitely wrapped
 in ^$
 */
 func Groups(directory string, filter string, limits []string) ([]string, error) {
@@ -95,6 +96,18 @@ func Groups(directory string, filter string, limits []string) ([]string, error) 
 		result = groups
 	}
 	return result, nil
+}
+
+/*
+SortedGroups is the same as Groups() but the resulting list is sorted alphabetically
+*/
+func SortedGroups(directory string, filter string, limits []string) ([]string, error) {
+	g, err := Groups(directory, filter, limits)
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(g)
+	return g, nil
 }
 
 // LimitGroups applies a list of limits (each treated as regex) to a list

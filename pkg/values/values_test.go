@@ -48,9 +48,8 @@ func TestValues(t *testing.T) {
 	}{
 		"file":           {input: "file/spruce-eval.yml", skipEval: false, expected: "file/spruce-eval.expected.yml"},
 		"file-skip-eval": {input: "file/spruce-eval.yml", skipEval: true, expected: "file/spruce-eval.yml"},
-		// TODO: possible race condition? Execute multiple times uncached
-		"dir":           {input: "file", skipEval: false, expected: "file/spruce-eval.expected.yml"},
-		"dir-skip-eval": {input: "file", skipEval: true, expected: "file/spruce-eval.yml"},
+		"dir":            {input: "file", skipEval: false, expected: "file/spruce-eval.expected.yml"},
+		"dir-skip-eval":  {input: "file", skipEval: true, expected: "file/spruce-eval.yml"},
 	}
 
 	ejsonSettings := ejson.Settings{
