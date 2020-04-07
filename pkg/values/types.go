@@ -16,7 +16,7 @@ limitations under the License.
 
 package values
 
-import "github.com/bedag/kusible/internal/wrapper/ejson"
+import "github.com/bedag/kusible/pkg/wrapper/ejson"
 
 type Values interface {
 	YAML() ([]byte, error)

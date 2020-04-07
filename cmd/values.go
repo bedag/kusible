@@ -19,7 +19,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/bedag/kusible/internal/wrapper/ejson"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	"github.com/bedag/kusible/pkg/values"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

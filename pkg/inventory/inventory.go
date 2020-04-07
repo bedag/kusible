@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/bedag/kusible/internal/wrapper/ejson"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/values"
 )

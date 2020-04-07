@@ -19,7 +19,7 @@ package values
 import (
 	"os"
 
-	"github.com/bedag/kusible/internal/wrapper/ejson"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	groupsfilter "github.com/bedag/kusible/pkg/groups"
 )
 
