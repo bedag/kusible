@@ -19,7 +19,7 @@ package target
 import (
 	"testing"
 
-	"github.com/bedag/kusible/internal/wrapper/ejson"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	"github.com/bedag/kusible/pkg/inventory"
 	invconf "github.com/bedag/kusible/pkg/inventory/config"
 	"gotest.tools/assert"

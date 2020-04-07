@@ -25,6 +25,11 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// TODO
+// Fields of map[string]interface{} can be easyly reached by doing
+// x := mymap["field"].(type)
+// Duh!
+
 // NewBaseConfigFromFile loads a playbook base config from the given
 // file path. The file must contain yaml data.
 func NewBaseConfigFromFile(path string) (*BaseConfig, error) {

@@ -22,7 +22,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/bedag/kusible/internal/wrapper/ejson"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	"github.com/bedag/kusible/pkg/loader"
 	"github.com/go-test/deep"
 	"gotest.tools/assert"
