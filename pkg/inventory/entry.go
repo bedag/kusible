@@ -16,6 +16,7 @@ limitations under the License.
 package inventory
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -126,7 +127,7 @@ func (e *Entry) ClusterInventory() (*map[string]interface{}, error) {
 		return nil, err
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(e.configNamespace).Get("cluster-inventory", metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(e.configNamespace).Get(context.Background(), "cluster-inventory", metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("ConfigMap %s/cluster-inventory: %s", e.configNamespace, err)
 	}
