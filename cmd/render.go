@@ -20,9 +20,9 @@ import (
 	"fmt"
 
 	"github.com/bedag/kusible/internal/wrapper/ejson"
+	"github.com/bedag/kusible/pkg/helmutil"
 	"github.com/bedag/kusible/pkg/inventory"
 	"github.com/bedag/kusible/pkg/playbook"
-	"github.com/bedag/kusible/pkg/render/helm"
 	"github.com/bedag/kusible/pkg/target"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -92,7 +92,17 @@ var renderHelmCmd = &cobra.Command{
 
 		for name, playbook := range playbookSet {
 			for _, play := range playbook.Config.Plays {
-				manifests, err := helm.TemplatePlay(play, settings)
+				for _, repo := range play.Repos {
+					if err := helmutil.RepoAdd(repo.Name, repo.URL, settings); err != nil {
+						log.WithFields(log.Fields{
+							"play":  play.Name,
+							"repo":  repo.Name,
+							"entry": name,
+							"error": err.Error(),
+						}).Fatal("Failed to add helm repo for play.")
+					}
+				}
+				manifests, err := helmutil.TemplatePlay(play, settings)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"play":  play.Name,

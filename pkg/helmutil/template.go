@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Michael Gruener
+Copyright © 2021 Michael Gruener & The Helm Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package helm
+/* Lots of code straight from github.com/helm/helm and adapted to be used here */
+
+package helmutil
 
 import (
 	"fmt"
