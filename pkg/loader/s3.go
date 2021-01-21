@@ -138,20 +138,19 @@ func (b *S3Backend) Load() ([]byte, error) {
 
 	var rawKubeconfig []byte
 
-	switch mime.String() {
-	case "text/plain":
+	if mime.Is("text/plain") {
 		rawKubeconfig = data
-	case "application/x-7z-compressed":
+	} else if mime.Is("application/x-7z-compressed") {
 		rawKubeconfig, err = extractSingleTar7Zip(data, b.config.DecryptKey)
 		if err != nil {
 			return nil, err
 		}
-	case "application/octet-stream":
+	} else if mime.Is("application/octet-stream") {
 		rawKubeconfig, err = decryptOpensslSymmetric(data, b.config.DecryptKey)
 		if err != nil {
 			return nil, err
 		}
-	default:
+	} else {
 		return nil, errors.New("Unknown kubeconfig source file type: " + mime.String())
 	}
 

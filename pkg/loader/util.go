@@ -58,7 +58,7 @@ func extractSingleTar7ZipFile(path string, password string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if mime.String() != "application/x-7z-compressed" {
+	if !mime.Is("application/x-7z-compressed") {
 		return nil, errors.New("expected MIME type application/x-7z-compressed but got " + mime.String())
 	}
 

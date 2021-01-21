@@ -56,6 +56,8 @@ type Params map[string]interface{}
 
 // decode the given data with the default decoder settings
 func decode(data *map[string]interface{}, result interface{}) error {
+	// TODO: check https://github.com/mitchellh/mapstructure/issues/187 to
+	// support mitchellh/mapstructure > 1.3.1
 	decoderConfig := &mapstructure.DecoderConfig{
 		ZeroFields:       true,
 		ErrorUnused:      false,
