@@ -54,12 +54,12 @@ func extractSingleTar7Zip(data []byte, password string) ([]byte, error) {
 func extractSingleTar7ZipFile(path string, password string) ([]byte, error) {
 	var archive *lzmadec.Archive
 
-	mime, _, err := mimetype.DetectFile(path)
+	mime, err := mimetype.DetectFile(path)
 	if err != nil {
 		return nil, err
 	}
-	if mime != "application/x-7z-compressed" {
-		return nil, errors.New("expected MIME type application/x-7z-compressed but got " + mime)
+	if mime.String() != "application/x-7z-compressed" {
+		return nil, errors.New("expected MIME type application/x-7z-compressed but got " + mime.String())
 	}
 
 	if password != "" {

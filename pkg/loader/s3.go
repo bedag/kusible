@@ -131,14 +131,14 @@ func (b *S3Backend) Load() ([]byte, error) {
 	}
 	data := buf.Bytes()
 
-	mime, _, err := mimetype.DetectReader(bytes.NewReader(data))
+	mime, err := mimetype.DetectReader(bytes.NewReader(data))
 	if err != nil {
 		return nil, fmt.Errorf("failed to detect mimetype for s3://%s/%s/%s", b.config.Server, b.config.Bucket, b.config.Path)
 	}
 
 	var rawKubeconfig []byte
 
-	switch mime {
+	switch mime.String() {
 	case "text/plain":
 		rawKubeconfig = data
 	case "application/x-7z-compressed":
@@ -152,7 +152,7 @@ func (b *S3Backend) Load() ([]byte, error) {
 			return nil, err
 		}
 	default:
-		return nil, errors.New("Unknown kubeconfig source file type: " + mime)
+		return nil, errors.New("Unknown kubeconfig source file type: " + mime.String())
 	}
 
 	return rawKubeconfig, nil
