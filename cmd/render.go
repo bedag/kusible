@@ -19,11 +19,12 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/bedag/kusible/pkg/helmutil"
 	"github.com/bedag/kusible/pkg/inventory"
 	"github.com/bedag/kusible/pkg/playbook"
 	"github.com/bedag/kusible/pkg/target"
+	argocdutil "github.com/bedag/kusible/pkg/wrapper/argocd"
 	"github.com/bedag/kusible/pkg/wrapper/ejson"
+	helmutil "github.com/bedag/kusible/pkg/wrapper/helm"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -45,7 +46,7 @@ var renderHelmCmd = &cobra.Command{
 		groupVarsDir := viper.GetString("group-vars-dir")
 		inventoryPath := viper.GetString("inventory")
 		skipEval := viper.GetBool("skip-eval")
-		skipClusterInv := viper.GetBool("render-skip-cluster-inventory")
+		skipClusterInv := viper.GetBool("render-helm-skip-cluster-inventory")
 		skipDecrypt := viper.GetBool("skip-decrypt")
 		ejsonPrivKey := viper.GetString("ejson-privkey")
 		ejsonKeyDir := viper.GetString("ejson-key-dir")
@@ -126,7 +127,9 @@ var renderArgoCDCmd = &cobra.Command{
 		groupVarsDir := viper.GetString("group-vars-dir")
 		inventoryPath := viper.GetString("inventory")
 		skipEval := viper.GetBool("skip-eval")
-		skipClusterInv := viper.GetBool("render-skip-cluster-inventory")
+		skipClusterInv := viper.GetBool("render-argocd-skip-cluster-inventory")
+		namespace := viper.GetString("argocd-namespace")
+		project := viper.GetString("argocd-project")
 		skipDecrypt := viper.GetBool("skip-decrypt")
 		ejsonPrivKey := viper.GetString("ejson-privkey")
 		ejsonKeyDir := viper.GetString("ejson-key-dir")
@@ -169,28 +172,15 @@ var renderArgoCDCmd = &cobra.Command{
 			}).Fatal("Failed to compile playbooks.")
 		}
 
-		settings := helmcli.New()
-
-		// https://github.com/argoproj/argo-cd/blob/master/pkg/apis/application/v1alpha1/types.go
 		for name, playbook := range playbookSet {
 			for _, play := range playbook.Config.Plays {
-				for _, repo := range play.Repos {
-					if err := helmutil.RepoAdd(repo.Name, repo.URL, settings); err != nil {
-						log.WithFields(log.Fields{
-							"play":  play.Name,
-							"repo":  repo.Name,
-							"entry": name,
-							"error": err.Error(),
-						}).Fatal("Failed to add helm repo for play.")
-					}
-				}
-				manifests, err := helmutil.TemplatePlay(play, settings)
+				manifests, err := argocdutil.ApplicationFromPlay(play, project, namespace, name)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"play":  play.Name,
 						"entry": name,
 						"error": err.Error(),
-					}).Fatal("Failed to render play manifests with helm.")
+					}).Fatal("Failed to render ArgoCD application manifests.")
 				}
 				fmt.Printf(manifests)
 			}
@@ -200,8 +190,16 @@ var renderArgoCDCmd = &cobra.Command{
 
 func init() {
 	renderHelmCmd.Flags().BoolP("skip-cluster-inventory", "", false, "Skip downloading the cluster-inventory ConfigMap")
-	viper.BindPFlag("render-skip-cluster-inventory", renderHelmCmd.Flags().Lookup("skip-cluster-inventory"))
+	viper.BindPFlag("render-helm-skip-cluster-inventory", renderHelmCmd.Flags().Lookup("skip-cluster-inventory"))
+
+	renderArgoCDCmd.Flags().BoolP("skip-cluster-inventory", "", false, "Skip downloading the cluster-inventory ConfigMap")
+	renderArgoCDCmd.Flags().StringP("namespace", "", "argocd", "Namespace where ArgoCD is looking for ArgoCD applications")
+	renderArgoCDCmd.Flags().StringP("project", "", "default", "The ArgoCD project to which the applications should be assigned")
+	viper.BindPFlag("render-argocd-skip-cluster-inventory", renderArgoCDCmd.Flags().Lookup("skip-cluster-inventory"))
+	viper.BindPFlag("argocd-namespace", renderArgoCDCmd.Flags().Lookup("namespace"))
+	viper.BindPFlag("argocd-project", renderArgoCDCmd.Flags().Lookup("project"))
 
 	renderCmd.AddCommand(renderHelmCmd)
+	renderCmd.AddCommand(renderArgoCDCmd)
 	rootCmd.AddCommand(renderCmd)
 }

@@ -16,7 +16,7 @@ limitations under the License.
 
 /* Lots of code straight from github.com/helm/helm and adapted to be used here */
 
-package helmutil
+package helm
 
 import (
 	"context"
