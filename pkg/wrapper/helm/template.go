@@ -16,7 +16,7 @@ limitations under the License.
 
 /* Lots of code straight from github.com/helm/helm and adapted to be used here */
 
-package helmutil
+package helm
 
 import (
 	"fmt"
@@ -48,6 +48,10 @@ func TemplatePlay(play *config.Play, settings *helmcli.EnvSettings) (string, err
 			if pr.Name == chart.Repo {
 				client.ChartPathOptions.RepoURL = pr.URL
 			}
+		}
+
+		if client.ChartPathOptions.RepoURL == "" {
+			return result, fmt.Errorf("no repo '%s' for chart '%s' configured in play", chart.Repo, chart.Name)
 		}
 
 		client.ReleaseName = chart.Name
