@@ -69,23 +69,22 @@ func (b *FileBackend) Load() ([]byte, error) {
 	}
 
 	var raw []byte
-	switch mime.String() {
-	case "text/plain":
+	if mime.Is("text/plain") {
 		raw, err = ioutil.ReadFile(b.config.Path)
 		if err != nil {
 			return nil, err
 		}
-	case "application/x-7z-compressed":
+	} else if mime.Is("application/x-7z-compressed") {
 		raw, err = extractSingleTar7ZipFile(b.config.Path, b.config.DecryptKey)
 		if err != nil {
 			return nil, err
 		}
-	case "application/octet-stream":
+	} else if mime.Is("application/octet-stream") {
 		raw, err = decryptOpensslSymmetricFile(b.config.Path, b.config.DecryptKey)
 		if err != nil {
 			return nil, err
 		}
-	default:
+	} else {
 		return nil, errors.New("Unknown source file type: " + mime.String())
 	}
 
