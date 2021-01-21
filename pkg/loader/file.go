@@ -63,13 +63,13 @@ func (b *FileBackend) Load() ([]byte, error) {
 		return nil, err
 	}
 
-	mime, _, err := mimetype.DetectFile(b.config.Path)
+	mime, err := mimetype.DetectFile(b.config.Path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to detect mimetype for file://%s", b.config.Path)
 	}
 
 	var raw []byte
-	switch mime {
+	switch mime.String() {
 	case "text/plain":
 		raw, err = ioutil.ReadFile(b.config.Path)
 		if err != nil {
@@ -86,7 +86,7 @@ func (b *FileBackend) Load() ([]byte, error) {
 			return nil, err
 		}
 	default:
-		return nil, errors.New("Unknown source file type: " + mime)
+		return nil, errors.New("Unknown source file type: " + mime.String())
 	}
 
 	return raw, nil
