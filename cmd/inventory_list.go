@@ -19,71 +19,59 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/bedag/kusible/pkg/values"
+	"github.com/bedag/kusible/pkg/inventory"
 	"github.com/bedag/kusible/pkg/wrapper/ejson"
-	"github.com/spf13/cobra"
-
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
-func newValuesCmd(c *Cli) *cobra.Command {
+func newInventoryListCmd(c *Cli) *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   "values GROUP ...",
-		Short: "Compile values for a list of groups",
-		Long: `Use the given groups to compile a single values yaml file.
-	The groups are priorized from least to most specific.
-	Values of groups of higher priorities override values
-	of groups with lower priorities.`,
-		Args:                  cobra.MinimumNArgs(1),
+		Use:                   "list [regex]",
+		Short:                 "List inventory entries",
+		Args:                  cobra.ExactArgs(1),
 		TraverseChildren:      true,
 		DisableFlagsInUseLine: true,
-		RunE:                  c.wrap(runValues),
+		RunE:                  c.wrap(runInventoryList),
 	}
-	addEjsonFlags(cmd)
-	addEvalFlags(cmd)
-	addGroupsFlags(cmd)
-	addOutputFormatFlags(cmd)
+	addInventoryFlags(cmd)
 
 	return cmd
 }
 
-func runValues(c *Cli, cmd *cobra.Command, args []string) error {
-	groups := args
-	groupVarsDir := c.viper.GetString("group-vars-dir")
-	skipEval := c.viper.GetBool("skip-eval")
-	skipDecrypt := c.viper.GetBool("skip-decrypt")
+func runInventoryList(c *Cli, cmd *cobra.Command, args []string) error {
+	filter := args[0]
+	limits := c.viper.GetStringSlice("limit")
+	inventoryPath := c.viper.GetString("inventory")
 	ejsonPrivKey := c.viper.GetString("ejson-privkey")
 	ejsonKeyDir := c.viper.GetString("ejson-key-dir")
 
 	ejsonSettings := ejson.Settings{
 		PrivKey:     ejsonPrivKey,
 		KeyDir:      ejsonKeyDir,
-		SkipDecrypt: skipDecrypt,
+		SkipDecrypt: false,
 	}
 
-	values, err := values.New(groupVarsDir, groups, skipEval, ejsonSettings)
+	// as we just want to list the available inventory entries we can (and should)
+	// skip kubeconfig retrieval
+	skipKubeconfig := true
+	inventory, err := inventory.NewInventory(inventoryPath, ejsonSettings, skipKubeconfig)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
-		}).Error("Failed to compile group vars.")
+		}).Error("Failed to compile inventory.")
 		return err
 	}
 
-	render := values.YAML
-	if c.viper.GetBool("json") {
-		render = values.JSON
-	}
-
-	result, err := render()
+	names, err := inventory.EntryNames(filter, limits)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
-		}).Error("Failed to render compiled group vars.")
+		}).Error("Failed to get list of entries")
 		return err
 	}
-
-	if !c.viper.GetBool("quiet") {
-		fmt.Printf("%s", string(result))
+	for _, name := range names {
+		fmt.Printf("%s\n", name)
 	}
 	return nil
 }
