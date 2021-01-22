@@ -15,14 +15,16 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/bedag/kusible/cmd"
 )
 
-var version string
-
 func main() {
-	cmd.Execute()
-	os.Exit(0)
+	c := cmd.NewCli()
+	if err := c.RootCommand.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(-1)
+	}
 }

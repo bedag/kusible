@@ -24,32 +24,43 @@ import (
 	"github.com/bedag/kusible/pkg/groups"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-var groupsCmd = &cobra.Command{
-	Use:   "groups [regex]",
-	Short: "List available groups based on given regex",
-	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		filter := args[0]
-		limits := viper.GetStringSlice("limit")
-		groupVarsDir := viper.GetString("group-vars-dir")
+func newGroupsCmd(c *Cli) *cobra.Command {
+	var cmd = &cobra.Command{
+		Use:                   "groups [regex]",
+		Short:                 "List available groups based on given regex",
+		Args:                  cobra.ExactArgs(1),
+		TraverseChildren:      true,
+		DisableFlagsInUseLine: true,
+		RunE:                  c.wrap(runGroups),
+	}
+	addGroupsFlags(cmd)
+	addLimitFlags(cmd)
 
-		groups, err := groups.Groups(groupVarsDir, filter, limits)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"filter":    filter,
-				"limits":    strings.Join(limits[:], " "),
-				"directory": groupVarsDir,
-			}).Error("Failed to get groups")
-		}
-
-		sort.Strings(groups)
-		fmt.Println(strings.Join(groups, "\n"))
-	},
+	return cmd
 }
 
-func init() {
-	rootCmd.AddCommand(groupsCmd)
+func addGroupsFlags(cmd *cobra.Command) {
+	cmd.Flags().StringP("group-vars-dir", "d", "group_vars", "Source directory to read from")
+}
+
+func runGroups(c *Cli, cmd *cobra.Command, args []string) error {
+	filter := args[0]
+	limits := c.viper.GetStringSlice("limit")
+	groupVarsDir := c.viper.GetString("group-vars-dir")
+
+	groups, err := groups.Groups(groupVarsDir, filter, limits)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"filter":    filter,
+			"limits":    strings.Join(limits[:], " "),
+			"directory": groupVarsDir,
+		}).Error("Failed to get groups")
+		return err
+	}
+
+	sort.Strings(groups)
+	fmt.Println(strings.Join(groups, "\n"))
+	return nil
 }

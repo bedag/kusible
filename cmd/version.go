@@ -23,16 +23,18 @@ import (
 )
 
 const appName = "kusible"
-const version = "v0.0.1"
 
-func init() {
-	rootCmd.AddCommand(versionCmd)
-}
+// Version is the application version. It will be overriden during the build process.
+// See https://www.digitalocean.com/community/tutorials/using-ldflags-to-set-version-information-for-go-applications
+var Version = "development"
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: fmt.Sprint("Print the version number of ", appName),
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("%s %s\n", appName, version)
-	},
+func newVersionCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "version",
+		Short: fmt.Sprint("Print the version number of ", appName),
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("%s %s\n", appName, Version)
+		},
+	}
+	return cmd
 }

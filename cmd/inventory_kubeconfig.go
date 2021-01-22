@@ -19,71 +19,70 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/bedag/kusible/pkg/values"
+	"github.com/bedag/kusible/pkg/inventory"
 	"github.com/bedag/kusible/pkg/wrapper/ejson"
-	"github.com/spf13/cobra"
-
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
-func newValuesCmd(c *Cli) *cobra.Command {
+func newInventoryKubeconfigCmd(c *Cli) *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   "values GROUP ...",
-		Short: "Compile values for a list of groups",
-		Long: `Use the given groups to compile a single values yaml file.
-	The groups are priorized from least to most specific.
-	Values of groups of higher priorities override values
-	of groups with lower priorities.`,
-		Args:                  cobra.MinimumNArgs(1),
+		Use:                   "kubeconfig [entry name]",
+		Short:                 "Get the kubeconfig for a given inventory entry",
+		Args:                  cobra.ExactArgs(1),
 		TraverseChildren:      true,
 		DisableFlagsInUseLine: true,
-		RunE:                  c.wrap(runValues),
+		RunE:                  c.wrap(runInventoryKubeconfig),
 	}
-	addEjsonFlags(cmd)
-	addEvalFlags(cmd)
-	addGroupsFlags(cmd)
-	addOutputFormatFlags(cmd)
+	addInventoryFlags(cmd)
 
 	return cmd
 }
 
-func runValues(c *Cli, cmd *cobra.Command, args []string) error {
-	groups := args
-	groupVarsDir := c.viper.GetString("group-vars-dir")
-	skipEval := c.viper.GetBool("skip-eval")
+func runInventoryKubeconfig(c *Cli, cmd *cobra.Command, args []string) error {
+	name := args[0]
+	inventoryPath := c.viper.GetString("inventory")
 	skipDecrypt := c.viper.GetBool("skip-decrypt")
 	ejsonPrivKey := c.viper.GetString("ejson-privkey")
 	ejsonKeyDir := c.viper.GetString("ejson-key-dir")
 
+	if skipDecrypt {
+		return fmt.Errorf("cannot use --skip-decrypt when retrieving kubeconfig files")
+	}
+
 	ejsonSettings := ejson.Settings{
 		PrivKey:     ejsonPrivKey,
 		KeyDir:      ejsonKeyDir,
-		SkipDecrypt: skipDecrypt,
+		SkipDecrypt: false,
 	}
 
-	values, err := values.New(groupVarsDir, groups, skipEval, ejsonSettings)
+	// as we want to retrieve the kubeconfig, it makes no sense to
+	// skip kubeconfig retrieval
+	skipKubeconfig := false
+	inv, err := inventory.NewInventory(inventoryPath, ejsonSettings, skipKubeconfig)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
-		}).Error("Failed to compile group vars.")
+		}).Error("Failed to compile inventory.")
 		return err
 	}
 
-	render := values.YAML
-	if c.viper.GetBool("json") {
-		render = values.JSON
+	entry, ok := inv.Entries()[name]
+	if !ok {
+		log.WithFields(log.Fields{
+			"entry": name,
+		}).Error("Entry does not exist")
+		return err
 	}
 
-	result, err := render()
+	kubeconfig, err := entry.Kubeconfig().Yaml()
 	if err != nil {
 		log.WithFields(log.Fields{
+			"entry": name,
 			"error": err.Error(),
-		}).Error("Failed to render compiled group vars.")
+		}).Error("Failed to get kubeconfig")
 		return err
 	}
-
-	if !c.viper.GetBool("quiet") {
-		fmt.Printf("%s", string(result))
-	}
+	fmt.Println(string(kubeconfig))
 	return nil
 }
