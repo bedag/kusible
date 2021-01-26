@@ -18,6 +18,7 @@ package inventory
 import (
 	"testing"
 
+	"github.com/bedag/kusible/pkg/inventory/config"
 	"gotest.tools/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,7 +55,11 @@ func TestEntryValidGroups(t *testing.T) {
 }
 
 func TestClusterInventory(t *testing.T) {
-	configNamespace := "kube-system"
+	clusterInventoryConfig := &config.ClusterInventory{
+		Namespace: "kube-system",
+		ConfigMap: "cluster-inventory",
+	}
+
 	tests := map[string]struct {
 		configmap   *v1.ConfigMap
 		errExpected bool
@@ -62,8 +67,8 @@ func TestClusterInventory(t *testing.T) {
 		"working empty": {
 			configmap: &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        "cluster-inventory",
-					Namespace:   configNamespace,
+					Name:        clusterInventoryConfig.ConfigMap,
+					Namespace:   clusterInventoryConfig.Namespace,
 					Annotations: map[string]string{},
 				},
 				Data: map[string]string{
@@ -75,8 +80,8 @@ func TestClusterInventory(t *testing.T) {
 		"missing inventory": {
 			configmap: &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        "cluster-inventory",
-					Namespace:   configNamespace,
+					Name:        clusterInventoryConfig.ConfigMap,
+					Namespace:   clusterInventoryConfig.Namespace,
 					Annotations: map[string]string{},
 				},
 				Data: map[string]string{},
@@ -86,8 +91,8 @@ func TestClusterInventory(t *testing.T) {
 		"inventory unparsable": {
 			configmap: &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        "cluster-inventory",
-					Namespace:   configNamespace,
+					Name:        clusterInventoryConfig.ConfigMap,
+					Namespace:   clusterInventoryConfig.Namespace,
 					Annotations: map[string]string{},
 				},
 				Data: map[string]string{
@@ -99,7 +104,7 @@ func TestClusterInventory(t *testing.T) {
 		"wrong namespace": {
 			configmap: &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        "cluster-inventory",
+					Name:        clusterInventoryConfig.ConfigMap,
 					Namespace:   "wrong",
 					Annotations: map[string]string{},
 				},
@@ -113,7 +118,7 @@ func TestClusterInventory(t *testing.T) {
 			configmap: &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "some-inventory",
-					Namespace:   configNamespace,
+					Namespace:   clusterInventoryConfig.Namespace,
 					Annotations: map[string]string{},
 				},
 				Data: map[string]string{
@@ -136,10 +141,10 @@ func TestClusterInventory(t *testing.T) {
 			}
 
 			entry := &Entry{
-				name:            "test",
-				groups:          []string{"test"},
-				configNamespace: configNamespace,
-				kubeconfig:      k,
+				name:                   "test",
+				groups:                 []string{"test"},
+				clusterInventoryConfig: clusterInventoryConfig,
+				kubeconfig:             k,
 			}
 			_, err := entry.ClusterInventory()
 			assert.Equal(t, tc.errExpected, err != nil)

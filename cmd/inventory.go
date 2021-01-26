@@ -42,5 +42,6 @@ func addInventoryFlags(cmd *cobra.Command) {
 	addEjsonFlags(cmd)
 	addEvalFlags(cmd)
 	addLimitFlags(cmd)
+	addClusterInventoryFlags(cmd)
 	cmd.Flags().StringP("inventory", "i", "inventory.yml", "Path to the inventory")
 }

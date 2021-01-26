@@ -32,7 +32,7 @@ import (
 func TestNewKubeconfigFromConfig(t *testing.T) {
 	kubeconfigConfig := &invconfig.Kubeconfig{
 		Backend: "file",
-		Params: &invconfig.Params{
+		Params: invconfig.Params{
 			"decrypt_key": "test123",
 			"path":        "testdata/kubeconfig.enc.7z",
 		},
@@ -108,7 +108,7 @@ func TestSetClient(t *testing.T) {
 func TestClientFromKubeconfig(t *testing.T) {
 	kubeconfigConfig := &invconfig.Kubeconfig{
 		Backend: "file",
-		Params: &invconfig.Params{
+		Params: invconfig.Params{
 			"path": "testdata/kubeconfig",
 		},
 	}

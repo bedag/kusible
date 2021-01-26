@@ -20,12 +20,13 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/values"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
+	"github.com/imdario/mergo"
 )
 
-func NewInventory(path string, ejson ejson.Settings, skipKubeconfig bool) (*Inventory, error) {
+func NewInventory(path string, ejson ejson.Settings, skipKubeconfig bool, defaulClusterInventoryConfig invconfig.ClusterInventory) (*Inventory, error) {
 	// load the raw inventory yaml data
 	raw, err := values.New(path, []string{}, false, ejson)
 	if err != nil {
@@ -43,7 +44,15 @@ func NewInventory(path string, ejson ejson.Settings, skipKubeconfig bool) (*Inve
 	// create the inventory based on the inventory config
 	entries := make(map[string]*Entry, len(inventoryConfig.Inventory))
 	for _, entryConf := range inventoryConfig.Inventory {
-		entry, err := NewEntryFromConfig(entryConf)
+		clusterInventoryConfig := defaulClusterInventoryConfig
+
+		err = mergo.Merge(&clusterInventoryConfig, entryConf.ClusterInventory, mergo.WithOverride)
+		if err != nil {
+			return nil, err
+		}
+		entryConf.ClusterInventory = clusterInventoryConfig
+
+		entry, err := NewEntryFromConfigWithDefaults(entryConf)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create entry '%s' from config: %s", entryConf.Name, err)
 		}

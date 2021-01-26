@@ -18,7 +18,6 @@ package inventory
 import (
 	"context"
 	"fmt"
-	"os"
 	"regexp"
 
 	"github.com/bedag/kusible/pkg/groups"
@@ -29,39 +28,40 @@ import (
 )
 
 func NewEntryFromConfig(config *invconfig.Entry) (*Entry, error) {
-	kubeconfigConfig := invconfig.Kubeconfig{
-		Backend: "s3",
-		Params: &invconfig.Params{
-			"path": fmt.Sprintf("%s/kubeconfig/kubeconfig.enc.7z", config.Name),
-		},
-	}
-
-	err := mergo.Merge(&kubeconfigConfig, config.Kubeconfig, mergo.WithOverride)
-	if err != nil {
-		return nil, err
-	}
-
-	kubeconfig, err := NewKubeconfigFromConfig(&kubeconfigConfig)
+	kubeconfig, err := NewKubeconfigFromConfig(&config.Kubeconfig)
 	if err != nil {
 		return nil, err
 	}
 
 	entry := &Entry{
-		name:            config.Name,
-		configNamespace: config.ConfigNamespace,
-		kubeconfig:      kubeconfig,
+		name:                   config.Name,
+		clusterInventoryConfig: &config.ClusterInventory,
+		kubeconfig:             kubeconfig,
 	}
+
+	// set "entry" level defaults here
 	entry.groups = append([]string{"all"}, config.Groups...)
 	entry.groups = append(entry.groups, config.Name)
 
-	// using mergo just for this would be overkill
-	if entry.configNamespace == "" {
-		if env, ok := os.LookupEnv("CONFIG_NAMESPACE_DEFAULT"); ok {
-			entry.configNamespace = env
-		} else {
-			entry.configNamespace = "kube-system"
-		}
+	return entry, nil
+}
+
+func NewEntryFromConfigWithDefaults(config *invconfig.Entry) (*Entry, error) {
+	entry, err := NewEntryFromConfig(config)
+	if err != nil {
+		return entry, nil
 	}
+
+	clusterInventoryConfig := &invconfig.ClusterInventory{
+		Namespace: "kube-system",
+		ConfigMap: "cluster-inventory",
+	}
+
+	err = mergo.Merge(clusterInventoryConfig, config.ClusterInventory, mergo.WithOverride)
+	if err != nil {
+		return entry, err
+	}
+	entry.clusterInventoryConfig = clusterInventoryConfig
 
 	return entry, nil
 }
@@ -117,8 +117,8 @@ func (e *Entry) Name() string {
 	return e.name
 }
 
-func (e *Entry) ConfigNamespace() string {
-	return e.configNamespace
+func (e *Entry) ClusterInventoryConfig() *invconfig.ClusterInventory {
+	return e.clusterInventoryConfig
 }
 
 func (e *Entry) ClusterInventory() (*map[string]interface{}, error) {
@@ -127,9 +127,9 @@ func (e *Entry) ClusterInventory() (*map[string]interface{}, error) {
 		return nil, err
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(e.configNamespace).Get(context.Background(), "cluster-inventory", metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(e.ClusterInventoryConfig().Namespace).Get(context.Background(), e.ClusterInventoryConfig().ConfigMap, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("ConfigMap %s/cluster-inventory: %s", e.configNamespace, err)
+		return nil, fmt.Errorf("ConfigMap %s/%s: %s", e.ClusterInventoryConfig().Namespace, e.ClusterInventoryConfig().ConfigMap, err)
 	}
 
 	rawData, ok := configMap.Data["inventory"]

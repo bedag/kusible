@@ -17,8 +17,9 @@ limitations under the License.
 package inventory
 
 import (
-	"github.com/bedag/kusible/pkg/wrapper/ejson"
+	"github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/loader"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -29,10 +30,10 @@ type Inventory struct {
 }
 
 type Entry struct {
-	name            string
-	groups          []string
-	configNamespace string
-	kubeconfig      *Kubeconfig
+	name                   string
+	groups                 []string
+	clusterInventoryConfig *config.ClusterInventory
+	kubeconfig             *Kubeconfig
 }
 
 type Kubeconfig struct {

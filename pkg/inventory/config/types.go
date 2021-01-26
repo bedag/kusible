@@ -16,7 +16,12 @@ limitations under the License.
 
 package config
 
-import "github.com/mitchellh/mapstructure"
+import (
+	"fmt"
+
+	"github.com/imdario/mergo"
+	"github.com/mitchellh/mapstructure"
+)
 
 // Config holds the list of entries that can serve as targets
 // for application deployments. It is the root of the actual inventory
@@ -35,18 +40,24 @@ type Entry struct {
 	// Each entry is always part of the "all" group and a group
 	// with the name of the entry.
 	Groups []string `json:"groups"`
-	// ConfigNamespace refers to the namespace where the "cluster-inventory"
-	// ConfigMap can be found
-	ConfigNamespace string `json:"config_namespace"`
+	// Location of the "Cluster Inventory"
+	ClusterInventory ClusterInventory `json:"cluster_inventory"`
 	// Kubeconfig holds the kubeconfig loader configuration
-	Kubeconfig *Kubeconfig `json:"kubeconfig"`
+	Kubeconfig Kubeconfig `json:"kubeconfig"`
+}
+
+// ClusterInventory points to a ConfigMap holding information about the cluster
+// that can be referenced in the values of a play
+type ClusterInventory struct {
+	Namespace string `json:"namespace"`
+	ConfigMap string `json:"configmap"`
 }
 
 // Kubeconfig holds information on how / where to retrieve / generate
 // the Kubeconfig for an entry in the inventory
 type Kubeconfig struct {
-	Backend string  `json:"backend"`
-	Params  *Params `json:"params"`
+	Backend string `json:"backend"`
+	Params  Params `json:"params"`
 }
 
 // Params holds the parameters used by a kubeconfig backend to
@@ -83,12 +94,23 @@ func NewConfigFromMap(data *map[string]interface{}) (*Config, error) {
 		config.Inventory = make([]*Entry, 0)
 	}
 	for index := range config.Inventory {
-		if config.Inventory[index].Kubeconfig == nil {
-			config.Inventory[index].Kubeconfig = new(Kubeconfig)
+		// Set "config" level defaults here.
+		// For values set here it can later on no longer be
+		// differentiated if they are "default" values or explicitely set
+		// in a given inventory config
+		entry := &Entry{}
+		entry.Kubeconfig = Kubeconfig{
+			Backend: "s3",
+			Params: Params{
+				"path": fmt.Sprintf("%s/kubeconfig/kubeconfig.enc.7z", config.Inventory[index].Name),
+			},
 		}
-		if config.Inventory[index].Kubeconfig.Params == nil {
-			config.Inventory[index].Kubeconfig.Params = new(Params)
+
+		err := mergo.Merge(entry, config.Inventory[index], mergo.WithOverride)
+		if err != nil {
+			return nil, err
 		}
+		config.Inventory[index] = entry
 	}
 	return &config, err
 }

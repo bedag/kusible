@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/bedag/kusible/pkg/inventory"
+	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/playbook"
 	"github.com/bedag/kusible/pkg/target"
 	"github.com/bedag/kusible/pkg/wrapper/ejson"
@@ -47,10 +48,12 @@ func runRenderPlaybook(c *Cli, cmd *cobra.Command, args []string) error {
 	groupVarsDir := c.viper.GetString("group-vars-dir")
 	inventoryPath := c.viper.GetString("inventory")
 	skipEval := c.viper.GetBool("skip-eval")
-	skipClusterInv := c.viper.GetBool("skip-cluster-inventory")
 	skipDecrypt := c.viper.GetBool("skip-decrypt")
 	ejsonPrivKey := c.viper.GetString("ejson-privkey")
 	ejsonKeyDir := c.viper.GetString("ejson-key-dir")
+	skipClusterInv := c.viper.GetBool("skip-cluster-inventory")
+	clusterInvNamespace := c.viper.GetString("cluster-inventory-namespace")
+	clusterInvConfigMap := c.viper.GetString("cluster-inventory-configmap")
 
 	invEjsonSettings := ejson.Settings{
 		PrivKey: ejsonPrivKey,
@@ -67,9 +70,14 @@ func runRenderPlaybook(c *Cli, cmd *cobra.Command, args []string) error {
 		SkipDecrypt: skipDecrypt,
 	}
 
+	clusterInventoryDefaults := invconfig.ClusterInventory{
+		Namespace: clusterInvNamespace,
+		ConfigMap: clusterInvConfigMap,
+	}
+
 	// if we do not retrieve the cluster inventory ConfigMap, we do not need to retrieve
 	// the kubeconfig
-	inventory, err := inventory.NewInventory(inventoryPath, invEjsonSettings, false)
+	inventory, err := inventory.NewInventory(inventoryPath, invEjsonSettings, false, clusterInventoryDefaults)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err.Error(),

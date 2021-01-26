@@ -19,9 +19,10 @@ package playbook
 import (
 	"testing"
 
-	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	"github.com/bedag/kusible/pkg/inventory"
+	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/target"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	"gotest.tools/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,7 +64,7 @@ func TestConvert(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			inv, err := inventory.NewInventory(invPath, ejsonSettings, true)
+			inv, err := inventory.NewInventory(invPath, ejsonSettings, true, invconfig.ClusterInventory{})
 			assert.NilError(t, err)
 
 			targets, err := target.NewTargets(".*", []string{}, varsPath, inv, true, &ejsonSettings)
@@ -73,8 +74,8 @@ func TestConvert(t *testing.T) {
 			for _, tgt := range targets.Targets() {
 				clientset := fake.NewSimpleClientset(&v1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        "cluster-inventory",
-						Namespace:   tgt.Entry().ConfigNamespace(),
+						Name:        tgt.Entry().ClusterInventoryConfig().ConfigMap,
+						Namespace:   tgt.Entry().ClusterInventoryConfig().Namespace,
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
