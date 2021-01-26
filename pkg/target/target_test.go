@@ -19,9 +19,9 @@ package target
 import (
 	"testing"
 
-	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	"github.com/bedag/kusible/pkg/inventory"
 	invconf "github.com/bedag/kusible/pkg/inventory/config"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	"gotest.tools/assert"
 )
 
@@ -29,8 +29,9 @@ func TestTarget(t *testing.T) {
 	config := &invconf.Entry{
 		Name:   "cluster-01",
 		Groups: []string{"group-01", "group-02"},
-		Kubeconfig: &invconf.Kubeconfig{
-			Params: new(invconf.Params),
+		Kubeconfig: invconf.Kubeconfig{
+			Backend: "s3",
+			Params:  make(invconf.Params),
 		},
 	}
 

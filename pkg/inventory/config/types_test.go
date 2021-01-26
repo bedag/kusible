@@ -36,7 +36,9 @@ func TestConfig(t *testing.T) {
 inventory:
   - name: "testentry"
     groups: ["g0","g1","g2"]
-    config_namespace: "kube-system"
+    cluster_inventory:
+      namespace: "kube-system"
+      configmap: "cluster-inventory"
     kubeconfig:
       backend: "s3"
       params:
@@ -44,6 +46,7 @@ inventory:
         param2: "value2"
         param3: "value3"
         param4: "value4"
+        path: "some/path"
 `)
 
 	var expectedMap map[string]interface{}
@@ -57,11 +60,12 @@ inventory:
 	assert.Assert(t, config.Inventory != nil)
 	assert.Equal(t, 1, len(config.Inventory))
 	assert.Equal(t, "testentry", config.Inventory[0].Name)
-	assert.Equal(t, "kube-system", config.Inventory[0].ConfigNamespace)
-	assert.Assert(t, config.Inventory[0].Kubeconfig != nil)
+	assert.Equal(t, "kube-system", config.Inventory[0].ClusterInventory.Namespace)
+	assert.Equal(t, "cluster-inventory", config.Inventory[0].ClusterInventory.ConfigMap)
 	assert.Equal(t, "s3", config.Inventory[0].Kubeconfig.Backend)
 	assert.Assert(t, config.Inventory[0].Kubeconfig.Params != nil)
-	assert.Equal(t, 4, len(*config.Inventory[0].Kubeconfig.Params))
+	assert.Equal(t, 5, len(config.Inventory[0].Kubeconfig.Params))
+	assert.Equal(t, "some/path", config.Inventory[0].Kubeconfig.Params["path"])
 
 	// ensure that converting the parsed config back to yaml
 	// results in the same yaml that was used to create the config
@@ -90,6 +94,7 @@ inventory:
 	assert.Assert(t, config.Inventory != nil)
 	assert.Equal(t, 1, len(config.Inventory))
 	assert.Equal(t, "testentry", config.Inventory[0].Name)
-	assert.Assert(t, config.Inventory[0].Kubeconfig != nil)
+	assert.Equal(t, "s3", config.Inventory[0].Kubeconfig.Backend)
 	assert.Assert(t, config.Inventory[0].Kubeconfig.Params != nil)
+	assert.Equal(t, "testentry/kubeconfig/kubeconfig.enc.7z", config.Inventory[0].Kubeconfig.Params["path"])
 }

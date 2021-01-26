@@ -40,6 +40,5 @@ func newRenderCmd(c *Cli) *cobra.Command {
 
 func addRenderFlags(cmd *cobra.Command) {
 	addGroupsFlags(cmd)
-	addClusterInventoryFlags(cmd)
 	addInventoryFlags(cmd)
 }

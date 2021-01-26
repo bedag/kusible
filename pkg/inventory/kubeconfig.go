@@ -27,7 +27,7 @@ import (
 )
 
 func NewKubeconfigFromConfig(config *invconfig.Kubeconfig) (*Kubeconfig, error) {
-	return NewKubeconfigFromParams(config.Backend, *config.Params)
+	return NewKubeconfigFromParams(config.Backend, config.Params)
 }
 
 func NewKubeconfigFromParams(backend string, params map[string]interface{}) (*Kubeconfig, error) {

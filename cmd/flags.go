@@ -36,6 +36,8 @@ func addLimitFlags(cmd *cobra.Command) {
 
 func addClusterInventoryFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("skip-cluster-inventory", "", false, "Skip downloading the cluster-inventory ConfigMap")
+	cmd.Flags().StringP("cluster-inventory-namespace", "c", "kube-system", "Default config namespace for the cluster inventory config map")
+	cmd.Flags().StringP("cluster-inventory-configmap", "", "cluster-inventory", "Name of the cluster inventory config map in the cluster inventory namespace")
 }
 
 func addOutputFormatFlags(cmd *cobra.Command) {

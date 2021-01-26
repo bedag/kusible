@@ -20,15 +20,16 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	"github.com/bedag/kusible/pkg/inventory"
+	invconf "github.com/bedag/kusible/pkg/inventory/config"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	"gotest.tools/assert"
 )
 
 func TestTargets(t *testing.T) {
 	ejsonSettings := ejson.Settings{}
 
-	inv, err := inventory.NewInventory("testdata/inventory.yml", ejsonSettings, true)
+	inv, err := inventory.NewInventory("testdata/inventory.yml", ejsonSettings, true, invconf.ClusterInventory{})
 	assert.NilError(t, err)
 
 	type expected struct {

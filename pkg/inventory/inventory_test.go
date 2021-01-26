@@ -18,24 +18,24 @@ package inventory
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"testing"
 
-	"github.com/bedag/kusible/pkg/wrapper/ejson"
+	"github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/loader"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	"github.com/go-test/deep"
 	"gotest.tools/assert"
 )
 
-func basicInventoryTest(path string, filter string, limits []string, skip bool, expected []string) (*Inventory, error) {
+func basicInventoryTest(path string, filter string, limits []string, skip bool, clusterInvConfig config.ClusterInventory, expected []string) (*Inventory, error) {
 	ejsonSettings := ejson.Settings{
 		PrivKey:     "",
 		KeyDir:      "",
 		SkipDecrypt: false,
 	}
 
-	inventory, err := NewInventory(path, ejsonSettings, skip)
+	inventory, err := NewInventory(path, ejsonSettings, skip, clusterInvConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create inventory: %s", err)
 	}
@@ -61,11 +61,12 @@ func TestInventoryBare(t *testing.T) {
 	skipKubeconfig := true
 	filter := ".*"
 	limits := []string{}
+	clusterInventory := config.ClusterInventory{}
 	expected := []string{
 		"test",
 	}
 
-	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
+	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, clusterInventory, expected)
 	assert.NilError(t, err)
 	entry := inventory.entries["test"]
 	assert.Assert(t, entry.kubeconfig != nil)
@@ -73,14 +74,15 @@ func TestInventoryBare(t *testing.T) {
 	assert.Equal(t, "s3", entry.kubeconfig.loader.Type())
 	assert.Equal(t, "all", entry.groups[0])
 	assert.Equal(t, "test", entry.groups[1])
-	assert.Equal(t, "kube-system", entry.configNamespace)
+	assert.Equal(t, "kube-system", entry.ClusterInventoryConfig().Namespace)
+	assert.Equal(t, "cluster-inventory", entry.ClusterInventoryConfig().ConfigMap)
 	expectedPath := fmt.Sprintf("%s/%s", expected[0], "kubeconfig/kubeconfig.enc.7z")
 	backendConfig := entry.kubeconfig.loader.Config().(*loader.S3Config)
 	assert.Equal(t, expectedPath, backendConfig.Path)
 	assert.Assert(t, backendConfig.Region != "")
 }
 
-func TestConfigNamespaceEnv(t *testing.T) {
+func TestClusterInventoryConfigDefaults(t *testing.T) {
 	inventoryPath := "testdata/clusters_bare.yaml"
 	skipKubeconfig := true
 	filter := ".*"
@@ -89,14 +91,50 @@ func TestConfigNamespaceEnv(t *testing.T) {
 		"test",
 	}
 
-	envNamespace := "inventory-ns"
-	err := os.Setenv("CONFIG_NAMESPACE_DEFAULT", envNamespace)
-	assert.NilError(t, err, "failed to set environment %s=%s", "CONFIG_NAMESPACE_DEFAULT", envNamespace)
+	tests := map[string]struct {
+		defaults      config.ClusterInventory
+		wantNamespace string
+		wantConfigMap string
+	}{
+		"no defaults": {
+			defaults:      config.ClusterInventory{},
+			wantNamespace: "kube-system",
+			wantConfigMap: "cluster-inventory",
+		},
+		"namespace and configmap default": {
+			defaults: config.ClusterInventory{
+				Namespace: "some-namespace",
+				ConfigMap: "some-configmap",
+			},
+			wantNamespace: "some-namespace",
+			wantConfigMap: "some-configmap",
+		},
+		"namespace default": {
+			defaults: config.ClusterInventory{
+				Namespace: "some-namespace",
+			},
+			wantNamespace: "some-namespace",
+			wantConfigMap: "cluster-inventory",
+		},
+		"configmap default": {
+			defaults: config.ClusterInventory{
+				ConfigMap: "some-configmap",
+			},
+			wantNamespace: "kube-system",
+			wantConfigMap: "some-configmap",
+		},
+	}
 
-	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
-	assert.NilError(t, err)
-	entry := inventory.entries["test"]
-	assert.Equal(t, envNamespace, entry.configNamespace)
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, tc.defaults, expected)
+			assert.NilError(t, err)
+			entry := inventory.entries["test"]
+			assert.Equal(t, tc.wantNamespace, entry.ClusterInventoryConfig().Namespace)
+			assert.Equal(t, tc.wantConfigMap, entry.ClusterInventoryConfig().ConfigMap)
+		})
+	}
+
 }
 
 func TestInventoryEntriesFull(t *testing.T) {
@@ -104,6 +142,7 @@ func TestInventoryEntriesFull(t *testing.T) {
 	skipKubeconfig := true
 	filter := ".*"
 	limits := []string{}
+	clusterInventory := config.ClusterInventory{}
 	expected := []string{
 		"cluster-test-01-preflight",
 		"cluster-dev-01",
@@ -117,7 +156,7 @@ func TestInventoryEntriesFull(t *testing.T) {
 		"cluster-prod-04",
 	}
 
-	_, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
+	_, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, clusterInventory, expected)
 	assert.NilError(t, err)
 }
 
@@ -128,9 +167,10 @@ func TestInventoryEntriesSingle(t *testing.T) {
 		"cluster-dev-01",
 	}
 	limits := []string{}
+	clusterInventory := config.ClusterInventory{}
 	filter := expected[0]
 
-	_, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
+	_, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, clusterInventory, expected)
 	assert.NilError(t, err)
 }
 
@@ -145,9 +185,10 @@ func TestInventoryEntriesLimits(t *testing.T) {
 	limits := []string{
 		"stage",
 	}
+	clusterInventory := config.ClusterInventory{}
 	filter := ".*"
 
-	_, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
+	_, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, clusterInventory, expected)
 	assert.NilError(t, err)
 }
 
@@ -156,12 +197,13 @@ func TestInventoryLoader(t *testing.T) {
 	skipKubeconfig := false
 	filter := ".*"
 	limits := []string{}
+	clusterInventory := config.ClusterInventory{}
 	expected := []string{
 		"cluster-test-01",
 		"cluster-test-02",
 		"cluster-test-03",
 	}
-	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
+	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, clusterInventory, expected)
 	assert.NilError(t, err)
 	for _, entry := range inventory.entries {
 		ldr := entry.kubeconfig.loader
@@ -175,12 +217,13 @@ func TestInventoryEntryGroups(t *testing.T) {
 	skipKubeconfig := false
 	filter := ".*"
 	limits := []string{}
+	clusterInventory := config.ClusterInventory{}
 	expected := []string{
 		"cluster-test-01",
 		"cluster-test-02",
 		"cluster-test-03",
 	}
-	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, expected)
+	inventory, err := basicInventoryTest(inventoryPath, filter, limits, skipKubeconfig, clusterInventory, expected)
 	assert.NilError(t, err)
 	for _, entry := range inventory.entries {
 		name := entry.name
