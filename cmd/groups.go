@@ -17,11 +17,11 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/bedag/kusible/pkg/groups"
+	"github.com/bedag/kusible/pkg/printer"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -37,6 +37,7 @@ func newGroupsCmd(c *Cli) *cobra.Command {
 	}
 	addGroupsFlags(cmd)
 	addLimitFlags(cmd)
+	addOutputFlags(cmd)
 
 	return cmd
 }
@@ -60,7 +61,15 @@ func runGroups(c *Cli, cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	sort.Strings(groups)
-	fmt.Println(strings.Join(groups, "\n"))
-	return nil
+	printFn := func(fields []string) map[string]interface{} {
+		sort.Strings(groups)
+		return map[string]interface{}{
+			"groups": groups,
+		}
+	}
+
+	printerQueue := printer.Queue{printer.NewJob(printFn)}
+
+	return c.output(printerQueue)
+
 }

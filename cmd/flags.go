@@ -18,6 +18,12 @@ package cmd
 
 import "github.com/spf13/cobra"
 
+// addOutputFlags adds format and fields flags to a command.
+func addOutputFlags(cmd *cobra.Command) {
+	cmd.Flags().StringSliceP("fields", "", []string{}, "Fields to print")
+	cmd.Flags().String("format", "yaml", "Format to print (single,json,yaml,table)")
+}
+
 // addEjsonFlags adds flags to control ejson decryption
 func addEjsonFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("ejson-privkey", "k", "", "EJSON private key")
@@ -46,8 +52,4 @@ func addClusterInventoryDefaultsFlags(cmd *cobra.Command) {
 func addClusterInventoryFlags(cmd *cobra.Command) {
 	addClusterInventoryDefaultsFlags(cmd)
 	addSkipClusterInventoryFlags(cmd)
-}
-
-func addOutputFormatFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolP("json", "j", false, "Output json instead of yaml")
 }

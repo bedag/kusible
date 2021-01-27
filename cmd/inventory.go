@@ -43,5 +43,6 @@ func addInventoryFlags(cmd *cobra.Command) {
 	addEvalFlags(cmd)
 	addLimitFlags(cmd)
 	addClusterInventoryDefaultsFlags(cmd)
+	addOutputFlags(cmd)
 	cmd.Flags().StringP("inventory", "i", "inventory.yml", "Path to the inventory")
 }

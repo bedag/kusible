@@ -41,7 +41,7 @@ func newValuesCmd(c *Cli) *cobra.Command {
 	addEjsonFlags(cmd)
 	addEvalFlags(cmd)
 	addGroupsFlags(cmd)
-	addOutputFormatFlags(cmd)
+	addOutputFlags(cmd)
 
 	return cmd
 }
