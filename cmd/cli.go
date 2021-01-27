@@ -19,6 +19,7 @@ package cmd
 import (
 	"strings"
 
+	"github.com/bedag/kusible/pkg/printer"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -90,4 +91,27 @@ func (c *Cli) setupLogger() {
 	}
 
 	log.SetLevel(logLevel)
+}
+
+func (c *Cli) output(queue printer.Queue) error {
+	printerFormat := c.viper.GetString("format")
+	printerFields := c.viper.GetStringSlice("fields")
+	format, err := printer.ParseFormat(printerFormat)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"format": printerFormat,
+		}).Error("Unknown printer format")
+		return err
+	}
+
+	printer, err := printer.New(format, printerFields, queue)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"format": printerFormat,
+			"error":  err,
+		}).Error("Failed to create printer")
+		return err
+	}
+	printer.Print()
+	return nil
 }

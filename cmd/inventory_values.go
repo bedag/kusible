@@ -35,7 +35,6 @@ func newInventoryValuesCmd(c *Cli) *cobra.Command {
 	}
 	addInventoryFlags(cmd)
 	addGroupsFlags(cmd)
-	addOutputFormatFlags(cmd)
 	addSkipClusterInventoryFlags(cmd)
 
 	return cmd
