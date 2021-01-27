@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/bedag/kusible/pkg/values"
-	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	"github.com/spf13/cobra"
 
 	log "github.com/sirupsen/logrus"
@@ -51,15 +50,8 @@ func runValues(c *Cli, cmd *cobra.Command, args []string) error {
 	groups := args
 	groupVarsDir := c.viper.GetString("group-vars-dir")
 	skipEval := c.viper.GetBool("skip-eval")
-	skipDecrypt := c.viper.GetBool("skip-decrypt")
-	ejsonPrivKey := c.viper.GetString("ejson-privkey")
-	ejsonKeyDir := c.viper.GetString("ejson-key-dir")
 
-	ejsonSettings := ejson.Settings{
-		PrivKey:     ejsonPrivKey,
-		KeyDir:      ejsonKeyDir,
-		SkipDecrypt: skipDecrypt,
-	}
+	ejsonSettings := getEjsonSettings(c)
 
 	values, err := values.New(groupVarsDir, groups, skipEval, ejsonSettings)
 	if err != nil {

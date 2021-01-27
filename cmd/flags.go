@@ -34,10 +34,18 @@ func addLimitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceP("limit", "l", []string{}, "Limit selected groups")
 }
 
-func addClusterInventoryFlags(cmd *cobra.Command) {
+func addSkipClusterInventoryFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("skip-cluster-inventory", "", false, "Skip downloading the cluster-inventory ConfigMap")
+}
+
+func addClusterInventoryDefaultsFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("cluster-inventory-namespace", "c", "kube-system", "Default config namespace for the cluster inventory config map")
 	cmd.Flags().StringP("cluster-inventory-configmap", "", "cluster-inventory", "Name of the cluster inventory config map in the cluster inventory namespace")
+}
+
+func addClusterInventoryFlags(cmd *cobra.Command) {
+	addClusterInventoryDefaultsFlags(cmd)
+	addSkipClusterInventoryFlags(cmd)
 }
 
 func addOutputFormatFlags(cmd *cobra.Command) {

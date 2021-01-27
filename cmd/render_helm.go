@@ -19,11 +19,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/bedag/kusible/pkg/inventory"
-	invconfig "github.com/bedag/kusible/pkg/inventory/config"
-	"github.com/bedag/kusible/pkg/playbook"
-	"github.com/bedag/kusible/pkg/target"
-	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	helmutil "github.com/bedag/kusible/pkg/wrapper/helm"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -46,60 +41,9 @@ func newRenderHelmCmd(c *Cli) *cobra.Command {
 
 func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 	playbookFile := args[0]
-	limits := c.viper.GetStringSlice("limit")
-	groupVarsDir := c.viper.GetString("group-vars-dir")
-	inventoryPath := c.viper.GetString("inventory")
-	skipEval := c.viper.GetBool("skip-eval")
-	skipDecrypt := c.viper.GetBool("skip-decrypt")
-	ejsonPrivKey := c.viper.GetString("ejson-privkey")
-	ejsonKeyDir := c.viper.GetString("ejson-key-dir")
-	skipClusterInv := c.viper.GetBool("skip-cluster-inventory")
-	clusterInvNamespace := c.viper.GetString("cluster-inventory-namespace")
-	clusterInvConfigMap := c.viper.GetString("cluster-inventory-configmap")
 
-	invEjsonSettings := ejson.Settings{
-		PrivKey: ejsonPrivKey,
-		KeyDir:  ejsonKeyDir,
-		// if we want to retrieve the cluster inventory ConfigMap
-		// we need a kubeconfig to retrieve it, so we cannot skip
-		// the decryption of the inventory settings
-		SkipDecrypt: false,
-	}
-
-	tgtEjsonSettings := ejson.Settings{
-		PrivKey:     ejsonPrivKey,
-		KeyDir:      ejsonKeyDir,
-		SkipDecrypt: skipDecrypt,
-	}
-
-	clusterInventoryDefaults := invconfig.ClusterInventory{
-		Namespace: clusterInvNamespace,
-		ConfigMap: clusterInvConfigMap,
-	}
-
-	// if we do not retrieve the cluster inventory ConfigMap, we do not need to retrieve
-	// the kubeconfig
-	inventory, err := inventory.NewInventory(inventoryPath, invEjsonSettings, false, clusterInventoryDefaults)
+	playbookSet, err := loadPlaybooks(c, playbookFile)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("Failed to compile inventory.")
-		return err
-	}
-
-	targets, err := target.NewTargets(".*", limits, groupVarsDir, inventory, true, &tgtEjsonSettings)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("Failed to compile values for inventory entries.")
-		return err
-	}
-
-	playbookSet, err := playbook.NewSet(playbookFile, targets, skipEval, skipClusterInv)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("Failed to compile playbooks.")
 		return err
 	}
 
