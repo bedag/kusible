@@ -40,10 +40,31 @@ func NewTable(data []map[string]interface{}, header []string) *TablePrinter {
 				continue
 			}
 			var rowData string
-			fieldType := reflect.ValueOf(fieldData).Kind()
-			switch fieldType {
+			switch reflect.ValueOf(fieldData).Kind() {
 			case reflect.Map, reflect.Struct:
-				rowData = "<Multiline data will not be rendered in table mode>"
+				rowData = "<structured data>"
+			case reflect.Slice:
+				// Special case: try to render fields that are lists
+				// if and only if the table will have only one column.
+				//
+				// Not sure if this is useful or if it is just "clever" and produces
+				// behavior the user is not expecting
+				s := reflect.ValueOf(fieldData)
+				count := s.Len()
+				if count < 1 {
+					break
+				}
+				rowData = "<structured data>"
+				if len(header) == 1 {
+					// Set the last element of the list in the fieldData
+					// as the "normal" row data and then explicitely create additional
+					// table rows based on the list in fieldData. the row in rowData
+					// will then be added last by the normal row processing below
+					rowData = fmt.Sprintf("%+v", s.Index(count-1))
+					for i := 0; i < count-2; i++ {
+						table.Append([]string{fmt.Sprintf("%+v", s.Index(i))})
+					}
+				}
 			default:
 				rowData = fmt.Sprintf("%+v", fieldData)
 			}
