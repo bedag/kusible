@@ -21,7 +21,7 @@ import (
 	"strings"
 )
 
-func New(format Format, fields []string, queue Queue) (Printer, error) {
+func New(format Format, fields []string, queue Queue, options Options) (Printer, error) {
 	feed := []map[string]interface{}{}
 	for _, object := range queue {
 		feed = append(feed, object.PrinterData(fields))
@@ -30,9 +30,9 @@ func New(format Format, fields []string, queue Queue) (Printer, error) {
 	var printer Printer
 	switch format {
 	case FormatJSON:
-		printer = NewJSON(feed)
+		printer = NewJSON(feed, options)
 	case FormatYAML:
-		printer = NewYAML(feed)
+		printer = NewYAML(feed, options)
 	case FormatTable:
 		if len(fields) < 1 {
 			return nil, fmt.Errorf("'table' printer requires at least one field to print")

@@ -38,6 +38,13 @@ type Printable interface {
 	PrinterData(fields []string) map[string]interface{}
 }
 
+type Options struct {
+	// Some printers can wrap the resulting elements
+	// in a list. This option controls if the printer
+	// should also wrap a single result element in a list.
+	ListWrapSingleItem bool
+}
+
 type Queue []Printable
 
 // DataFn defines the function signature needed to
@@ -49,7 +56,8 @@ type job struct {
 }
 
 type structPrinter struct {
-	data []map[string]interface{}
+	data               []map[string]interface{}
+	listWrapSingleItem bool
 }
 
 type listPrinter struct {
