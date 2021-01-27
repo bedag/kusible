@@ -16,7 +16,10 @@ limitations under the License.
 
 package printer
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+)
 
 func NewSingle(data []map[string]interface{}, field string) *SinglePrinter {
 	result := []interface{}{}
@@ -30,6 +33,15 @@ func NewSingle(data []map[string]interface{}, field string) *SinglePrinter {
 
 func (p *SinglePrinter) Print() {
 	for _, entry := range p.data {
-		fmt.Printf("%+v\n", entry)
+		switch reflect.TypeOf(entry).Kind() {
+		case reflect.Slice:
+			s := reflect.ValueOf(entry)
+
+			for i := 0; i < s.Len(); i++ {
+				fmt.Printf("%+v\n", s.Index(i))
+			}
+		default:
+			fmt.Printf("%+v\n", entry)
+		}
 	}
 }
