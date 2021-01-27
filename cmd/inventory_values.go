@@ -19,10 +19,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/bedag/kusible/pkg/inventory"
-	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/target"
-	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -39,6 +36,7 @@ func newInventoryValuesCmd(c *Cli) *cobra.Command {
 	addInventoryFlags(cmd)
 	addGroupsFlags(cmd)
 	addOutputFormatFlags(cmd)
+	addSkipClusterInventoryFlags(cmd)
 
 	return cmd
 }
@@ -46,37 +44,13 @@ func newInventoryValuesCmd(c *Cli) *cobra.Command {
 func runInventoryValues(c *Cli, cmd *cobra.Command, args []string) error {
 	name := args[0]
 	groupVarsDir := c.viper.GetString("group-vars-dir")
-	inventoryPath := c.viper.GetString("inventory")
-	skipDecrypt := c.viper.GetBool("skip-decrypt")
 	skipEval := c.viper.GetBool("skip-eval")
-	ejsonPrivKey := c.viper.GetString("ejson-privkey")
-	ejsonKeyDir := c.viper.GetString("ejson-key-dir")
-	skipClusterInv := c.viper.GetBool("skip-cluster-inventory")
-	clusterInvNamespace := c.viper.GetString("cluster-inventory-namespace")
-	clusterInvConfigMap := c.viper.GetString("cluster-inventory-configmap")
 
-	ejsonSettings := ejson.Settings{
-		PrivKey:     ejsonPrivKey,
-		KeyDir:      ejsonKeyDir,
-		SkipDecrypt: false,
-	}
-
-	if skipClusterInv {
-		log.Info("--skip-cluster-inventory has no effect when retrieving kubeconfig files")
-	}
-
-	clusterInventoryDefaults := invconfig.ClusterInventory{
-		Namespace: clusterInvNamespace,
-		ConfigMap: clusterInvConfigMap,
-	}
+	ejsonSettings := getEjsonSettings(c)
 
 	// we just need the values for the given entry, skip the kubeconfig retrieval
-	skipKubeconfig := true
-	inv, err := inventory.NewInventory(inventoryPath, ejsonSettings, skipKubeconfig, clusterInventoryDefaults)
+	inv, err := getInventoryWithoutKubeconfig(c)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("Failed to compile inventory.")
 		return err
 	}
 
@@ -88,7 +62,6 @@ func runInventoryValues(c *Cli, cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ejsonSettings.SkipDecrypt = skipDecrypt
 	target, err := target.New(entry, groupVarsDir, skipEval, &ejsonSettings)
 	if err != nil {
 		log.WithFields(log.Fields{
