@@ -22,15 +22,20 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func NewYAML(data []map[string]interface{}) *YAMLPrinter {
+func NewYAML(data []map[string]interface{}, options Options) *YAMLPrinter {
 	return &YAMLPrinter{
-		data: data,
+		data:               data,
+		listWrapSingleItem: options.ListWrapSingleItem,
 	}
 }
 
 func (p *YAMLPrinter) Print() {
-	items := map[string]interface{}{
+	var items interface{}
+	items = map[string]interface{}{
 		"items": p.data,
+	}
+	if len(p.data) == 1 && !p.listWrapSingleItem {
+		items = p.data[0]
 	}
 	result, err := yaml.Marshal(items)
 	if err != nil {

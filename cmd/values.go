@@ -17,8 +17,7 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/bedag/kusible/pkg/printer"
 	"github.com/bedag/kusible/pkg/values"
 	"github.com/spf13/cobra"
 
@@ -61,21 +60,23 @@ func runValues(c *Cli, cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	render := values.YAML
-	if c.viper.GetBool("json") {
-		render = values.JSON
+	printFn := func(fields []string) map[string]interface{} {
+		all := values.Map()
+		if len(fields) < 1 {
+			return all
+		}
+
+		result := make(map[string]interface{}, len(fields))
+
+		for _, field := range fields {
+			if val, ok := all[field]; ok {
+				result[field] = val
+			}
+		}
+		return result
 	}
 
-	result, err := render()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("Failed to render compiled group vars.")
-		return err
-	}
+	printerQueue := printer.Queue{printer.NewJob(printFn)}
 
-	if !c.viper.GetBool("quiet") {
-		fmt.Printf("%s", string(result))
-	}
-	return nil
+	return c.output(printerQueue)
 }

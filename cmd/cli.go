@@ -104,7 +104,7 @@ func (c *Cli) output(queue printer.Queue) error {
 		return err
 	}
 
-	printer, err := printer.New(format, printerFields, queue)
+	printer, err := printer.New(format, printerFields, queue, printer.Options{})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"format": printerFormat,
@@ -112,6 +112,8 @@ func (c *Cli) output(queue printer.Queue) error {
 		}).Error("Failed to create printer")
 		return err
 	}
-	printer.Print()
+	if !c.viper.GetBool("quiet") {
+		printer.Print()
+	}
 	return nil
 }

@@ -71,5 +71,4 @@ func runGroups(c *Cli, cmd *cobra.Command, args []string) error {
 	printerQueue := printer.Queue{printer.NewJob(printFn)}
 
 	return c.output(printerQueue)
-
 }

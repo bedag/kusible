@@ -21,9 +21,10 @@ import (
 	"fmt"
 )
 
-func NewJSON(data []map[string]interface{}) *JSONPrinter {
+func NewJSON(data []map[string]interface{}, options Options) *JSONPrinter {
 	return &JSONPrinter{
-		data: data,
+		data:               data,
+		listWrapSingleItem: options.ListWrapSingleItem,
 	}
 }
 
