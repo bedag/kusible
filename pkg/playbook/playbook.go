@@ -129,3 +129,22 @@ func (p *Playbook) JSON(raw bool) ([]byte, error) {
 	// least one play
 	return []byte{}, nil
 }
+
+func (p *Playbook) Map(raw bool) (map[string]interface{}, error) {
+	// we want the raw, unevaluated config
+	if raw {
+		return p.Raw, nil
+	}
+
+	// we want the evaluated config, but only if it
+	// contains at least one play
+	result := map[string]interface{}{}
+	if p.Config != nil && (len(p.Config.Plays) > 0) {
+		mergo.Map(&result, p.Config)
+	}
+
+	// we neither want the unevaluated config nor do
+	// we have an evaluated config that contains at
+	// least one play
+	return result, nil
+}
