@@ -139,12 +139,17 @@ func (p *Playbook) Map(raw bool) (map[string]interface{}, error) {
 	// we want the evaluated config, but only if it
 	// contains at least one play
 	result := map[string]interface{}{}
+	var err error
 	if p.Config != nil && (len(p.Config.Plays) > 0) {
-		mergo.Map(&result, p.Config)
+		data, err := p.Config.JSON()
+		if err != nil {
+			return nil, err
+		}
+		err = yaml.Unmarshal(data, &result)
 	}
 
 	// we neither want the unevaluated config nor do
 	// we have an evaluated config that contains at
 	// least one play
-	return result, nil
+	return result, err
 }
