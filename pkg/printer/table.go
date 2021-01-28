@@ -24,7 +24,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func NewTable(data []map[string]interface{}, header []string) *TablePrinter {
+func NewTable(data []map[string]interface{}, header []string) *tablePrinter {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader(header)
 	table.SetAutoWrapText(false)
@@ -73,11 +73,11 @@ func NewTable(data []map[string]interface{}, header []string) *TablePrinter {
 		}
 		table.Append(row)
 	}
-	return &TablePrinter{
+	return &tablePrinter{
 		table: table,
 	}
 }
 
-func (p *TablePrinter) Print() {
+func (p *tablePrinter) Print() {
 	p.table.Render()
 }

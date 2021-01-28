@@ -17,19 +17,29 @@ limitations under the License.
 package printer
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"sigs.k8s.io/yaml"
 )
 
-func NewYAML(data []map[string]interface{}, options Options) *YAMLPrinter {
-	return &YAMLPrinter{
+func NewYAML(data []map[string]interface{}, options Options) *structPrinter {
+	return &structPrinter{
 		data:               data,
 		listWrapSingleItem: options.ListWrapSingleItem,
+		marshal:            yaml.Marshal,
 	}
 }
 
-func (p *YAMLPrinter) Print() {
+func NewJSON(data []map[string]interface{}, options Options) *structPrinter {
+	return &structPrinter{
+		data:               data,
+		listWrapSingleItem: options.ListWrapSingleItem,
+		marshal:            func(o interface{}) ([]byte, error) { return json.MarshalIndent(o, "", "  ") },
+	}
+}
+
+func (p *structPrinter) Print() {
 	var items interface{}
 	items = map[string]interface{}{
 		"items": p.data,
@@ -37,9 +47,9 @@ func (p *YAMLPrinter) Print() {
 	if len(p.data) == 1 && !p.listWrapSingleItem {
 		items = p.data[0]
 	}
-	result, err := yaml.Marshal(items)
+	result, err := p.marshal(items)
 	if err != nil {
-		fmt.Printf("Failed to print data as json: %s", err)
+		fmt.Printf("Failed to print data: %s", err)
 	}
 	fmt.Printf("%s\n", string(result))
 }
