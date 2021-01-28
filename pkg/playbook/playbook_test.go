@@ -124,6 +124,16 @@ func TestConvert(t *testing.T) {
 						assert.NilError(t, err)
 						assert.Equal(t, tc.hasConfig, len(result) > 0)
 					})
+					t.Run("map", func(t *testing.T) {
+						result, err := playbook.Map(false)
+						assert.NilError(t, err)
+						assert.Equal(t, tc.hasConfig, len(result) > 0)
+					})
+					t.Run("map-raw", func(t *testing.T) {
+						result, err := playbook.Map(true)
+						assert.NilError(t, err)
+						assert.Equal(t, tc.hasConfig, len(result) > 0)
+					})
 				})
 			}
 		})
