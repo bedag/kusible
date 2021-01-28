@@ -21,17 +21,17 @@ import (
 	"reflect"
 )
 
-func NewSingle(data []map[string]interface{}, field string) *SinglePrinter {
+func NewSingle(data []map[string]interface{}, field string) *singlePrinter {
 	result := []interface{}{}
 	for _, entry := range data {
 		result = append(result, entry[field])
 	}
-	return &SinglePrinter{
+	return &singlePrinter{
 		data: result,
 	}
 }
 
-func (p *SinglePrinter) Print() {
+func (p *singlePrinter) Print() {
 	for _, entry := range p.data {
 		switch reflect.TypeOf(entry).Kind() {
 		case reflect.Slice:

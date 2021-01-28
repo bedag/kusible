@@ -58,16 +58,15 @@ type job struct {
 type structPrinter struct {
 	data               []map[string]interface{}
 	listWrapSingleItem bool
+	marshal            func(interface{}) ([]byte, error)
 }
 
 type listPrinter struct {
 	data []interface{}
 }
 
-type JSONPrinter structPrinter
-type YAMLPrinter structPrinter
-type TablePrinter struct {
+type singlePrinter listPrinter
+
+type tablePrinter struct {
 	table *tablewriter.Table
 }
-
-type SinglePrinter listPrinter
