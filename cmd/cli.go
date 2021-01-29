@@ -96,6 +96,7 @@ func (c *Cli) setupLogger() {
 func (c *Cli) output(queue printer.Queue) error {
 	printerFormat := c.viper.GetString("format")
 	printerFields := c.viper.GetStringSlice("fields")
+
 	format, err := printer.ParseFormat(printerFormat)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -104,7 +105,10 @@ func (c *Cli) output(queue printer.Queue) error {
 		return err
 	}
 
-	printer, err := printer.New(format, printerFields, queue, printer.Options{})
+	options := printer.Options{
+		ListWrapSingleItem: c.viper.GetBool("list-wrap-single"),
+	}
+	printer, err := printer.New(format, printerFields, queue, options)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"format": printerFormat,

@@ -30,9 +30,9 @@ func NewRootCommand(c *Cli) *cobra.Command {
 		SilenceErrors: true,
 	}
 
-	rootCmd.PersistentFlags().StringP("log-level", "", log.WarnLevel.String(), "log level (trace,debug,info,warn/warning,error,fatal,panic)")
-	rootCmd.PersistentFlags().BoolP("json-log", "", false, "log as json")
-	rootCmd.PersistentFlags().BoolP("log-functions", "", false, "log function names (performance impact!)")
+	rootCmd.PersistentFlags().String("log-level", log.WarnLevel.String(), "log level (trace,debug,info,warn/warning,error,fatal,panic)")
+	rootCmd.PersistentFlags().Bool("json-log", false, "log as json")
+	rootCmd.PersistentFlags().Bool("log-functions", false, "log function names (performance impact!)")
 	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Suppress all normal output")
 
 	c.bindAllFlags(rootCmd)
