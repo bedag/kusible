@@ -20,20 +20,21 @@ import "github.com/spf13/cobra"
 
 // addOutputFlags adds format and fields flags to a command.
 func addOutputFlags(cmd *cobra.Command) {
-	cmd.Flags().StringSliceP("fields", "", []string{}, "Fields to print")
+	cmd.Flags().StringSlice("fields", []string{}, "Fields to print")
 	cmd.Flags().String("format", "yaml", "Format to print (single,json,yaml,table)")
+	cmd.Flags().Bool("list-wrap-single", false, "Wrap the result in an 'items: []' list even if it has only one element")
 }
 
 // addEjsonFlags adds flags to control ejson decryption
 func addEjsonFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("ejson-privkey", "k", "", "EJSON private key")
-	cmd.Flags().StringP("ejson-key-dir", "", "/opt/ejson/keys", "Directory containing EJSON keys")
-	cmd.Flags().BoolP("skip-decrypt", "", false, "Skip ejson decryption")
+	cmd.Flags().String("ejson-key-dir", "/opt/ejson/keys", "Directory containing EJSON keys")
+	cmd.Flags().Bool("skip-decrypt", false, "Skip ejson decryption")
 }
 
 // addEvalFlags adds flags that controls spruce eval behavior
 func addEvalFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolP("skip-eval", "", false, "Skip spruce operator evaluation")
+	cmd.Flags().Bool("skip-eval", false, "Skip spruce operator evaluation")
 }
 
 func addLimitFlags(cmd *cobra.Command) {
@@ -41,12 +42,12 @@ func addLimitFlags(cmd *cobra.Command) {
 }
 
 func addSkipClusterInventoryFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolP("skip-cluster-inventory", "", false, "Skip downloading the cluster-inventory ConfigMap")
+	cmd.Flags().Bool("skip-cluster-inventory", false, "Skip downloading the cluster-inventory ConfigMap")
 }
 
 func addClusterInventoryDefaultsFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("cluster-inventory-namespace", "c", "kube-system", "Default config namespace for the cluster inventory config map")
-	cmd.Flags().StringP("cluster-inventory-configmap", "", "cluster-inventory", "Name of the cluster inventory config map in the cluster inventory namespace")
+	cmd.Flags().String("cluster-inventory-configmap", "cluster-inventory", "Name of the cluster inventory config map in the cluster inventory namespace")
 }
 
 func addClusterInventoryFlags(cmd *cobra.Command) {

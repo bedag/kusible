@@ -33,7 +33,7 @@ func newInventoryLoaderCmd(c *Cli) *cobra.Command {
 		RunE:                  c.wrap(runInventoryLoader),
 	}
 	addInventoryFlags(cmd)
-	cmd.Flags().BoolP("unsafe", "", false, "Show confidential loader info")
+	cmd.Flags().Bool("unsafe", false, "Show confidential loader info")
 
 	return cmd
 }

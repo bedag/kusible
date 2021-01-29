@@ -34,8 +34,8 @@ func newRenderArgoCDCmd(c *Cli) *cobra.Command {
 		RunE:                  c.wrap(runRenderArgoCD),
 	}
 	addRenderFlags(cmd)
-	cmd.Flags().StringP("argocd-namespace", "", "argocd", "Namespace where ArgoCD is looking for ArgoCD applications")
-	cmd.Flags().StringP("argocd-project", "", "default", "The ArgoCD project to which the applications should be assigned")
+	cmd.Flags().String("argocd-namespace", "argocd", "Namespace where ArgoCD is looking for ArgoCD applications")
+	cmd.Flags().String("argocd-project", "default", "The ArgoCD project to which the applications should be assigned")
 
 	return cmd
 }

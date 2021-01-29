@@ -71,7 +71,7 @@ func runRenderPlaybook(c *Cli, cmd *cobra.Command, args []string) error {
 					return defaultResult
 				}
 
-				// Iterate over each play and just render the requested fields
+				// Iterate over each play and just select the requested fields
 				// for each play. This means the "fields" parameter refers to
 				// the fields of each play of the playbook and not the fields of
 				// the playbook itself (which would just be one field: "plays")
