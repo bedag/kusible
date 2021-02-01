@@ -17,10 +17,7 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
-
-	"github.com/bedag/kusible/pkg/target"
-	log "github.com/sirupsen/logrus"
+	"github.com/bedag/kusible/pkg/printer"
 	"github.com/spf13/cobra"
 )
 
@@ -41,51 +38,42 @@ func newInventoryValuesCmd(c *Cli) *cobra.Command {
 }
 
 func runInventoryValues(c *Cli, cmd *cobra.Command, args []string) error {
-	name := args[0]
-	groupVarsDir := c.viper.GetString("group-vars-dir")
-	skipEval := c.viper.GetBool("skip-eval")
+	filter := args[0]
 
-	ejsonSettings := getEjsonSettings(c)
-
-	// we just need the values for the given entry, skip the kubeconfig retrieval
-	inv, err := getInventoryWithoutKubeconfig(c)
+	targets, err := loadTargets(c, filter)
 	if err != nil {
 		return err
 	}
 
-	entry, ok := inv.Entries()[name]
-	if !ok {
-		log.WithFields(log.Fields{
-			"entry": name,
-		}).Error("Entry does not exist")
-		return err
-	}
+	printerQueue := printer.Queue{}
+	for name, target := range targets.Targets() {
+		values := target.Values().Map()
+		// see https://golang.org/doc/faq#closures_and_goroutines
+		name := name
 
-	target, err := target.New(entry, groupVarsDir, skipEval, &ejsonSettings)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"entry": name,
-			"error": err.Error(),
-		}).Error("Failed to compile values for inventory entry")
-		return err
-	}
-	values := target.Values()
+		job := printer.NewJob(func(fields []string) map[string]interface{} {
+			defaultResult := map[string]interface{}{
+				"entry":  name,
+				"values": values,
+			}
 
-	render := values.YAML
-	if c.viper.GetBool("json") {
-		render = values.JSON
-	}
+			if len(fields) < 1 {
+				return defaultResult
+			}
 
-	result, err := render()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("Failed to render compiled group vars.")
-		return err
-	}
+			resultValues := map[string]interface{}{}
+			for _, field := range fields {
+				if val, ok := values[field]; ok {
+					resultValues[field] = val
+				}
+			}
 
-	if !c.viper.GetBool("quiet") {
-		fmt.Printf("%s", string(result))
+			return map[string]interface{}{
+				"entry":  name,
+				"values": resultValues,
+			}
+		})
+		printerQueue = append(printerQueue, job)
 	}
-	return nil
+	return c.output(printerQueue)
 }
