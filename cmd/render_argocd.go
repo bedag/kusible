@@ -61,6 +61,11 @@ func runRenderArgoCD(c *Cli, cmd *cobra.Command, args []string) error {
 				}).Error("Failed to render ArgoCD application manifests.")
 				return err
 			}
+			// Do not use the printer package here because the output is specifically intended
+			// to be directly consumed by kubectl (or whatever).
+			// It is up to the user to ensure that only the manifests he really needs are rendered
+			// (e.g. if he renders all manifests of all inventory entries at once it is his  task
+			// to deal with the result)
 			fmt.Printf(manifests)
 		}
 	}

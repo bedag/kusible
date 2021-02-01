@@ -34,7 +34,6 @@ type BackendConfig interface {
 }
 
 type S3Config struct {
-	BackendConfig
 	AccessKey  string `json:"accesskey"`
 	SecretKey  string `json:"secretkey"`
 	Region     string `json:"region"`
@@ -50,7 +49,6 @@ type S3Backend struct {
 }
 
 type FileConfig struct {
-	BackendConfig
 	Path       string `json:"path"`
 	DecryptKey string `json:"decrypt_key"`
 }

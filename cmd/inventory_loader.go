@@ -17,16 +17,15 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/bedag/kusible/pkg/printer"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 func newInventoryLoaderCmd(c *Cli) *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:                   "loader [entry name]",
-		Short:                 "Get kubeconfig loader information for the given entry",
+		Use:                   "loader [regex]",
+		Short:                 "Get kubeconfig loader information for entries matched by the regex",
 		Args:                  cobra.ExactArgs(1),
 		TraverseChildren:      true,
 		DisableFlagsInUseLine: true,
@@ -39,7 +38,8 @@ func newInventoryLoaderCmd(c *Cli) *cobra.Command {
 }
 
 func runInventoryLoader(c *Cli, cmd *cobra.Command, args []string) error {
-	name := args[0]
+	filter := args[0]
+	limits := c.viper.GetStringSlice("limit")
 	unsafe := c.viper.GetBool("unsafe")
 
 	// we just need the values for the given entry, skip the kubeconfig retrieval
@@ -48,23 +48,47 @@ func runInventoryLoader(c *Cli, cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	entry, ok := inv.Entries()[name]
-	if !ok {
-		log.WithFields(log.Fields{
-			"entry": name,
-		}).Error("Entry does not exist")
-		return err
-	}
-	loaderConfig, err := entry.Kubeconfig().Loader().Config().Yaml(unsafe)
+	names, err := inv.EntryNames(filter, limits)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"entry": name,
 			"error": err.Error(),
-		}).Error("Failed to get loader config")
+		}).Error("Failed to get list of entries")
 		return err
 	}
-	fmt.Printf("Loader type: %s\n", entry.Kubeconfig().Loader().Type())
-	fmt.Println("Loader config: ")
-	fmt.Printf("%4s", string(loaderConfig))
-	return nil
+
+	printerQueue := printer.Queue{}
+	for _, name := range names {
+		entry := inv.Entries()[name]
+		// see https://golang.org/doc/faq#closures_and_goroutines
+		name := name
+
+		loaderType := entry.Kubeconfig().Loader().Type()
+		loaderConfig := entry.Kubeconfig().Loader().Config().Sanitize()
+		if unsafe {
+			loaderConfig = entry.Kubeconfig().Loader().Config()
+		}
+
+		job := printer.NewJob(func(fields []string) map[string]interface{} {
+			defaultResult := map[string]interface{}{
+				"entry":  name,
+				"type":   loaderType,
+				"config": loaderConfig,
+			}
+
+			if len(fields) < 1 {
+				return defaultResult
+			}
+
+			result := map[string]interface{}{}
+			for _, field := range fields {
+				if val, ok := defaultResult[field]; ok {
+					result[field] = val
+				}
+			}
+			return result
+		})
+		printerQueue = append(printerQueue, job)
+	}
+
+	return c.output(printerQueue)
 }
