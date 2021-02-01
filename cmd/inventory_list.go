@@ -17,8 +17,7 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/bedag/kusible/pkg/printer"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -55,8 +54,14 @@ func runInventoryList(c *Cli, cmd *cobra.Command, args []string) error {
 		}).Error("Failed to get list of entries")
 		return err
 	}
-	for _, name := range names {
-		fmt.Printf("%s\n", name)
+
+	printFn := func(fields []string) map[string]interface{} {
+		return map[string]interface{}{
+			"entries": names,
+		}
 	}
-	return nil
+
+	printerQueue := printer.Queue{printer.NewJob(printFn)}
+
+	return c.output(printerQueue)
 }

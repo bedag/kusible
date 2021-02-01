@@ -170,10 +170,10 @@ func (c *S3Config) Sanitize() BackendConfig {
 
 	result := &S3Config{
 		AccessKey:  c.AccessKey,
-		SecretKey:  fmt.Sprintf("%x", sha256.Sum256([]byte(c.SecretKey))),
+		SecretKey:  fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(c.SecretKey))),
 		Region:     c.Region,
 		Server:     c.Server,
-		DecryptKey: fmt.Sprintf("%x", sha256.Sum256([]byte(c.DecryptKey))),
+		DecryptKey: fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(c.DecryptKey))),
 		Bucket:     c.Bucket,
 		Path:       c.Path,
 	}

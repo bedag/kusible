@@ -101,7 +101,7 @@ func (b *FileBackend) Config() BackendConfig {
 
 func (c *FileConfig) Sanitize() BackendConfig {
 	result := &FileConfig{
-		DecryptKey: fmt.Sprintf("%x", sha256.Sum256([]byte(c.DecryptKey))),
+		DecryptKey: fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(c.DecryptKey))),
 		Path:       c.Path,
 	}
 	return result
