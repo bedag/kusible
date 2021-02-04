@@ -19,9 +19,11 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/bedag/kusible/pkg/printer"
 	"github.com/imdario/mergo"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
 
 	"github.com/google/uuid"
 	"k8s.io/client-go/tools/clientcmd"
@@ -93,8 +95,26 @@ func runInventoryKubeconfig(c *Cli, cmd *cobra.Command, args []string) error {
 		}).Error("Failed to render merged kubeconfigs as yaml")
 		return err
 	}
-	fmt.Println(string(data))
-	return nil
+
+	printFn := func(fields []string) map[string]interface{} {
+		var defaultResult map[string]interface{}
+
+		yaml.Unmarshal(data, &defaultResult)
+		if len(fields) < 1 {
+			return defaultResult
+		}
+
+		result := map[string]interface{}{}
+		for _, field := range fields {
+			if val, ok := defaultResult[field]; ok {
+				result[field] = val
+			}
+		}
+		return result
+	}
+
+	printerQueue := printer.Queue{printer.NewJob(printFn)}
+	return c.output(printerQueue)
 }
 
 func mergeKubeconfigs(kubeconfigs []*clientcmdapi.Config) *clientcmdapi.Config {
