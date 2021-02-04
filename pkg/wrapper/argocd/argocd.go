@@ -19,7 +19,6 @@ package argocd
 import (
 	// "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	"fmt"
-	"strings"
 
 	"github.com/bedag/kusible/pkg/playbook/config"
 	"sigs.k8s.io/yaml"
@@ -32,9 +31,9 @@ import (
 // The project parameter is the argocd project the application should belong to
 // The namespace parameter is the namespace where ArgoCD is expection Application resources
 // The server parameter is the server name(!) as configured in ArgoCD where ArgoCD should deploy the rendered resources
-func ApplicationFromPlay(play *config.Play, project string, namespace string, server string) (string, error) {
+func ApplicationsFromPlay(play *config.Play, project string, namespace string, server string) ([]Application, error) {
 	// https://github.com/argoproj/argo-cd/blob/master/pkg/apis/application/v1alpha1/types.go
-	result := ""
+	result := []Application{}
 	for _, chart := range play.Charts {
 		app := Application{}
 		// global Application resource settings
@@ -76,11 +75,7 @@ func ApplicationFromPlay(play *config.Play, project string, namespace string, se
 		app.Spec.Destination.Namespace = chart.Namespace
 		app.Spec.Destination.Name = server
 
-		manifest, err := yaml.Marshal(app)
-		if err != nil {
-			return result, err
-		}
-		result = fmt.Sprintf("---\n%s%s\n", result, strings.TrimSpace(string(manifest)))
+		result = append(result, app)
 	}
 	return result, nil
 }
