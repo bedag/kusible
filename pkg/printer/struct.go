@@ -42,7 +42,9 @@ func NewJSON(data []map[string]interface{}, options Options) *structPrinter {
 func (p *structPrinter) Print() {
 	var items interface{}
 	items = map[string]interface{}{
-		"items": p.data,
+		"apiVersion": "v1",
+		"kind":       "List",
+		"items":      p.data,
 	}
 	if len(p.data) == 1 && !p.listWrapSingleItem {
 		items = p.data[0]
