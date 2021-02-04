@@ -24,6 +24,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 func NewKubeconfigFromConfig(config *invconfig.Kubeconfig) (*Kubeconfig, error) {
@@ -122,18 +123,48 @@ func (k *Kubeconfig) loadConfig() error {
 		return err
 	}
 
-	rawConfig, err := clientcmd.Load(configData)
+	config, err := clientcmd.Load(configData)
 	if err != nil {
 		return err
 	}
-	if rawConfig.CurrentContext == "" {
-		for name := range rawConfig.Contexts {
-			rawConfig.CurrentContext = name
-			break
+
+	if config.AuthInfos == nil {
+		config.AuthInfos = map[string]*clientcmdapi.AuthInfo{}
+	}
+	if config.Clusters == nil {
+		config.Clusters = map[string]*clientcmdapi.Cluster{}
+	}
+	if config.Contexts == nil {
+		config.Contexts = map[string]*clientcmdapi.Context{}
+	}
+
+	if len(config.Contexts) > 0 {
+		// normalize context names
+		// the resulting contexts only include contexts with unique
+		// cluster/user/namespace settings
+		contexts := make(map[string]*clientcmdapi.Context, len(config.Contexts))
+		for _, context := range config.Contexts {
+			name := fmt.Sprintf("%s-%s", context.Cluster, context.AuthInfo)
+			if context.Namespace != "" {
+				name = fmt.Sprintf("%s-%s", name, context.Namespace)
+			}
+			contexts[name] = context
+		}
+		config.Contexts = contexts
+
+		// If the current context is "", set it to the first
+		// context we can retrieve from the config. Because
+		// there is no guaranteed order of map elements, this is
+		// not necessaryly the first context
+		if config.CurrentContext == "" {
+			for name := range config.Contexts {
+				config.CurrentContext = name
+				break
+			}
 		}
 	}
 
-	clientConfig := clientcmd.NewDefaultClientConfig(*rawConfig, &clientcmd.ConfigOverrides{})
+	clientConfig := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{})
 
 	k.config = clientConfig
 	return nil
