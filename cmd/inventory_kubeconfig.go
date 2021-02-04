@@ -23,6 +23,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/google/uuid"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -77,6 +78,10 @@ func runInventoryKubeconfig(c *Cli, cmd *cobra.Command, args []string) error {
 			}).Error("Failed to get kubeconfig")
 			return err
 		}
+		// make all cluster/user/context names unique to
+		// prevent collisions when merging with other entry
+		// kubeconfigs
+		makeUnique(&config)
 		kubeconfigs = append(kubeconfigs, &config)
 	}
 
@@ -114,5 +119,37 @@ func mergeKubeconfigs(kubeconfigs []*clientcmdapi.Config) *clientcmdapi.Config {
 	mergo.Merge(config, mapConfig, mergo.WithOverride)
 	mergo.Merge(config, nonMapConfig, mergo.WithOverride)
 
+	for name := range config.Contexts {
+		config.CurrentContext = name
+		break
+	}
+
 	return config
+}
+
+func makeUnique(config *clientcmdapi.Config) {
+	uuidSuffix := uuid.New().String()
+	authInfos := make(map[string]*clientcmdapi.AuthInfo, len(config.AuthInfos))
+	clusters := make(map[string]*clientcmdapi.Cluster, len(config.Clusters))
+	contexts := make(map[string]*clientcmdapi.Context, len(config.Contexts))
+
+	for n, authInfo := range config.AuthInfos {
+		name := fmt.Sprintf("%s-%s", n, uuidSuffix)
+		authInfos[name] = authInfo
+	}
+	config.AuthInfos = authInfos
+
+	for n, cluster := range config.Clusters {
+		name := fmt.Sprintf("%s-%s", n, uuidSuffix)
+		clusters[name] = cluster
+	}
+	config.Clusters = clusters
+
+	for n, context := range config.Contexts {
+		name := fmt.Sprintf("%s-%s", n, uuidSuffix)
+		context.AuthInfo = fmt.Sprintf("%s-%s", context.AuthInfo, uuidSuffix)
+		context.Cluster = fmt.Sprintf("%s-%s", context.Cluster, uuidSuffix)
+		contexts[name] = context
+	}
+	config.Contexts = contexts
 }
