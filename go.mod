@@ -11,6 +11,7 @@ require (
 	github.com/geofffranks/spruce v1.27.0
 	github.com/go-test/deep v1.0.7
 	github.com/gofrs/flock v0.8.0
+	github.com/google/uuid v1.1.2
 	github.com/imdario/mergo v0.3.11
 	github.com/kjk/lzmadec v0.0.0-20200118223809-980b947af806
 	github.com/kr/pretty v0.2.1 // indirect
