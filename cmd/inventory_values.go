@@ -17,14 +17,17 @@ limitations under the License.
 package cmd
 
 import (
+	"github.com/bedag/kusible/internal/third_party/deepcopy"
+	"github.com/bedag/kusible/internal/wrapper/spruce"
 	"github.com/bedag/kusible/pkg/printer"
+	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
 )
 
 func newInventoryValuesCmd(c *Cli) *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:                   "values [entry name]",
-		Short:                 "Get the values for a given inventory entry",
+		Use:                   "values [filter]",
+		Short:                 "Get the values all inventory entries matched by filter",
 		Args:                  cobra.ExactArgs(1),
 		TraverseChildren:      true,
 		DisableFlagsInUseLine: true,
@@ -39,6 +42,8 @@ func newInventoryValuesCmd(c *Cli) *cobra.Command {
 
 func runInventoryValues(c *Cli, cmd *cobra.Command, args []string) error {
 	filter := args[0]
+	skipClusterInv := c.viper.GetBool("skip-cluster-inventory")
+	skipEval := c.viper.GetBool("skip-eval")
 
 	targets, err := loadTargets(c, filter)
 	if err != nil {
@@ -48,13 +53,26 @@ func runInventoryValues(c *Cli, cmd *cobra.Command, args []string) error {
 	printerQueue := printer.Queue{}
 	for name, target := range targets.Targets() {
 		values := target.Values().Map()
+		clusterInventory := map[string]interface{}{}
+		if !skipClusterInv {
+			ci, err := target.Entry().ClusterInventory()
+			if err != nil {
+				return err
+			}
+			clusterInventory = *ci
+		}
 		// see https://golang.org/doc/faq#closures_and_goroutines
 		name := name
 
 		job := printer.NewJob(func(fields []string) map[string]interface{} {
+			// TODO error handling
+			mergeResult, _ := deepcopy.Map(clusterInventory)
+			mergo.Merge(&mergeResult, values, mergo.WithOverride)
+			spruce.Eval(&mergeResult, skipEval, []string{})
+
 			defaultResult := map[string]interface{}{
 				"entry":  name,
-				"values": values,
+				"values": mergeResult,
 			}
 
 			if len(fields) < 1 {
