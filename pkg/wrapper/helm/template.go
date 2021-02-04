@@ -30,6 +30,7 @@ import (
 	helmcli "helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/downloader"
 	"helm.sh/helm/v3/pkg/getter"
+	"helm.sh/helm/v3/pkg/releaseutil"
 )
 
 // TemplatePlay renders all charts contained in a given play to a string containing
@@ -134,4 +135,22 @@ func Template(chart string, values map[string]interface{}, client *action.Instal
 	}
 
 	return rel.Manifest, nil
+}
+
+func SplitSortManifest(bigManifest string) ([]string, error) {
+	input := map[string]string{
+		"kusible": bigManifest,
+	}
+
+	_, manifests, err := releaseutil.SortManifests(input, nil, releaseutil.InstallOrder)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []string{}
+	for _, manifest := range manifests {
+		result = append(result, manifest.Content)
+	}
+
+	return result, nil
 }

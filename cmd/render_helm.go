@@ -19,10 +19,12 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/bedag/kusible/pkg/printer"
 	helmutil "github.com/bedag/kusible/pkg/wrapper/helm"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	helmcli "helm.sh/helm/v3/pkg/cli"
+	"sigs.k8s.io/yaml"
 )
 
 func newRenderHelmCmd(c *Cli) *cobra.Command {
@@ -49,6 +51,7 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 
 	settings := helmcli.New()
 
+	bigManifest := ""
 	for name, playbook := range playbookSet {
 		for _, play := range playbook.Config.Plays {
 			for _, repo := range play.Repos {
@@ -62,7 +65,7 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 					return err
 				}
 			}
-			manifests, err := helmutil.TemplatePlay(play, settings)
+			manifest, err := helmutil.TemplatePlay(play, settings)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"play":  play.Name,
@@ -71,13 +74,40 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 				}).Error("Failed to render play manifests with helm.")
 				return err
 			}
-			// Do not use the printer package here because the output is specifically intended
-			// to be directly consumed by kubectl (or whatever).
-			// It is up to the user to ensure that only the manifests he really needs are rendered
-			// (e.g. if he renders all manifests of all inventory entries at once it is his  task
-			// to deal with the result)
-			fmt.Printf(manifests)
+			bigManifest = fmt.Sprintf("%s%s\n---", bigManifest, manifest)
 		}
 	}
-	return nil
+
+	manifests, err := helmutil.SplitSortManifest(bigManifest)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Error("Failed to split combinded playbook manifest into separate yaml resources.")
+		return err
+	}
+
+	printerQueue := printer.Queue{}
+	for _, manifest := range manifests {
+		// see https://golang.org/doc/faq#closures_and_goroutines
+		manifest := manifest
+		job := printer.NewJob(func(fields []string) map[string]interface{} {
+			var defaultResult map[string]interface{}
+			yaml.Unmarshal([]byte(manifest), &defaultResult)
+
+			if len(fields) < 1 {
+				return defaultResult
+			}
+
+			result := map[string]interface{}{}
+			for _, field := range fields {
+				if val, ok := defaultResult[field]; ok {
+					result[field] = val
+				}
+			}
+			return result
+		})
+		printerQueue = append(printerQueue, job)
+	}
+
+	return c.output(printerQueue)
 }
