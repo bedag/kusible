@@ -17,11 +17,11 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/bedag/kusible/pkg/printer"
 	argocdutil "github.com/bedag/kusible/pkg/wrapper/argocd"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
 )
 
 func newRenderArgoCDCmd(c *Cli) *cobra.Command {
@@ -50,9 +50,10 @@ func runRenderArgoCD(c *Cli, cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	allApps := []argocdutil.Application{}
 	for name, playbook := range playbookSet {
 		for _, play := range playbook.Config.Plays {
-			manifests, err := argocdutil.ApplicationFromPlay(play, project, namespace, name)
+			apps, err := argocdutil.ApplicationsFromPlay(play, project, namespace, name)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"play":  play.Name,
@@ -61,13 +62,33 @@ func runRenderArgoCD(c *Cli, cmd *cobra.Command, args []string) error {
 				}).Error("Failed to render ArgoCD application manifests.")
 				return err
 			}
-			// Do not use the printer package here because the output is specifically intended
-			// to be directly consumed by kubectl (or whatever).
-			// It is up to the user to ensure that only the manifests he really needs are rendered
-			// (e.g. if he renders all manifests of all inventory entries at once it is his  task
-			// to deal with the result)
-			fmt.Printf(manifests)
+			allApps = append(allApps, apps...)
 		}
 	}
-	return nil
+
+	printerQueue := printer.Queue{}
+	for _, app := range allApps {
+		// see https://golang.org/doc/faq#closures_and_goroutines
+		app := app
+		job := printer.NewJob(func(fields []string) map[string]interface{} {
+			manifest, _ := yaml.Marshal(app)
+			var defaultResult map[string]interface{}
+			yaml.Unmarshal(manifest, &defaultResult)
+
+			if len(fields) < 1 {
+				return defaultResult
+			}
+
+			result := map[string]interface{}{}
+			for _, field := range fields {
+				if val, ok := defaultResult[field]; ok {
+					result[field] = val
+				}
+			}
+			return result
+		})
+		printerQueue = append(printerQueue, job)
+	}
+
+	return c.output(printerQueue)
 }
