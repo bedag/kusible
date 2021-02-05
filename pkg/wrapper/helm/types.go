@@ -17,23 +17,16 @@ limitations under the License.
 package helm
 
 import (
-	"helm.sh/helm/v3/pkg/releaseutil"
+	"os"
+
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/cli"
 )
 
-func SplitSortManifest(bigManifest string) ([]string, error) {
-	input := map[string]string{
-		"kusible": bigManifest,
-	}
-
-	_, manifests, err := releaseutil.SortManifests(input, nil, releaseutil.InstallOrder)
-	if err != nil {
-		return nil, err
-	}
-
-	result := []string{}
-	for _, manifest := range manifests {
-		result = append(result, manifest.Content)
-	}
-
-	return result, nil
+// Helm encabsules a single helm instance
+type Helm struct {
+	settings     *cli.EnvSettings
+	out          *os.File
+	helmDriver   string
+	actionConfig *action.Configuration
 }

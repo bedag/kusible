@@ -28,13 +28,13 @@ import (
 
 	"github.com/gofrs/flock"
 	"github.com/pkg/errors"
-	helmcli "helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/repo"
 	"sigs.k8s.io/yaml"
 )
 
-func RepoAdd(name string, url string, settings *helmcli.EnvSettings) error {
+func (h *Helm) RepoAdd(name string, url string) error {
+	settings := h.settings
 	repoFile := settings.RepositoryConfig
 	repoCache := settings.RepositoryCache
 

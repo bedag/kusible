@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Michael Gruener & The Helm Authors
+Copyright © 2021 Michael Gruener
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/* Lots of code straight from github.com/helm/helm and adapted to be used here */
-
 package helm
 
 import (
@@ -24,12 +22,11 @@ import (
 
 	"github.com/bedag/kusible/pkg/playbook/config"
 	"helm.sh/helm/v3/pkg/action"
-	helmcli "helm.sh/helm/v3/pkg/cli"
 )
 
 // TemplatePlay renders all charts contained in a given play to a string containing
 // kubernetes manifests
-func TemplatePlay(play *config.Play, settings *helmcli.EnvSettings) (string, error) {
+func (h *Helm) TemplatePlay(play *config.Play) (string, error) {
 	result := ""
 	for _, chart := range play.Charts {
 		actionConfig := new(action.Configuration)
@@ -56,7 +53,7 @@ func TemplatePlay(play *config.Play, settings *helmcli.EnvSettings) (string, err
 		name := chart.Chart
 		values := chart.Values
 
-		manifests, err := template(chart.Name, name, values, client, settings)
+		manifests, err := h.template(chart.Name, name, values, client)
 		if err != nil {
 			return result, err
 		}
@@ -67,11 +64,11 @@ func TemplatePlay(play *config.Play, settings *helmcli.EnvSettings) (string, err
 
 // Template renders a given chart + values to a string containing
 // kubernetes manifests
-func template(release string, chart string, values map[string]interface{}, client *action.Install, settings *helmcli.EnvSettings) (string, error) {
+func (h *Helm) template(release string, chart string, values map[string]interface{}, client *action.Install) (string, error) {
 	args := []string{release, chart}
-	rel, err := runInstall(args, values, client, settings)
+	rel, err := h.runInstall(args, values, client)
 
-	if err != nil && !settings.Debug {
+	if err != nil && !h.settings.Debug {
 		if rel != nil {
 			return "", fmt.Errorf("%w\n\nUse the HELM_DEBUG env var to render out invalid YAML", err)
 		}
