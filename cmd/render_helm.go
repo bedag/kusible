@@ -23,7 +23,6 @@ import (
 	helmutil "github.com/bedag/kusible/pkg/wrapper/helm"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	helmcli "helm.sh/helm/v3/pkg/cli"
 	"sigs.k8s.io/yaml"
 )
 
@@ -49,13 +48,16 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	settings := helmcli.New()
+	helm, err := helmutil.New()
+	if err != nil {
+		return fmt.Errorf("failed to create helm client instance: %s", err)
+	}
 
 	bigManifest := ""
 	for name, playbook := range playbookSet {
 		for _, play := range playbook.Config.Plays {
 			for _, repo := range play.Repos {
-				if err := helmutil.RepoAdd(repo.Name, repo.URL, settings); err != nil {
+				if err := helm.RepoAdd(repo.Name, repo.URL); err != nil {
 					log.WithFields(log.Fields{
 						"play":  play.Name,
 						"repo":  repo.Name,
@@ -65,7 +67,7 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 					return err
 				}
 			}
-			manifest, err := helmutil.TemplatePlay(play, settings)
+			manifest, err := helm.TemplatePlay(play)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"play":  play.Name,

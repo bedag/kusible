@@ -19,20 +19,18 @@ limitations under the License.
 package helm
 
 import (
-	"os"
-
 	"github.com/pkg/errors"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
-	helmcli "helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/downloader"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/release"
 )
 
-func runInstall(args []string, vals map[string]interface{}, client *action.Install, settings *helmcli.EnvSettings) (*release.Release, error) {
-	out := os.Stdout
+func (h *Helm) runInstall(args []string, vals map[string]interface{}, client *action.Install) (*release.Release, error) {
+	out := h.out
+	settings := h.settings
 	//debug("Original chart version: %q", client.Version)
 	if client.Version == "" && client.Devel {
 		//debug("setting version to >0.0.0-0")
