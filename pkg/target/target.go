@@ -19,9 +19,9 @@ package target
 import (
 	"fmt"
 
-	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	inv "github.com/bedag/kusible/pkg/inventory"
 	"github.com/bedag/kusible/pkg/values"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
 )
 
 func New(entry *inv.Entry, valuesPath string, skipEval bool, ejson *ejson.Settings) (*Target, error) {
