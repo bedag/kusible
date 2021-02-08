@@ -18,15 +18,38 @@ package helm
 
 import (
 	"os"
+	"time"
 
-	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // Helm encabsules a single helm instance
 type Helm struct {
-	settings     *cli.EnvSettings
-	out          *os.File
-	helmDriver   string
-	actionConfig *action.Configuration
+	settings         *cli.EnvSettings
+	out              *os.File
+	helmDriver       string
+	restClientGetter genericclioptions.RESTClientGetter
+	globals          Globals
+}
+
+// Globals holds all (relevant) helm cli options
+type Globals struct {
+	CreateNamespace          bool
+	DryRun                   bool
+	NoHooks                  bool
+	Replace                  bool
+	Timeout                  time.Duration
+	Wait                     bool
+	WaitForJobs              bool
+	DepdencyUpdate           bool
+	DisableOpenAPIValidation bool
+	Atomic                   bool
+	SkipCRDs                 bool
+	RenderSubChartNotes      bool
+	Verify                   bool
+	Keyring                  string
+	Validate                 bool
+	IncludeCRDs              bool
+	ExtraAPIs                []string
 }

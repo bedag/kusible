@@ -22,6 +22,7 @@ import (
 
 	"github.com/bedag/kusible/pkg/playbook/config"
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 // TemplatePlay renders all charts contained in a given play to a string containing
@@ -29,12 +30,12 @@ import (
 func (h *Helm) TemplatePlay(play *config.Play) (string, error) {
 	result := ""
 	for _, chart := range play.Charts {
-		actionConfig := new(action.Configuration)
+		actionConfig, err := h.ActionConfig()
+		if err != nil {
+			return "", fmt.Errorf("failed initialize helm client: %s", err)
+		}
 		client := action.NewInstall(actionConfig)
-		client.DryRun = true
-		client.Replace = true
-		client.ClientOnly = true
-		client.IncludeCRDs = true
+		h.getTemplateOptions(client)
 
 		for _, pr := range play.Repos {
 			if pr.Name == chart.Repo {
@@ -76,4 +77,13 @@ func (h *Helm) template(release string, chart string, values map[string]interfac
 	}
 
 	return rel.Manifest, nil
+}
+
+func (h *Helm) getTemplateOptions(client *action.Install) {
+	h.getInstallOptions(client)
+	client.DryRun = true
+	client.Replace = true
+	client.ClientOnly = !h.globals.Validate
+	client.APIVersions = chartutil.VersionSet(h.globals.ExtraAPIs)
+	client.IncludeCRDs = h.globals.IncludeCRDs
 }
