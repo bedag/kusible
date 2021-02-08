@@ -28,6 +28,27 @@ import (
 	"helm.sh/helm/v3/pkg/release"
 )
 
+func (h *Helm) getInstallOptions(client *action.Install) {
+	client.CreateNamespace = h.globals.CreateNamespace
+	client.DryRun = h.globals.DryRun
+	client.DisableHooks = h.globals.NoHooks
+	client.Replace = h.globals.Replace
+	client.Timeout = h.globals.Timeout
+	client.Wait = h.globals.Wait
+	client.WaitForJobs = h.globals.WaitForJobs
+	client.DependencyUpdate = h.globals.DepdencyUpdate
+	client.DisableOpenAPIValidation = h.globals.DisableOpenAPIValidation
+	client.Atomic = h.globals.Atomic
+	client.SkipCRDs = h.globals.SkipCRDs
+	client.SubNotes = h.globals.RenderSubChartNotes
+	h.getChartPathOptions(&client.ChartPathOptions)
+}
+
+func (h *Helm) getChartPathOptions(c *action.ChartPathOptions) {
+	c.Verify = h.globals.Verify
+	c.Keyring = h.globals.Keyring
+}
+
 func (h *Helm) runInstall(args []string, vals map[string]interface{}, client *action.Install) (*release.Release, error) {
 	out := h.out
 	settings := h.settings

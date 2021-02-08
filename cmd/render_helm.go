@@ -36,6 +36,9 @@ func newRenderHelmCmd(c *Cli) *cobra.Command {
 		RunE:                  c.wrap(runRenderHelm),
 	}
 	addRenderFlags(cmd)
+	helmutil.AddHelmInstallFlags(cmd)
+	helmutil.AddHelmChartPathOptionsFlags(cmd)
+	helmutil.AddHelmTemplateFlags(cmd)
 
 	return cmd
 }
@@ -48,7 +51,8 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	helm, err := helmutil.New()
+	helmGlobals := helmutil.GlobalsFromViper(c.viper)
+	helm, err := helmutil.New(helmGlobals)
 	if err != nil {
 		return fmt.Errorf("failed to create helm client instance: %s", err)
 	}

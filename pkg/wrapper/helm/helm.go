@@ -26,30 +26,35 @@ import (
 )
 
 // New returns a new helm instance
-func New() (*Helm, error) {
+func New(globals Globals) (*Helm, error) {
 	h := &Helm{
-		settings:     cli.New(),
-		out:          os.Stdout,
-		actionConfig: new(action.Configuration),
-		helmDriver:   os.Getenv("HELM_DRIVER"),
+		settings:   cli.New(),
+		out:        os.Stdout,
+		helmDriver: os.Getenv("HELM_DRIVER"),
+		globals:    globals,
 	}
+	h.restClientGetter = h.settings.RESTClientGetter()
 
-	if err := h.actionConfig.Init(h.settings.RESTClientGetter(), h.settings.Namespace(), h.helmDriver, h.debug); err != nil {
-		return nil, err
-	}
 	return h, nil
 }
 
-func NewWithGetter(getter genericclioptions.RESTClientGetter) (*Helm, error) {
-	h, err := New()
+// NewWithGetter returns a new helm instance that uses the provided getter to
+// retrieve kubeconfigs
+func NewWithGetter(globals Globals, getter genericclioptions.RESTClientGetter) (*Helm, error) {
+	h, err := New(globals)
 	if err != nil {
-		return h, err
-	}
-
-	if err := h.actionConfig.Init(getter, h.settings.Namespace(), h.helmDriver, h.debug); err != nil {
 		return nil, err
 	}
+	h.restClientGetter = getter
 	return h, nil
+}
+
+func (h *Helm) ActionConfig() (*action.Configuration, error) {
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(h.restClientGetter, h.settings.Namespace(), h.helmDriver, h.debug); err != nil {
+		return nil, err
+	}
+	return actionConfig, nil
 }
 
 // STUB, just here to be passed to action.Configration.Init()
