@@ -62,7 +62,7 @@ func (h *Helm) InstallPlay(play *config.Play) ([]*release.Release, error) {
 
 		rel, err := h.runInstall([]string{chart.Name, name}, values, client)
 		if err != nil {
-			return releases, fmt.Errorf("failed to install chart '%s' as releases '%s': %s", chart.Name, name, err)
+			return releases, fmt.Errorf("failed to install chart '%s' as release '%s': %s", name, chart.Name, err)
 		}
 		releases = append(releases, rel)
 
