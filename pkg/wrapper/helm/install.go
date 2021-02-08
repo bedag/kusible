@@ -19,6 +19,9 @@ limitations under the License.
 package helm
 
 import (
+	"fmt"
+
+	"github.com/bedag/kusible/pkg/playbook/config"
 	"github.com/pkg/errors"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
@@ -27,6 +30,45 @@ import (
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/release"
 )
+
+// InstallPlay renders all charts contained in a given play to a string containing
+// kubernetes manifests
+func (h *Helm) InstallPlay(play *config.Play) ([]*release.Release, error) {
+	releases := make([]*release.Release, len(play.Charts))
+	for _, chart := range play.Charts {
+		actionConfig, err := h.ActionConfig()
+		if err != nil {
+			return releases, fmt.Errorf("failed initialize helm client: %s", err)
+		}
+		client := action.NewInstall(actionConfig)
+		h.getInstallOptions(client)
+
+		for _, pr := range play.Repos {
+			if pr.Name == chart.Repo {
+				client.ChartPathOptions.RepoURL = pr.URL
+			}
+		}
+
+		if client.ChartPathOptions.RepoURL == "" {
+			return releases, fmt.Errorf("no repo '%s' for chart '%s' configured in play", chart.Repo, chart.Name)
+		}
+
+		client.ReleaseName = chart.Name
+		client.Version = chart.Version
+		client.Namespace = chart.Namespace
+
+		name := chart.Chart
+		values := chart.Values
+
+		rel, err := h.runInstall([]string{chart.Name, name}, values, client)
+		if err != nil {
+			return releases, fmt.Errorf("failed to install chart '%s' as releases '%s': %s", chart.Name, name, err)
+		}
+		releases = append(releases, rel)
+
+	}
+	return releases, nil
+}
 
 func (h *Helm) getInstallOptions(client *action.Install) {
 	client.CreateNamespace = h.globals.CreateNamespace
@@ -120,7 +162,9 @@ func (h *Helm) runInstall(args []string, vals map[string]interface{}, client *ac
 		}
 	}
 
-	client.Namespace = settings.Namespace()
+	if client.Namespace == "" {
+		client.Namespace = settings.Namespace()
+	}
 	return client.Run(chartRequested, vals)
 }
 

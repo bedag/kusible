@@ -43,6 +43,7 @@ func NewRootCommand(c *Cli) *cobra.Command {
 		newGroupsCmd(c),
 		newRenderCmd(c),
 		newInventoryCmd(c),
+		newDeployCmd(c),
 	)
 
 	return rootCmd
