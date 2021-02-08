@@ -56,7 +56,7 @@ func GlobalsFromViper(viper *viper.Viper) Globals {
 }
 
 func AddHelmInstallFlags(cmd *cobra.Command) {
-	cmd.Flags().Bool("helm-create-namespace", false, "create the release namespace if not present")
+	cmd.Flags().Bool("helm-create-namespace", true, "create the release namespace if not present")
 	cmd.Flags().Bool("helm-no-hooks", false, "prevent hooks from running during install")
 	cmd.Flags().Bool("helm-replace", false, "re-use the given name, only if that name is a deleted release which remains in the history. This is unsafe in production")
 	cmd.Flags().Duration("helm-timeout", 300*time.Second, "time to wait for any individual Kubernetes operation (like Jobs for hooks)")
