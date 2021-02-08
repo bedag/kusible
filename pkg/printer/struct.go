@@ -53,5 +53,5 @@ func (p *structPrinter) Print() {
 	if err != nil {
 		fmt.Printf("Failed to print data: %s", err)
 	}
-	fmt.Printf("%s\n", string(result))
+	fmt.Printf("%s", string(result))
 }

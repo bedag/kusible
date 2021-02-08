@@ -18,13 +18,14 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/bedag/kusible/pkg/printer"
 	helmutil "github.com/bedag/kusible/pkg/wrapper/helm"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/release"
-	"sigs.k8s.io/yaml"
 )
 
 func newDeployHelmCmd(c *Cli) *cobra.Command {
@@ -59,9 +60,10 @@ func runDeployHelm(c *Cli, cmd *cobra.Command, args []string) error {
 
 	helmGlobals := helmutil.GlobalsFromViper(c.viper)
 
-	releases := []*release.Release{}
+	releases := map[string][]*release.Release{}
 	for name, playbook := range playbookSet {
 		entry := inv.Entries()[name]
+		entryReleases := []*release.Release{}
 		for _, play := range playbook.Config.Plays {
 			helm, err := helmutil.NewWithGetter(helmGlobals, entry.Kubeconfig())
 			if err != nil {
@@ -75,6 +77,7 @@ func runDeployHelm(c *Cli, cmd *cobra.Command, args []string) error {
 						"entry": name,
 						"error": err.Error(),
 					}).Error("Failed to add helm repo for play.")
+					releases[name] = entryReleases
 					outErr := c.output(deployHelmStatusQueue(releases))
 					if outErr != nil {
 						return fmt.Errorf("%s + %s", err, outErr)
@@ -82,46 +85,78 @@ func runDeployHelm(c *Cli, cmd *cobra.Command, args []string) error {
 					return err
 				}
 			}
-			rels, err := helm.InstallPlay(play)
+			playReleases, err := helm.InstallPlay(play)
+			entryReleases = append(entryReleases, playReleases...)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"play":  play.Name,
 					"entry": name,
 					"error": err.Error(),
 				}).Error("Failed to render play manifests with helm.")
+				releases[name] = entryReleases
 				outErr := c.output(deployHelmStatusQueue(releases))
 				if outErr != nil {
 					return fmt.Errorf("%s + %s", err, outErr)
 				}
 				return err
 			}
-			releases = append(releases, rels...)
 		}
+		releases[name] = entryReleases
 	}
 
 	return c.output(deployHelmStatusQueue(releases))
 }
 
-func deployHelmStatusQueue(releases []*release.Release) printer.Queue {
+func deployHelmStatusQueue(releases map[string][]*release.Release) printer.Queue {
 	printerQueue := printer.Queue{}
-	for _, rel := range releases {
+	for name, entryReleases := range releases {
 		// see https://golang.org/doc/faq#closures_and_goroutines
-		rel := rel
+		name := name
+		entryReleases := entryReleases
 		job := printer.NewJob(func(fields []string) map[string]interface{} {
-			var defaultResult map[string]interface{}
-			status, _ := yaml.Marshal(rel)
-			yaml.Unmarshal([]byte(status), &defaultResult)
-
-			if len(fields) < 1 {
-				return defaultResult
+			result := map[string]interface{}{
+				"entry": name,
 			}
-
-			result := map[string]interface{}{}
-			for _, field := range fields {
-				if val, ok := defaultResult[field]; ok {
-					result[field] = val
+			releases := []map[string]interface{}{}
+			for _, rel := range entryReleases {
+				if rel == nil {
+					continue
 				}
+				defaultStatus := map[string]interface{}{
+					"release":   rel.Name,
+					"namespace": rel.Namespace,
+					"status":    rel.Info.Status.String(),
+					"revision":  rel.Version,
+				}
+				if !rel.Info.LastDeployed.IsZero() {
+					defaultStatus["lastDeployed"] = rel.Info.LastDeployed.Format(time.ANSIC)
+				}
+				if len(rel.Info.Notes) > 0 {
+					defaultStatus["notes"] = strings.TrimSpace(rel.Info.Notes)
+				}
+				if strings.EqualFold(rel.Info.Description, "Dry run complete") {
+					hooks := ""
+					for _, h := range rel.Hooks {
+						hooks = fmt.Sprintf("%s\n---\n# Source: %s\n%s\n", hooks, h.Path, h.Manifest)
+					}
+					defaultStatus["hooks"] = hooks
+					defaultStatus["manifest"] = rel.Manifest
+				}
+
+				if len(fields) < 1 {
+					releases = append(releases, defaultStatus)
+					continue
+				}
+
+				status := map[string]interface{}{}
+				for _, field := range fields {
+					if val, ok := defaultStatus[field]; ok {
+						status[field] = val
+					}
+				}
+				releases = append(releases, status)
 			}
+			result["releases"] = releases
 			return result
 		})
 		printerQueue = append(printerQueue, job)
