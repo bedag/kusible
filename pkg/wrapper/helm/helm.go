@@ -65,3 +65,8 @@ func (h *Helm) debug(format string, v ...interface{}) {
 		fmt.Printf(format, v...)
 	}
 }
+
+func (h *Helm) getChartPathOptions(c *action.ChartPathOptions) {
+	c.Verify = h.options.Verify
+	c.Keyring = h.options.Keyring
+}

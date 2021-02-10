@@ -45,7 +45,8 @@ func NewCli() *Cli {
 	v.SetEnvKeyReplacer(dashReplacer)
 	v.AutomaticEnv()
 	cli := &Cli{
-		viper: v,
+		viper:   v,
+		HelmEnv: helmcli.New(),
 	}
 	cli.RootCommand = NewRootCommand(cli)
 	return cli
