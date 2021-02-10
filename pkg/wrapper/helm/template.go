@@ -83,7 +83,7 @@ func (h *Helm) getTemplateOptions(client *action.Install) {
 	h.getInstallOptions(client)
 	client.DryRun = true
 	client.Replace = true
-	client.ClientOnly = !h.globals.Validate
-	client.APIVersions = chartutil.VersionSet(h.globals.ExtraAPIs)
-	client.IncludeCRDs = h.globals.IncludeCRDs
+	client.ClientOnly = !h.options.Validate
+	client.APIVersions = chartutil.VersionSet(h.options.ExtraAPIs)
+	client.IncludeCRDs = h.options.IncludeCRDs
 }

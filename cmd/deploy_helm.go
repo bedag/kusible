@@ -58,14 +58,14 @@ func runDeployHelm(c *Cli, cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	helmGlobals := helmutil.GlobalsFromViper(c.viper)
+	helmOptions := helmutil.NewOptions(c.viper)
 
 	releases := map[string][]*release.Release{}
 	for name, playbook := range playbookSet {
 		entry := inv.Entries()[name]
 		entryReleases := []*release.Release{}
 		for _, play := range playbook.Config.Plays {
-			helm, err := helmutil.NewWithGetter(helmGlobals, entry.Kubeconfig())
+			helm, err := helmutil.NewWithGetter(helmOptions, c.HelmEnv, entry.Kubeconfig())
 			if err != nil {
 				return fmt.Errorf("failed to create helm client instance: %s", err)
 			}

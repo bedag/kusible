@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	helmcli "helm.sh/helm/v3/pkg/cli"
 )
 
 // Cli is the core command line interface
@@ -33,6 +34,7 @@ import (
 type Cli struct {
 	RootCommand *cobra.Command
 	viper       *viper.Viper
+	HelmEnv     *helmcli.EnvSettings
 }
 
 // NewCli creates a

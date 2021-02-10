@@ -30,11 +30,11 @@ type Helm struct {
 	out              *os.File
 	helmDriver       string
 	restClientGetter genericclioptions.RESTClientGetter
-	globals          Globals
+	options          Options
 }
 
-// Globals holds all (relevant) helm cli options
-type Globals struct {
+// Options holds all (relevant) helm cli options
+type Options struct {
 	CreateNamespace          bool
 	DryRun                   bool
 	NoHooks                  bool
@@ -52,4 +52,9 @@ type Globals struct {
 	Validate                 bool
 	IncludeCRDs              bool
 	ExtraAPIs                []string
+	Force                    bool
+	ResetValues              bool
+	ReuseValues              bool
+	HistoryMax               int
+	CleanupOnFail            bool
 }
