@@ -38,9 +38,7 @@ func newDeployHelmCmd(c *Cli) *cobra.Command {
 		RunE:                  c.wrap(runDeployHelm),
 	}
 	addDeployFlags(cmd)
-	helmutil.AddHelmInstallFlags(cmd)
-	helmutil.AddHelmChartPathOptionsFlags(cmd)
-	helmutil.AddHelmTemplateFlags(cmd)
+	helmutil.AddHelmUpgradeFlags(cmd)
 
 	return cmd
 }
@@ -85,14 +83,14 @@ func runDeployHelm(c *Cli, cmd *cobra.Command, args []string) error {
 					return err
 				}
 			}
-			playReleases, err := helm.InstallPlay(play)
+			playReleases, err := helm.DeployPlay(play)
 			entryReleases = append(entryReleases, playReleases...)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"play":  play.Name,
 					"entry": name,
 					"error": err.Error(),
-				}).Error("Failed to render play manifests with helm.")
+				}).Error("Failed to deploy application with helm.")
 				releases[name] = entryReleases
 				outErr := c.output(deployHelmStatusQueue(releases))
 				if outErr != nil {

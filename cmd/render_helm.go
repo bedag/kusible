@@ -36,8 +36,6 @@ func newRenderHelmCmd(c *Cli) *cobra.Command {
 		RunE:                  c.wrap(runRenderHelm),
 	}
 	addRenderFlags(cmd)
-	helmutil.AddHelmInstallFlags(cmd)
-	helmutil.AddHelmChartPathOptionsFlags(cmd)
 	helmutil.AddHelmTemplateFlags(cmd)
 
 	return cmd

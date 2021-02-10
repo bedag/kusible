@@ -54,7 +54,7 @@ func (h *Helm) TemplatePlay(play *config.Play) (string, error) {
 		name := chart.Chart
 		values := chart.Values
 
-		manifests, err := h.template(chart.Name, name, values, client)
+		manifests, err := h.runTemplate(chart.Name, name, values, client)
 		if err != nil {
 			return result, err
 		}
@@ -65,7 +65,7 @@ func (h *Helm) TemplatePlay(play *config.Play) (string, error) {
 
 // Template renders a given chart + values to a string containing
 // kubernetes manifests
-func (h *Helm) template(release string, chart string, values map[string]interface{}, client *action.Install) (string, error) {
+func (h *Helm) runTemplate(release string, chart string, values map[string]interface{}, client *action.Install) (string, error) {
 	args := []string{release, chart}
 	rel, err := h.runInstall(args, values, client)
 
