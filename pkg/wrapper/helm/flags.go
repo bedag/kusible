@@ -31,11 +31,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"helm.sh/helm/v3/pkg/cli"
 	"k8s.io/client-go/util/homedir"
 )
 
-func GlobalsFromViper(viper *viper.Viper) Globals {
-	return Globals{
+func NewOptions(viper *viper.Viper) Options {
+	return Options{
 		CreateNamespace:          viper.GetBool("helm-create-namespace"),
 		NoHooks:                  viper.GetBool("helm-no-hooks"),
 		Replace:                  viper.GetBool("helm-replace"),
@@ -52,6 +53,11 @@ func GlobalsFromViper(viper *viper.Viper) Globals {
 		Validate:                 viper.GetBool("helm-validate"),
 		IncludeCRDs:              viper.GetBool("helm-include-crds"),
 		ExtraAPIs:                viper.GetStringSlice("helm-api-versions"),
+		Force:                    viper.GetBool("helm-force"),
+		ResetValues:              viper.GetBool("helm-reset-values"),
+		ReuseValues:              viper.GetBool("helm-reuse-values"),
+		HistoryMax:               viper.GetInt("helm-history-max"),
+		CleanupOnFail:            viper.GetBool("helm-cleanup-on-fail"),
 	}
 }
 
@@ -67,6 +73,15 @@ func AddHelmInstallFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("helm-atomic", false, "if set, the installation process deletes the installation on failure. The --helm-wait flag will be set automatically if --helm-atomic is used")
 	cmd.Flags().Bool("helm-skip-crds", false, "if set, no CRDs will be installed. By default, CRDs are installed if not already present")
 	cmd.Flags().Bool("helm-render-subchart-notes", false, "if set, render subchart notes along with the parent")
+}
+
+func AddHelmUpgradeFlags(cmd *cobra.Command) {
+	cmd.Flags().Bool("helm-force", false, "force resource updates through a replacement strategy")
+	cmd.Flags().Bool("helm-reset-values", false, "when upgrading, reset the values to the ones built into the chart")
+	cmd.Flags().Bool("helm-reuse-values", false, "when upgrading, reuse the last release's values and merge in any overrides from the command line via --set and -f. If '--reset-values' is specified, this is ignored")
+	// not sure if instantiating a new EnvSettings here just to get the default is a good idea
+	cmd.Flags().Int("helm-history-max", cli.New().MaxHistory, "limit the maximum number of revisions saved per release. Use 0 for no limit")
+	cmd.Flags().Bool("helm-cleanup-on-fail", false, "allow deletion of new resources created in this upgrade when upgrade fails")
 }
 
 func AddHelmChartPathOptionsFlags(cmd *cobra.Command) {

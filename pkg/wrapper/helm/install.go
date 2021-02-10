@@ -71,24 +71,24 @@ func (h *Helm) InstallPlay(play *config.Play) ([]*release.Release, error) {
 }
 
 func (h *Helm) getInstallOptions(client *action.Install) {
-	client.CreateNamespace = h.globals.CreateNamespace
-	client.DryRun = h.globals.DryRun
-	client.DisableHooks = h.globals.NoHooks
-	client.Replace = h.globals.Replace
-	client.Timeout = h.globals.Timeout
-	client.Wait = h.globals.Wait
-	client.WaitForJobs = h.globals.WaitForJobs
-	client.DependencyUpdate = h.globals.DepdencyUpdate
-	client.DisableOpenAPIValidation = h.globals.DisableOpenAPIValidation
-	client.Atomic = h.globals.Atomic
-	client.SkipCRDs = h.globals.SkipCRDs
-	client.SubNotes = h.globals.RenderSubChartNotes
+	client.CreateNamespace = h.options.CreateNamespace
+	client.DryRun = h.options.DryRun
+	client.DisableHooks = h.options.NoHooks
+	client.Replace = h.options.Replace
+	client.Timeout = h.options.Timeout
+	client.Wait = h.options.Wait
+	client.WaitForJobs = h.options.WaitForJobs
+	client.DependencyUpdate = h.options.DepdencyUpdate
+	client.DisableOpenAPIValidation = h.options.DisableOpenAPIValidation
+	client.Atomic = h.options.Atomic
+	client.SkipCRDs = h.options.SkipCRDs
+	client.SubNotes = h.options.RenderSubChartNotes
 	h.getChartPathOptions(&client.ChartPathOptions)
 }
 
 func (h *Helm) getChartPathOptions(c *action.ChartPathOptions) {
-	c.Verify = h.globals.Verify
-	c.Keyring = h.globals.Keyring
+	c.Verify = h.options.Verify
+	c.Keyring = h.options.Keyring
 }
 
 func (h *Helm) runInstall(args []string, vals map[string]interface{}, client *action.Install) (*release.Release, error) {

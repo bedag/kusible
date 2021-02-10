@@ -51,8 +51,8 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	helmGlobals := helmutil.GlobalsFromViper(c.viper)
-	helm, err := helmutil.New(helmGlobals)
+	helmOptions := helmutil.NewOptions(c.viper)
+	helm, err := helmutil.New(helmOptions, c.HelmEnv)
 	if err != nil {
 		return fmt.Errorf("failed to create helm client instance: %s", err)
 	}

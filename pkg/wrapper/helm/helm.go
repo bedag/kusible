@@ -26,12 +26,12 @@ import (
 )
 
 // New returns a new helm instance
-func New(globals Globals) (*Helm, error) {
+func New(options Options, settings *cli.EnvSettings) (*Helm, error) {
 	h := &Helm{
-		settings:   cli.New(),
+		settings:   settings,
 		out:        os.Stdout,
 		helmDriver: os.Getenv("HELM_DRIVER"),
-		globals:    globals,
+		options:    options,
 	}
 	h.restClientGetter = h.settings.RESTClientGetter()
 
@@ -40,8 +40,8 @@ func New(globals Globals) (*Helm, error) {
 
 // NewWithGetter returns a new helm instance that uses the provided getter to
 // retrieve kubeconfigs
-func NewWithGetter(globals Globals, getter genericclioptions.RESTClientGetter) (*Helm, error) {
-	h, err := New(globals)
+func NewWithGetter(options Options, settings *cli.EnvSettings, getter genericclioptions.RESTClientGetter) (*Helm, error) {
+	h, err := New(options, settings)
 	if err != nil {
 		return nil, err
 	}
