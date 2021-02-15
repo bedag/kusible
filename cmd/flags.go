@@ -49,3 +49,7 @@ func addClusterInventoryDefaultsFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("cluster-inventory-namespace", "c", "kube-system", "Default config namespace for the cluster inventory config map")
 	cmd.Flags().String("cluster-inventory-configmap", "cluster-inventory", "Name of the cluster inventory config map in the cluster inventory namespace")
 }
+
+func addDryRunFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolP("dry-run", "C", false, "check mode (dry-run)")
+}

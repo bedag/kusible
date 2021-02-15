@@ -38,4 +38,5 @@ func newDeployCmd(c *Cli) *cobra.Command {
 
 func addDeployFlags(cmd *cobra.Command) {
 	addRenderFlags(cmd)
+	addDryRunFlags(cmd)
 }
