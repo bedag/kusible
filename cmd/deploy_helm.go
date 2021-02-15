@@ -23,7 +23,7 @@ import (
 
 	"github.com/bedag/kusible/pkg/printer"
 	helmutil "github.com/bedag/kusible/pkg/wrapper/helm"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/release"
 )
@@ -63,13 +63,18 @@ func runDeployHelm(c *Cli, cmd *cobra.Command, args []string) error {
 		entry := inv.Entries()[name]
 		entryReleases := []*release.Release{}
 		for _, play := range playbook.Config.Plays {
-			helm, err := helmutil.NewWithGetter(helmOptions, c.HelmEnv, entry.Kubeconfig())
+			helm, err := helmutil.NewWithGetter(helmOptions, c.HelmEnv, entry.Kubeconfig(), c.Log)
 			if err != nil {
 				return fmt.Errorf("failed to create helm client instance: %s", err)
 			}
 			for _, repo := range play.Repos {
+				c.Log.WithFields(logrus.Fields{
+					"play":  play.Name,
+					"repo":  repo.Name,
+					"entry": name,
+				}).Info("Adding helm repository.")
 				if err := helm.RepoAdd(repo.Name, repo.URL); err != nil {
-					log.WithFields(log.Fields{
+					c.Log.WithFields(logrus.Fields{
 						"play":  play.Name,
 						"repo":  repo.Name,
 						"entry": name,
@@ -83,10 +88,14 @@ func runDeployHelm(c *Cli, cmd *cobra.Command, args []string) error {
 					return err
 				}
 			}
+			c.Log.WithFields(logrus.Fields{
+				"play":  play.Name,
+				"entry": name,
+			}).Info("Deploying play charts.")
 			playReleases, err := helm.DeployPlay(play)
 			entryReleases = append(entryReleases, playReleases...)
 			if err != nil {
-				log.WithFields(log.Fields{
+				c.Log.WithFields(logrus.Fields{
 					"play":  play.Name,
 					"entry": name,
 					"error": err.Error(),

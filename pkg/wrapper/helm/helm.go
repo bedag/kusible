@@ -20,18 +20,20 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // New returns a new helm instance
-func New(options Options, settings *cli.EnvSettings) (*Helm, error) {
+func New(options Options, settings *cli.EnvSettings, log logrus.FieldLogger) (*Helm, error) {
 	h := &Helm{
 		settings:   settings,
 		out:        os.Stdout,
 		helmDriver: os.Getenv("HELM_DRIVER"),
 		options:    options,
+		log:        log,
 	}
 	h.restClientGetter = h.settings.RESTClientGetter()
 
@@ -40,8 +42,8 @@ func New(options Options, settings *cli.EnvSettings) (*Helm, error) {
 
 // NewWithGetter returns a new helm instance that uses the provided getter to
 // retrieve kubeconfigs
-func NewWithGetter(options Options, settings *cli.EnvSettings, getter genericclioptions.RESTClientGetter) (*Helm, error) {
-	h, err := New(options, settings)
+func NewWithGetter(options Options, settings *cli.EnvSettings, getter genericclioptions.RESTClientGetter, log logrus.FieldLogger) (*Helm, error) {
+	h, err := New(options, settings, log)
 	if err != nil {
 		return nil, err
 	}
@@ -57,12 +59,10 @@ func (h *Helm) ActionConfig(namespace string) (*action.Configuration, error) {
 	return actionConfig, nil
 }
 
-// STUB, just here to be passed to action.Configration.Init()
-// TODO: implement proper debug log method
 func (h *Helm) debug(format string, v ...interface{}) {
 	if h.settings.Debug {
-		format = fmt.Sprintf("[debug] %s\n", format)
-		fmt.Printf(format, v...)
+		format = fmt.Sprintf("[helm-debug] %s", format)
+		h.log.Debugf(format, v...)
 	}
 }
 

@@ -21,7 +21,7 @@ import (
 
 	"github.com/bedag/kusible/pkg/printer"
 	helmutil "github.com/bedag/kusible/pkg/wrapper/helm"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
 )
@@ -50,7 +50,7 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 	}
 
 	helmOptions := helmutil.NewOptions(c.viper)
-	helm, err := helmutil.New(helmOptions, c.HelmEnv)
+	helm, err := helmutil.New(helmOptions, c.HelmEnv, c.Log)
 	if err != nil {
 		return fmt.Errorf("failed to create helm client instance: %s", err)
 	}
@@ -59,8 +59,13 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 	for name, playbook := range playbookSet {
 		for _, play := range playbook.Config.Plays {
 			for _, repo := range play.Repos {
+				c.Log.WithFields(logrus.Fields{
+					"play":  play.Name,
+					"repo":  repo.Name,
+					"entry": name,
+				}).Debug("Adding helm repository.")
 				if err := helm.RepoAdd(repo.Name, repo.URL); err != nil {
-					log.WithFields(log.Fields{
+					c.Log.WithFields(logrus.Fields{
 						"play":  play.Name,
 						"repo":  repo.Name,
 						"entry": name,
@@ -69,9 +74,13 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 					return err
 				}
 			}
+			c.Log.WithFields(logrus.Fields{
+				"play":  play.Name,
+				"entry": name,
+			}).Debug("Rendering play charts.")
 			manifest, err := helm.TemplatePlay(play)
 			if err != nil {
-				log.WithFields(log.Fields{
+				c.Log.WithFields(logrus.Fields{
 					"play":  play.Name,
 					"entry": name,
 					"error": err.Error(),
@@ -84,7 +93,7 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 
 	manifests, err := helmutil.SplitSortManifest(bigManifest)
 	if err != nil {
-		log.WithFields(log.Fields{
+		c.Log.WithFields(logrus.Fields{
 			"error": err.Error(),
 		}).Error("Failed to split combinded playbook manifest into separate yaml resources.")
 		return err

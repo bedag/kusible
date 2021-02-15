@@ -20,6 +20,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/cli"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -31,6 +32,7 @@ type Helm struct {
 	helmDriver       string
 	restClientGetter genericclioptions.RESTClientGetter
 	options          Options
+	log              logrus.FieldLogger
 }
 
 // Options holds all (relevant) helm cli options
