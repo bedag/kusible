@@ -58,6 +58,7 @@ func NewOptions(viper *viper.Viper) Options {
 		ReuseValues:              viper.GetBool("helm-reuse-values"),
 		HistoryMax:               viper.GetInt("helm-history-max"),
 		CleanupOnFail:            viper.GetBool("helm-cleanup-on-fail"),
+		KeepHistory:              viper.GetBool("helm-keep-history"),
 	}
 }
 
@@ -66,10 +67,18 @@ func AddHelmChartPathOptionsFlags(cmd *cobra.Command) {
 	cmd.Flags().String("helm-keyring", defaultKeyring(), "location of public keys used for verification")
 }
 
+func AddHelmTimeoutFlags(cmd *cobra.Command) {
+	cmd.Flags().Duration("helm-timeout", 300*time.Second, "time to wait for any individual Kubernetes operation (like Jobs for hooks)")
+}
+
+func AddHelmHooksFlags(cmd *cobra.Command) {
+	cmd.Flags().Bool("helm-no-hooks", false, "prevent hooks from running")
+}
+
 func AddHelmUpgradeInstallCommonFlags(cmd *cobra.Command) {
 	AddHelmChartPathOptionsFlags(cmd)
-	cmd.Flags().Bool("helm-no-hooks", false, "prevent hooks from running during install")
-	cmd.Flags().Duration("helm-timeout", 300*time.Second, "time to wait for any individual Kubernetes operation (like Jobs for hooks)")
+	AddHelmTimeoutFlags(cmd)
+	AddHelmHooksFlags(cmd)
 	cmd.Flags().Bool("helm-wait", false, "if set, will wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state before marking the release as successful. It will wait for as long as --helm-timeout")
 	cmd.Flags().Bool("helm-wait-for-jobs", false, "if set and --helm-wait enabled, will wait until all Jobs have been completed before marking the release as successful. It will wait for as long as --helm-timeout")
 	cmd.Flags().Bool("helm-disable-openapi-validation", false, "if set, the installation process will not validate rendered templates against the Kubernetes OpenAPI Schema")
@@ -100,6 +109,12 @@ func AddHelmTemplateFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("helm-validate", false, "validate your manifests against the Kubernetes cluster you are currently pointing at. This is the same validation performed on an install")
 	cmd.Flags().Bool("helm-include-crds", false, "include CRDs in the templated output")
 	cmd.Flags().StringArrayP("helm-api-versions", "a", []string{}, "Kubernetes api versions used for Capabilities.APIVersions")
+}
+
+func AddHelmUninstallFlags(cmd *cobra.Command) {
+	AddHelmTimeoutFlags(cmd)
+	AddHelmHooksFlags(cmd)
+	cmd.Flags().Bool("helm-keep-history", false, "remove all associated resources and mark the release as deleted, but retain the release history")
 }
 
 // defaultKeyring returns the expanded path to the default keyring.

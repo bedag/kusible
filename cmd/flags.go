@@ -49,8 +49,3 @@ func addClusterInventoryDefaultsFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("cluster-inventory-namespace", "c", "kube-system", "Default config namespace for the cluster inventory config map")
 	cmd.Flags().String("cluster-inventory-configmap", "cluster-inventory", "Name of the cluster inventory config map in the cluster inventory namespace")
 }
-
-func addClusterInventoryFlags(cmd *cobra.Command) {
-	addClusterInventoryDefaultsFlags(cmd)
-	addSkipClusterInventoryFlags(cmd)
-}

@@ -57,4 +57,5 @@ type Options struct {
 	ReuseValues              bool
 	HistoryMax               int
 	CleanupOnFail            bool
+	KeepHistory              bool
 }

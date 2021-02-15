@@ -44,6 +44,7 @@ func NewRootCommand(c *Cli) *cobra.Command {
 		newRenderCmd(c),
 		newInventoryCmd(c),
 		newDeployCmd(c),
+		newUninstallCmd(c),
 	)
 
 	return rootCmd
