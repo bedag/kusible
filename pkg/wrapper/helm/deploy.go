@@ -31,7 +31,7 @@ import (
 func (h *Helm) DeployPlay(play *config.Play) ([]*release.Release, error) {
 	releases := make([]*release.Release, len(play.Charts))
 	for _, chart := range play.Charts {
-		actionConfig, err := h.ActionConfig()
+		actionConfig, err := h.ActionConfig(chart.Namespace)
 		if err != nil {
 			return releases, fmt.Errorf("failed initialize helm client: %s", err)
 		}

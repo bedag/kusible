@@ -49,9 +49,9 @@ func NewWithGetter(options Options, settings *cli.EnvSettings, getter genericcli
 	return h, nil
 }
 
-func (h *Helm) ActionConfig() (*action.Configuration, error) {
+func (h *Helm) ActionConfig(namespace string) (*action.Configuration, error) {
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(h.restClientGetter, h.settings.Namespace(), h.helmDriver, h.debug); err != nil {
+	if err := actionConfig.Init(h.restClientGetter, namespace, h.helmDriver, h.debug); err != nil {
 		return nil, err
 	}
 	return actionConfig, nil

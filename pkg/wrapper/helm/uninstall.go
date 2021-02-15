@@ -26,7 +26,7 @@ import (
 func (h *Helm) UninstallPlay(play *config.Play) ([]string, error) {
 	result := []string{}
 	for _, chart := range play.Charts {
-		actionConfig, err := h.ActionConfig()
+		actionConfig, err := h.ActionConfig(chart.Namespace)
 		if err != nil {
 			return result, fmt.Errorf("failed initialize helm client: %s", err)
 		}
