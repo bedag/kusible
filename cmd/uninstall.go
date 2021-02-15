@@ -38,4 +38,5 @@ func newUninstallCmd(c *Cli) *cobra.Command {
 
 func addUninstallFlags(cmd *cobra.Command) {
 	addRenderFlags(cmd)
+	addDryRunFlags(cmd)
 }

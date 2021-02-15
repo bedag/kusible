@@ -37,6 +37,7 @@ import (
 
 func NewOptions(viper *viper.Viper) Options {
 	return Options{
+		DryRun:                   viper.GetBool("dry-run"),
 		CreateNamespace:          viper.GetBool("helm-create-namespace"),
 		NoHooks:                  viper.GetBool("helm-no-hooks"),
 		Replace:                  viper.GetBool("helm-replace"),

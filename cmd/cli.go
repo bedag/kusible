@@ -71,6 +71,9 @@ func (c *Cli) wrap(f func(*Cli, *cobra.Command, []string) error) func(*cobra.Com
 	return func(cmd *cobra.Command, args []string) error {
 		cmd.SilenceUsage = true
 		c.setupLogger()
+		if log.IsLevelEnabled(log.DebugLevel) {
+			c.HelmEnv.Debug = true
+		}
 		c.bindAllFlags(cmd)
 		return f(c, cmd, args)
 	}
