@@ -22,7 +22,7 @@ import (
 
 	"github.com/bedag/kusible/pkg/groups"
 	"github.com/bedag/kusible/pkg/printer"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -53,7 +53,7 @@ func runGroups(c *Cli, cmd *cobra.Command, args []string) error {
 
 	groups, err := groups.Groups(groupVarsDir, filter, limits)
 	if err != nil {
-		log.WithFields(log.Fields{
+		c.Log.WithFields(logrus.Fields{
 			"filter":    filter,
 			"limits":    strings.Join(limits[:], " "),
 			"directory": groupVarsDir,

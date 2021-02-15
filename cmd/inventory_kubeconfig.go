@@ -21,7 +21,7 @@ import (
 
 	"github.com/bedag/kusible/pkg/printer"
 	"github.com/imdario/mergo"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
 
@@ -55,7 +55,7 @@ func runInventoryKubeconfig(c *Cli, cmd *cobra.Command, args []string) error {
 
 	names, err := inv.EntryNames(filter, limits)
 	if err != nil {
-		log.WithFields(log.Fields{
+		c.Log.WithFields(logrus.Fields{
 			"error": err.Error(),
 		}).Error("Failed to get list of entries")
 		return err
@@ -66,7 +66,7 @@ func runInventoryKubeconfig(c *Cli, cmd *cobra.Command, args []string) error {
 		entry := inv.Entries()[name]
 		clientConfig, err := entry.Kubeconfig().Config()
 		if err != nil {
-			log.WithFields(log.Fields{
+			c.Log.WithFields(logrus.Fields{
 				"entry": name,
 				"error": err.Error(),
 			}).Error("Failed to get kubeconfig")
@@ -74,7 +74,7 @@ func runInventoryKubeconfig(c *Cli, cmd *cobra.Command, args []string) error {
 		}
 		config, err := clientConfig.RawConfig()
 		if err != nil {
-			log.WithFields(log.Fields{
+			c.Log.WithFields(logrus.Fields{
 				"entry": name,
 				"error": err.Error(),
 			}).Error("Failed to get kubeconfig")
@@ -90,7 +90,7 @@ func runInventoryKubeconfig(c *Cli, cmd *cobra.Command, args []string) error {
 	kubeconfig := mergeKubeconfigs(kubeconfigs)
 	data, err := clientcmd.Write(*kubeconfig)
 	if err != nil {
-		log.WithFields(log.Fields{
+		c.Log.WithFields(logrus.Fields{
 			"error": err.Error(),
 		}).Error("Failed to render merged kubeconfigs as yaml")
 		return err

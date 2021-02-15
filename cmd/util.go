@@ -17,12 +17,15 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/bedag/kusible/pkg/inventory"
 	invconfig "github.com/bedag/kusible/pkg/inventory/config"
 	"github.com/bedag/kusible/pkg/playbook"
 	"github.com/bedag/kusible/pkg/target"
 	"github.com/bedag/kusible/pkg/wrapper/ejson"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 func getEjsonSettings(c *Cli) ejson.Settings {
@@ -42,13 +45,23 @@ func loadInventory(c *Cli, skipKubeconfig bool) (*inventory.Inventory, error) {
 		ConfigMap: c.viper.GetString("cluster-inventory-configmap"),
 	}
 
+	c.Log.WithFields(logrus.Fields{
+		"path":              inventoryPath,
+		"load-kubeconfig":   !skipKubeconfig,
+		"cluster-inventory": fmt.Sprintf("%s/%s", clusterInventoryDefaults.Namespace, clusterInventoryDefaults.ConfigMap),
+	}).Trace("Loading inventory.")
+
 	inventory, err := inventory.NewInventory(inventoryPath, ejsonSettings, skipKubeconfig, clusterInventoryDefaults)
 	if err != nil {
-		log.WithFields(log.Fields{
+		c.Log.WithFields(logrus.Fields{
 			"error": err.Error(),
 		}).Error("Failed to compile inventory.")
 		return nil, err
 	}
+
+	c.Log.WithFields(logrus.Fields{
+		"entries": len(inventory.Entries()),
+	}).Trace("Successfully loaded inventory.")
 
 	return inventory, nil
 }
@@ -82,13 +95,23 @@ func loadTargetsWithInventory(c *Cli, filter string, inv *inventory.Inventory) (
 
 	ejsonSettings := getEjsonSettings(c)
 
+	c.Log.WithFields(logrus.Fields{
+		"limits":         strings.Join(limits, ","),
+		"filter":         filter,
+		"group-vars-dir": groupVarsDir,
+	}).Trace("Loading targets from inventory.")
+
 	targets, err := target.NewTargets(filter, limits, groupVarsDir, inv, true, &ejsonSettings)
 	if err != nil {
-		log.WithFields(log.Fields{
+		c.Log.WithFields(logrus.Fields{
 			"error": err.Error(),
 		}).Error("Failed to compile values for inventory entries.")
 		return nil, err
 	}
+
+	c.Log.WithFields(logrus.Fields{
+		"targets": len(targets.Targets()),
+	}).Trace("Successfully loaded targets from inventory.")
 
 	return targets, nil
 }
@@ -105,12 +128,34 @@ func loadPlaybooksWithTargets(c *Cli, playbookFile string, targets *target.Targe
 	skipEval := c.viper.GetBool("skip-eval")
 	skipClusterInv := c.viper.GetBool("skip-cluster-inventory")
 
+	c.Log.WithFields(logrus.Fields{
+		"playbook-file":          playbookFile,
+		"spruce-eval":            !skipEval,
+		"load-cluster-inventory": !skipClusterInv,
+	}).Trace("Loading playbooks for targets.")
+
 	playbooks, err := playbook.NewSet(playbookFile, targets, skipEval, skipClusterInv)
 	if err != nil {
-		log.WithFields(log.Fields{
+		c.Log.WithFields(logrus.Fields{
 			"error": err.Error(),
 		}).Error("Failed to compile playbooks.")
 		return nil, err
+	}
+
+	if c.Log.IsLevelEnabled(logrus.TraceLevel) {
+		plays := 0
+		charts := 0
+		for _, playbook := range playbooks {
+			plays = plays + len(playbook.Config.Plays)
+			for _, play := range playbook.Config.Plays {
+				charts = charts + len(play.Charts)
+			}
+		}
+		c.Log.WithFields(logrus.Fields{
+			"target-playbooks": len(playbooks),
+			"plays":            plays,
+			"charts":           charts,
+		}).Trace("Successfully loaded playbooks for targets.")
 	}
 
 	return playbooks, nil
