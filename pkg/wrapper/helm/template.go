@@ -30,7 +30,7 @@ import (
 func (h *Helm) TemplatePlay(play *config.Play) (string, error) {
 	result := ""
 	for _, chart := range play.Charts {
-		actionConfig, err := h.ActionConfig()
+		actionConfig, err := h.ActionConfig(chart.Namespace)
 		if err != nil {
 			return "", fmt.Errorf("failed initialize helm client: %s", err)
 		}
