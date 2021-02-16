@@ -19,6 +19,7 @@ limitations under the License.
 package helm
 
 import (
+	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/release"
@@ -45,6 +46,11 @@ func (h *Helm) getUpgradeOptions(client *action.Upgrade) {
 
 func (h *Helm) runUpgrade(args []string, vals map[string]interface{}, client *action.Upgrade, cfg *action.Configuration) (*release.Release, error) {
 	settings := h.settings
+	logFields := logrus.Fields{
+		"release": args[0],
+		"chart":   args[1],
+	}
+
 	if client.Namespace == "" {
 		client.Namespace = settings.Namespace()
 	}
@@ -54,10 +60,8 @@ func (h *Helm) runUpgrade(args []string, vals map[string]interface{}, client *ac
 		histClient := action.NewHistory(cfg)
 		histClient.Max = 1
 		if _, err := histClient.Run(args[0]); err == driver.ErrReleaseNotFound {
-			// Only print this to stdout for table output
-			//if outfmt == output.Table {
-			//  fmt.Fprintf(h.out, "Release %q does not exist. Installing it now.\n", args[0])
-			//}
+			h.log.WithFields(logFields).Info("Release does not exist. Installing it now.")
+
 			instClient := action.NewInstall(cfg)
 			h.getInstallOptions(instClient)
 			instClient.Version = client.Version
@@ -71,7 +75,7 @@ func (h *Helm) runUpgrade(args []string, vals map[string]interface{}, client *ac
 	}
 
 	if client.Version == "" && client.Devel {
-		//debug("setting version to >0.0.0-0")
+		h.log.WithFields(logFields).Debug("setting version to >0.0.0-0")
 		client.Version = ">0.0.0-0"
 	}
 
@@ -79,6 +83,8 @@ func (h *Helm) runUpgrade(args []string, vals map[string]interface{}, client *ac
 	if err != nil {
 		return nil, err
 	}
+
+	h.log.WithFields(logFields).Debugf("CHART PATH: %s", chartPath)
 
 	//vals, err := valueOpts.MergeValues(getter.All(settings))
 	//if err != nil {
@@ -96,9 +102,9 @@ func (h *Helm) runUpgrade(args []string, vals map[string]interface{}, client *ac
 		}
 	}
 
-	//if ch.Metadata.Deprecated {
-	//	warning("This chart is deprecated")
-	//}
+	if ch.Metadata.Deprecated {
+		h.log.WithFields(logFields).Warn("This chart is deprecated")
+	}
 
 	return client.Run(args[0], ch, vals)
 }

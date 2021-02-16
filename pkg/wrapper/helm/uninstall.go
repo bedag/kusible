@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/bedag/kusible/pkg/playbook/config"
+	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
 )
 
@@ -34,6 +35,11 @@ func (h *Helm) UninstallPlay(play *config.Play) ([]string, error) {
 		h.getUninstallOptions(client)
 
 		releaseName := chart.Name
+		h.log.WithFields(logrus.Fields{
+			"release":   releaseName,
+			"namespace": chart.Namespace,
+		}).Debug("Deleting release.")
+
 		status, err := h.runUninstall(releaseName, client)
 		if err != nil {
 			return result, fmt.Errorf("failed to uninstall release '%s': %s", releaseName, err)

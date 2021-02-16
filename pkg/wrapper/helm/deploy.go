@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/bedag/kusible/pkg/playbook/config"
+	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/release"
 )
@@ -55,6 +56,13 @@ func (h *Helm) DeployPlay(play *config.Play) ([]*release.Release, error) {
 		chartName := chart.Chart
 		releaseName := chart.Name
 		values := chart.Values
+
+		h.log.WithFields(logrus.Fields{
+			"chart":     chartName,
+			"release":   releaseName,
+			"namespace": chart.Namespace,
+			"version":   chart.Version,
+		}).Info("Deploying chart.")
 
 		rel, err := h.runUpgrade([]string{releaseName, chartName}, values, client, actionConfig)
 		if err != nil {
