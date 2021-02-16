@@ -32,6 +32,7 @@ Lots of code taken from https://github.com/kubernetes/cli-runtime/blob/master/pk
 package inventory
 
 import (
+	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -60,7 +61,11 @@ func (k *Kubeconfig) ToRawKubeConfigLoader() clientcmd.ClientConfig {
 // to a .kubeconfig file, loading rules, and config flag overrides.
 // Expects the AddFlags method to have been called.
 func (k *Kubeconfig) ToRESTConfig() (*rest.Config, error) {
-	return k.ToRawKubeConfigLoader().ClientConfig()
+	raw := k.ToRawKubeConfigLoader()
+	if raw == nil {
+		return nil, fmt.Errorf("failed to retrieve kubeconfig")
+	}
+	return raw.ClientConfig()
 }
 
 // ToDiscoveryClient implements RESTClientGetter.
