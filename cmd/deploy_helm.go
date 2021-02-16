@@ -62,17 +62,20 @@ func runDeployHelm(c *Cli, cmd *cobra.Command, args []string) error {
 	for name, playbook := range playbookSet {
 		entry := inv.Entries()[name]
 		entryReleases := []*release.Release{}
+
 		for _, play := range playbook.Config.Plays {
 			helm, err := helmutil.NewWithGetter(helmOptions, c.HelmEnv, entry.Kubeconfig(), c.Log)
 			if err != nil {
 				return fmt.Errorf("failed to create helm client instance: %s", err)
 			}
+
 			for _, repo := range play.Repos {
 				c.Log.WithFields(logrus.Fields{
 					"play":  play.Name,
 					"repo":  repo.Name,
 					"entry": name,
 				}).Info("Adding helm repository.")
+
 				if err := helm.RepoAdd(repo.Name, repo.URL); err != nil {
 					c.Log.WithFields(logrus.Fields{
 						"play":  play.Name,
@@ -80,6 +83,7 @@ func runDeployHelm(c *Cli, cmd *cobra.Command, args []string) error {
 						"entry": name,
 						"error": err.Error(),
 					}).Error("Failed to add helm repo for play.")
+
 					releases[name] = entryReleases
 					outErr := c.output(deployHelmStatusQueue(releases))
 					if outErr != nil {
@@ -88,10 +92,12 @@ func runDeployHelm(c *Cli, cmd *cobra.Command, args []string) error {
 					return err
 				}
 			}
+
 			c.Log.WithFields(logrus.Fields{
 				"play":  play.Name,
 				"entry": name,
 			}).Info("Deploying play charts.")
+
 			playReleases, err := helm.DeployPlay(play)
 			entryReleases = append(entryReleases, playReleases...)
 			if err != nil {
@@ -100,11 +106,13 @@ func runDeployHelm(c *Cli, cmd *cobra.Command, args []string) error {
 					"entry": name,
 					"error": err.Error(),
 				}).Error("Failed to deploy application with helm.")
+
 				releases[name] = entryReleases
 				outErr := c.output(deployHelmStatusQueue(releases))
 				if outErr != nil {
 					return fmt.Errorf("%s + %s", err, outErr)
 				}
+
 				return err
 			}
 		}
@@ -120,6 +128,7 @@ func deployHelmStatusQueue(releases map[string][]*release.Release) printer.Queue
 		// see https://golang.org/doc/faq#closures_and_goroutines
 		name := name
 		entryReleases := entryReleases
+
 		job := printer.NewJob(func(fields []string) map[string]interface{} {
 			result := map[string]interface{}{
 				"entry": name,
@@ -166,6 +175,7 @@ func deployHelmStatusQueue(releases map[string][]*release.Release) printer.Queue
 			result["releases"] = releases
 			return result
 		})
+
 		printerQueue = append(printerQueue, job)
 	}
 

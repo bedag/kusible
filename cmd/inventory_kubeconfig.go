@@ -72,6 +72,7 @@ func runInventoryKubeconfig(c *Cli, cmd *cobra.Command, args []string) error {
 			}).Error("Failed to get kubeconfig")
 			return err
 		}
+
 		config, err := clientConfig.RawConfig()
 		if err != nil {
 			c.Log.WithFields(logrus.Fields{
@@ -80,6 +81,7 @@ func runInventoryKubeconfig(c *Cli, cmd *cobra.Command, args []string) error {
 			}).Error("Failed to get kubeconfig")
 			return err
 		}
+
 		// make all cluster/user/context names unique to
 		// prevent collisions when merging with other entry
 		// kubeconfigs
