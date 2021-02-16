@@ -124,8 +124,10 @@ func (c *Cli) output(queue printer.Queue) error {
 		}).Error("Failed to create printer")
 		return err
 	}
+
 	if !c.viper.GetBool("quiet") {
 		printer.Print()
 	}
+
 	return nil
 }

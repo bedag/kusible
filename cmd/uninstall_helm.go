@@ -60,15 +60,18 @@ func runUninstallHelm(c *Cli, cmd *cobra.Command, args []string) error {
 	for name, playbook := range playbookSet {
 		entry := inv.Entries()[name]
 		entryStatus := []string{}
+
 		for _, play := range playbook.Config.Plays {
 			helm, err := helmutil.NewWithGetter(helmOptions, c.HelmEnv, entry.Kubeconfig(), c.Log)
 			if err != nil {
 				return fmt.Errorf("failed to create helm client instance: %s", err)
 			}
+
 			c.Log.WithFields(logrus.Fields{
 				"play":  play.Name,
 				"entry": name,
 			}).Info("Uninstalling play charts.")
+
 			playStatus, err := helm.UninstallPlay(play)
 			entryStatus = append(entryStatus, playStatus...)
 			if err != nil {
@@ -77,14 +80,17 @@ func runUninstallHelm(c *Cli, cmd *cobra.Command, args []string) error {
 					"entry": name,
 					"error": err.Error(),
 				}).Error("Failed to uninstall application with helm.")
+
 				status[name] = entryStatus
 				outErr := c.output(uninstallHelmStatusQueue(status))
 				if outErr != nil {
 					return fmt.Errorf("%s + %s", err, outErr)
 				}
+
 				return err
 			}
 		}
+
 		status[name] = entryStatus
 	}
 
@@ -97,6 +103,7 @@ func uninstallHelmStatusQueue(releases map[string][]string) printer.Queue {
 	for name, entryStatus := range releases {
 		name := name
 		entryStatus := entryStatus
+
 		job := printer.NewJob(func(fields []string) map[string]interface{} {
 			defaultResult := map[string]interface{}{
 				"entry":  name,

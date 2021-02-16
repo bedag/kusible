@@ -64,6 +64,7 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 					"repo":  repo.Name,
 					"entry": name,
 				}).Debug("Adding helm repository.")
+
 				if err := helm.RepoAdd(repo.Name, repo.URL); err != nil {
 					c.Log.WithFields(logrus.Fields{
 						"play":  play.Name,
@@ -71,6 +72,7 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 						"entry": name,
 						"error": err.Error(),
 					}).Error("Failed to add helm repo for play.")
+
 					return err
 				}
 			}
@@ -78,6 +80,7 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 				"play":  play.Name,
 				"entry": name,
 			}).Debug("Rendering play charts.")
+
 			manifest, err := helm.TemplatePlay(play)
 			if err != nil {
 				c.Log.WithFields(logrus.Fields{
@@ -85,8 +88,10 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 					"entry": name,
 					"error": err.Error(),
 				}).Error("Failed to render play manifests with helm.")
+
 				return err
 			}
+
 			bigManifest = fmt.Sprintf("%s%s\n---", bigManifest, manifest)
 		}
 	}
@@ -96,6 +101,7 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 		c.Log.WithFields(logrus.Fields{
 			"error": err.Error(),
 		}).Error("Failed to split combinded playbook manifest into separate yaml resources.")
+
 		return err
 	}
 

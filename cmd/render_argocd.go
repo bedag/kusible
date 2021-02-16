@@ -57,6 +57,7 @@ func runRenderArgoCD(c *Cli, cmd *cobra.Command, args []string) error {
 				"play":  play.Name,
 				"entry": name,
 			}).Debug("Rendering play.")
+
 			apps, err := argocdutil.ApplicationsFromPlay(play, project, namespace, name)
 			if err != nil {
 				c.Log.WithFields(logrus.Fields{
@@ -64,6 +65,7 @@ func runRenderArgoCD(c *Cli, cmd *cobra.Command, args []string) error {
 					"entry": name,
 					"error": err.Error(),
 				}).Error("Failed to render ArgoCD application manifests.")
+
 				return err
 			}
 			allApps = append(allApps, apps...)

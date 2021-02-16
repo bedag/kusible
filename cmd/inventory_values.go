@@ -54,6 +54,7 @@ func runInventoryValues(c *Cli, cmd *cobra.Command, args []string) error {
 	for name, target := range targets.Targets() {
 		values := target.Values().Map()
 		clusterInventory := map[string]interface{}{}
+
 		if !skipClusterInv {
 			ci, err := target.Entry().ClusterInventory()
 			if err != nil {
@@ -61,6 +62,7 @@ func runInventoryValues(c *Cli, cmd *cobra.Command, args []string) error {
 			}
 			clusterInventory = *ci
 		}
+
 		// see https://golang.org/doc/faq#closures_and_goroutines
 		name := name
 
