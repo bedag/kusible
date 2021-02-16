@@ -20,6 +20,7 @@ package helm
 
 import (
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -47,9 +48,13 @@ func (h *Helm) getInstallOptions(client *action.Install) {
 func (h *Helm) runInstall(args []string, vals map[string]interface{}, client *action.Install) (*release.Release, error) {
 	out := h.out
 	settings := h.settings
-	//debug("Original chart version: %q", client.Version)
+	logFields := logrus.Fields{
+		"release": args[0],
+		"chart":   args[1],
+	}
+
 	if client.Version == "" && client.Devel {
-		//debug("setting version to >0.0.0-0")
+		h.log.WithFields(logFields).Debug("setting version to >0.0.0-0")
 		client.Version = ">0.0.0-0"
 	}
 
@@ -64,7 +69,7 @@ func (h *Helm) runInstall(args []string, vals map[string]interface{}, client *ac
 		return nil, err
 	}
 
-	//debug("CHART PATH: %s\n", cp)
+	h.log.WithFields(logFields).Debugf("CHART PATH: %s", cp)
 
 	p := getter.All(settings)
 	//vals, err := valueOpts.MergeValues(p)
@@ -82,9 +87,9 @@ func (h *Helm) runInstall(args []string, vals map[string]interface{}, client *ac
 		return nil, err
 	}
 
-	//if chartRequested.Metadata.Deprecated {
-	//	warning("This chart is deprecated")
-	//}
+	if chartRequested.Metadata.Deprecated {
+		h.log.WithFields(logFields).Warn("This chart is deprecated")
+	}
 
 	if req := chartRequested.Metadata.Dependencies; req != nil {
 		// If CheckDependencies returns an error, we have unfulfilled dependencies.
