@@ -19,6 +19,8 @@ package cmd
 import (
 	"fmt"
 
+	"encoding/json"
+
 	"github.com/spf13/cobra"
 )
 
@@ -28,12 +30,39 @@ const appName = "kusible"
 // See https://www.digitalocean.com/community/tutorials/using-ldflags-to-set-version-information-for-go-applications
 var Version = "development"
 
+// BuildTime is the date/time when the binary was build. It should be set by the build process and will not be
+// displayed if it is empty.
+var BuildTime string
+
+// GitRev is the Git revision of the code the binary is build from. It should be set by the build process and will not be
+// displayed if it is empty.
+var GitRev string
+
+// GitTreeState indicates if the git tree had uncommited changes when the binary was build. It should be set by the build
+// process and will not be displayed if it is empty.
+var GitTreeState string
+
+type BuildInfo struct {
+	Version      string `json:"Version,omitempty"`
+	GitRev       string `json:"GitRev,omitempty"`
+	BuildTime    string `json:"BuildTime,omitempty"`
+	GitTreeState string `json:"GitTreeState,omitempty"`
+}
+
 func newVersionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: fmt.Sprint("Print the version number of ", appName),
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("%s %s\n", appName, Version)
+			bi := BuildInfo{
+				Version:      Version,
+				GitRev:       GitRev,
+				BuildTime:    BuildTime,
+				GitTreeState: GitTreeState,
+			}
+
+			version, _ := json.MarshalIndent(bi, "", "  ")
+			fmt.Println(string(version))
 		},
 	}
 	return cmd

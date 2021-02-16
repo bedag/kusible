@@ -4,12 +4,20 @@ export GO111MODULE=on
 export CGO_ENABLED=0
 APPNAME="kusible"
 VERSION=${VERSION:-"development"}
+BUILDTIME=$(date)
+GITREV=$(git rev-parse HEAD)
+GITTREESTATE=""
+if [ -z "$(git status --porcelain)" ]; then
+  GITTREESTATE="clean"
+else
+  GITTREESTATE="tainted"
+fi
 
 echo "Building ${APPNAME}..."
 # Details: https://golang.org/cmd/go/#hdr-Compile_packages_and_dependencies
 GO_BUILD_CMD="go build -a -v -trimpath"
 # Details: https://golang.org/cmd/link/
-GO_BUILD_LDFLAGS="-s -w -X 'github.com/bedag/kusible/cmd.Version=${VERSION}'"
+GO_BUILD_LDFLAGS="-s -w -X 'github.com/bedag/kusible/cmd.Version=${VERSION}' -X 'github.com/bedag/kusible/cmd.BuildTime=${BUILDTIME}' -X 'github.com/bedag/kusible/cmd.GitRev=${GITREV}' -X 'github.com/bedag/kusible/cmd.GitTreeState=${GITTREESTATE}'"
 
 mkdir -p release
 RELEASEDIR=$(readlink -f release)
