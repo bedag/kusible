@@ -86,7 +86,7 @@ If ejson encrypted files are present, the ejson privkey must be provided with th
 
 Group vars can make use of spruce operators and can use this to access settings in the inventory config map of the given cluster.
 
-All group variables should be inside the `vars` hash map e.g.:
+All group variabls should be inside the `vars` hash map e.g.:
 
 ```yaml
 ---
