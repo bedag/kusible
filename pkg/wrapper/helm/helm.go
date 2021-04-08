@@ -20,10 +20,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bedag/kusible/pkg/inventory"
+
 	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // New returns a new helm instance
@@ -35,14 +36,13 @@ func New(options Options, settings *cli.EnvSettings, log logrus.FieldLogger) (*H
 		options:    options,
 		log:        log,
 	}
-	h.restClientGetter = h.settings.RESTClientGetter()
 
 	return h, nil
 }
 
 // NewWithGetter returns a new helm instance that uses the provided getter to
 // retrieve kubeconfigs
-func NewWithGetter(options Options, settings *cli.EnvSettings, getter genericclioptions.RESTClientGetter, log logrus.FieldLogger) (*Helm, error) {
+func NewWithGetter(options Options, settings *cli.EnvSettings, getter *inventory.Kubeconfig, log logrus.FieldLogger) (*Helm, error) {
 	h, err := New(options, settings, log)
 	if err != nil {
 		return nil, err
@@ -52,6 +52,9 @@ func NewWithGetter(options Options, settings *cli.EnvSettings, getter genericcli
 }
 
 func (h *Helm) ActionConfig(namespace string) (*action.Configuration, error) {
+	// Set namespace acording to chart namespace in kubeconfig
+	h.restClientGetter.SetNamespace(namespace)
+
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(h.restClientGetter, namespace, h.helmDriver, h.debug); err != nil {
 		return nil, err

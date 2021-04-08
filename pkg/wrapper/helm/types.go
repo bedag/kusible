@@ -20,9 +20,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/bedag/kusible/pkg/inventory"
 	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/cli"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // Helm encabsules a single helm instance
@@ -30,7 +30,7 @@ type Helm struct {
 	settings         *cli.EnvSettings
 	out              *os.File
 	helmDriver       string
-	restClientGetter genericclioptions.RESTClientGetter
+	restClientGetter *inventory.Kubeconfig
 	options          Options
 	log              logrus.FieldLogger
 }
