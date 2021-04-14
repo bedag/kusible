@@ -37,7 +37,8 @@ type Entry struct {
 }
 
 type Kubeconfig struct {
-	loader loader.Loader
-	config clientcmd.ClientConfig
-	client kubernetes.Interface // *kubernetes.Clientset
+	loader    loader.Loader
+	config    clientcmd.ClientConfig
+	client    kubernetes.Interface // *kubernetes.Clientset
+	namespace string
 }

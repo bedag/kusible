@@ -25,11 +25,16 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
 	gotest.tools v2.2.0+incompatible
-	helm.sh/helm/v3 v3.5.0
-	k8s.io/api v0.20.1
-	k8s.io/apimachinery v0.20.1
-	k8s.io/cli-runtime v0.20.1
-	k8s.io/client-go v0.20.1
-	rsc.io/letsencrypt v0.0.3 // indirect
+	helm.sh/helm/v3 v3.5.3
+	k8s.io/api v0.20.2
+	k8s.io/apimachinery v0.20.2
+	k8s.io/apiserver v0.20.2
+	k8s.io/cli-runtime v0.20.2
+	k8s.io/client-go v0.20.2
 	sigs.k8s.io/yaml v1.2.0
+)
+
+replace (
+	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
+	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
 )
