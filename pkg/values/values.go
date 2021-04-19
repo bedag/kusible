@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 Michael Gruener
+Copyright © 2019 Copyright © 2021 Bedag Informatik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package values
 import (
 	"os"
 
-	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	groupsfilter "github.com/bedag/kusible/pkg/groups"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
 )
 
 func New(path string, groups []string, skipEval bool, ejsonSettings ejson.Settings) (Values, error) {
