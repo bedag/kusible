@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Michael Gruener
+Copyright © 2021 Bedag Informatik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -38,4 +38,5 @@ func newDeployCmd(c *Cli) *cobra.Command {
 
 func addDeployFlags(cmd *cobra.Command) {
 	addRenderFlags(cmd)
+	addDryRunFlags(cmd)
 }

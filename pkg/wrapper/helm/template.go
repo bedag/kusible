@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Michael Gruener
+Copyright © 2021 Bedag Informatik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/bedag/kusible/pkg/playbook/config"
+	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
@@ -30,7 +31,7 @@ import (
 func (h *Helm) TemplatePlay(play *config.Play) (string, error) {
 	result := ""
 	for _, chart := range play.Charts {
-		actionConfig, err := h.ActionConfig()
+		actionConfig, err := h.ActionConfig(chart.Namespace)
 		if err != nil {
 			return "", fmt.Errorf("failed initialize helm client: %s", err)
 		}
@@ -51,10 +52,18 @@ func (h *Helm) TemplatePlay(play *config.Play) (string, error) {
 		client.Version = chart.Version
 		client.Namespace = chart.Namespace
 
-		name := chart.Chart
+		chartName := chart.Chart
+		releaseName := chart.Name
 		values := chart.Values
 
-		manifests, err := h.template(chart.Name, name, values, client)
+		h.log.WithFields(logrus.Fields{
+			"chart":     chartName,
+			"release":   releaseName,
+			"namespace": chart.Namespace,
+			"version":   chart.Version,
+		}).Debug("Templating chart.")
+
+		manifests, err := h.runTemplate(releaseName, chartName, values, client)
 		if err != nil {
 			return result, err
 		}
@@ -65,7 +74,7 @@ func (h *Helm) TemplatePlay(play *config.Play) (string, error) {
 
 // Template renders a given chart + values to a string containing
 // kubernetes manifests
-func (h *Helm) template(release string, chart string, values map[string]interface{}, client *action.Install) (string, error) {
+func (h *Helm) runTemplate(release string, chart string, values map[string]interface{}, client *action.Install) (string, error) {
 	args := []string{release, chart}
 	rel, err := h.runInstall(args, values, client)
 
@@ -83,7 +92,7 @@ func (h *Helm) getTemplateOptions(client *action.Install) {
 	h.getInstallOptions(client)
 	client.DryRun = true
 	client.Replace = true
-	client.ClientOnly = !h.globals.Validate
-	client.APIVersions = chartutil.VersionSet(h.globals.ExtraAPIs)
-	client.IncludeCRDs = h.globals.IncludeCRDs
+	client.ClientOnly = !h.options.Validate
+	client.APIVersions = chartutil.VersionSet(h.options.ExtraAPIs)
+	client.IncludeCRDs = h.options.IncludeCRDs
 }

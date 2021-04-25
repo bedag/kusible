@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Michael Gruener & The Helm Authors
+Copyright © 2021 Bedag Informatik AG & The Helm Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,10 +19,8 @@ limitations under the License.
 package helm
 
 import (
-	"fmt"
-
-	"github.com/bedag/kusible/pkg/playbook/config"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -31,72 +29,32 @@ import (
 	"helm.sh/helm/v3/pkg/release"
 )
 
-// InstallPlay renders all charts contained in a given play to a string containing
-// kubernetes manifests
-func (h *Helm) InstallPlay(play *config.Play) ([]*release.Release, error) {
-	releases := make([]*release.Release, len(play.Charts))
-	for _, chart := range play.Charts {
-		actionConfig, err := h.ActionConfig()
-		if err != nil {
-			return releases, fmt.Errorf("failed initialize helm client: %s", err)
-		}
-		client := action.NewInstall(actionConfig)
-		h.getInstallOptions(client)
-
-		for _, pr := range play.Repos {
-			if pr.Name == chart.Repo {
-				client.ChartPathOptions.RepoURL = pr.URL
-			}
-		}
-
-		if client.ChartPathOptions.RepoURL == "" {
-			return releases, fmt.Errorf("no repo '%s' for chart '%s' configured in play", chart.Repo, chart.Name)
-		}
-
-		client.ReleaseName = chart.Name
-		client.Version = chart.Version
-		client.Namespace = chart.Namespace
-
-		name := chart.Chart
-		values := chart.Values
-
-		rel, err := h.runInstall([]string{chart.Name, name}, values, client)
-		if err != nil {
-			return releases, fmt.Errorf("failed to install chart '%s' as release '%s': %s", name, chart.Name, err)
-		}
-		releases = append(releases, rel)
-
-	}
-	return releases, nil
-}
-
 func (h *Helm) getInstallOptions(client *action.Install) {
-	client.CreateNamespace = h.globals.CreateNamespace
-	client.DryRun = h.globals.DryRun
-	client.DisableHooks = h.globals.NoHooks
-	client.Replace = h.globals.Replace
-	client.Timeout = h.globals.Timeout
-	client.Wait = h.globals.Wait
-	client.WaitForJobs = h.globals.WaitForJobs
-	client.DependencyUpdate = h.globals.DepdencyUpdate
-	client.DisableOpenAPIValidation = h.globals.DisableOpenAPIValidation
-	client.Atomic = h.globals.Atomic
-	client.SkipCRDs = h.globals.SkipCRDs
-	client.SubNotes = h.globals.RenderSubChartNotes
+	client.CreateNamespace = h.options.CreateNamespace
+	client.DryRun = h.options.DryRun
+	client.DisableHooks = h.options.NoHooks
+	client.Replace = h.options.Replace
+	client.Timeout = h.options.Timeout
+	client.Wait = h.options.Wait
+	client.WaitForJobs = h.options.WaitForJobs
+	client.DependencyUpdate = h.options.DepdencyUpdate
+	client.DisableOpenAPIValidation = h.options.DisableOpenAPIValidation
+	client.Atomic = h.options.Atomic
+	client.SkipCRDs = h.options.SkipCRDs
+	client.SubNotes = h.options.RenderSubChartNotes
 	h.getChartPathOptions(&client.ChartPathOptions)
-}
-
-func (h *Helm) getChartPathOptions(c *action.ChartPathOptions) {
-	c.Verify = h.globals.Verify
-	c.Keyring = h.globals.Keyring
 }
 
 func (h *Helm) runInstall(args []string, vals map[string]interface{}, client *action.Install) (*release.Release, error) {
 	out := h.out
 	settings := h.settings
-	//debug("Original chart version: %q", client.Version)
+	logFields := logrus.Fields{
+		"release": args[0],
+		"chart":   args[1],
+	}
+
 	if client.Version == "" && client.Devel {
-		//debug("setting version to >0.0.0-0")
+		h.log.WithFields(logFields).Debug("setting version to >0.0.0-0")
 		client.Version = ">0.0.0-0"
 	}
 
@@ -111,7 +69,7 @@ func (h *Helm) runInstall(args []string, vals map[string]interface{}, client *ac
 		return nil, err
 	}
 
-	//debug("CHART PATH: %s\n", cp)
+	h.log.WithFields(logFields).Debugf("CHART PATH: %s", cp)
 
 	p := getter.All(settings)
 	//vals, err := valueOpts.MergeValues(p)
@@ -129,9 +87,9 @@ func (h *Helm) runInstall(args []string, vals map[string]interface{}, client *ac
 		return nil, err
 	}
 
-	//if chartRequested.Metadata.Deprecated {
-	//	warning("This chart is deprecated")
-	//}
+	if chartRequested.Metadata.Deprecated {
+		h.log.WithFields(logFields).Warn("This chart is deprecated")
+	}
 
 	if req := chartRequested.Metadata.Dependencies; req != nil {
 			if client.DependencyUpdate {

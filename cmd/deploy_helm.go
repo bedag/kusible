@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 Michael Gruener
+Copyright © 2021 Bedag Informatik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import (
 
 	"github.com/bedag/kusible/pkg/printer"
 	helmutil "github.com/bedag/kusible/pkg/wrapper/helm"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/release"
 )
@@ -38,9 +38,7 @@ func newDeployHelmCmd(c *Cli) *cobra.Command {
 		RunE:                  c.wrap(runDeployHelm),
 	}
 	addDeployFlags(cmd)
-	helmutil.AddHelmInstallFlags(cmd)
-	helmutil.AddHelmChartPathOptionsFlags(cmd)
-	helmutil.AddHelmTemplateFlags(cmd)
+	helmutil.AddHelmUpgradeFlags(cmd)
 
 	return cmd
 }
@@ -58,25 +56,34 @@ func runDeployHelm(c *Cli, cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	helmGlobals := helmutil.GlobalsFromViper(c.viper)
+	helmOptions := helmutil.NewOptions(c.viper)
 
 	releases := map[string][]*release.Release{}
 	for name, playbook := range playbookSet {
 		entry := inv.Entries()[name]
 		entryReleases := []*release.Release{}
+
 		for _, play := range playbook.Config.Plays {
-			helm, err := helmutil.NewWithGetter(helmGlobals, entry.Kubeconfig())
+			helm, err := helmutil.NewWithGetter(helmOptions, c.HelmEnv, entry.Kubeconfig(), c.Log)
 			if err != nil {
 				return fmt.Errorf("failed to create helm client instance: %s", err)
 			}
+
 			for _, repo := range play.Repos {
+				c.Log.WithFields(logrus.Fields{
+					"play":  play.Name,
+					"repo":  repo.Name,
+					"entry": name,
+				}).Info("Adding helm repository.")
+
 				if err := helm.RepoAdd(repo.Name, repo.URL); err != nil {
-					log.WithFields(log.Fields{
+					c.Log.WithFields(logrus.Fields{
 						"play":  play.Name,
 						"repo":  repo.Name,
 						"entry": name,
 						"error": err.Error(),
 					}).Error("Failed to add helm repo for play.")
+
 					releases[name] = entryReleases
 					outErr := c.output(deployHelmStatusQueue(releases))
 					if outErr != nil {
@@ -85,19 +92,27 @@ func runDeployHelm(c *Cli, cmd *cobra.Command, args []string) error {
 					return err
 				}
 			}
-			playReleases, err := helm.InstallPlay(play)
+
+			c.Log.WithFields(logrus.Fields{
+				"play":  play.Name,
+				"entry": name,
+			}).Info("Deploying play charts.")
+
+			playReleases, err := helm.DeployPlay(play)
 			entryReleases = append(entryReleases, playReleases...)
 			if err != nil {
-				log.WithFields(log.Fields{
+				c.Log.WithFields(logrus.Fields{
 					"play":  play.Name,
 					"entry": name,
 					"error": err.Error(),
-				}).Error("Failed to render play manifests with helm.")
+				}).Error("Failed to deploy application with helm.")
+
 				releases[name] = entryReleases
 				outErr := c.output(deployHelmStatusQueue(releases))
 				if outErr != nil {
 					return fmt.Errorf("%s + %s", err, outErr)
 				}
+
 				return err
 			}
 		}
@@ -113,6 +128,7 @@ func deployHelmStatusQueue(releases map[string][]*release.Release) printer.Queue
 		// see https://golang.org/doc/faq#closures_and_goroutines
 		name := name
 		entryReleases := entryReleases
+
 		job := printer.NewJob(func(fields []string) map[string]interface{} {
 			result := map[string]interface{}{
 				"entry": name,
@@ -159,6 +175,7 @@ func deployHelmStatusQueue(releases map[string][]*release.Release) printer.Queue
 			result["releases"] = releases
 			return result
 		})
+
 		printerQueue = append(printerQueue, job)
 	}
 

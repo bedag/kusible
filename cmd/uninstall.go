@@ -14,8 +14,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-Package config describes the config format of the kusible inventory
-files.
-*/
-package config
+package cmd
+
+import (
+	"github.com/spf13/cobra"
+)
+
+func newUninstallCmd(c *Cli) *cobra.Command {
+	var cmd = &cobra.Command{
+		Use:                   "uninstall",
+		Short:                 "Uninstall an application",
+		Args:                  cobra.NoArgs,
+		TraverseChildren:      true,
+		DisableFlagsInUseLine: true,
+	}
+
+	cmd.AddCommand(
+		newUninstallHelmCmd(c),
+	)
+
+	return cmd
+}
+
+func addUninstallFlags(cmd *cobra.Command) {
+	addRenderFlags(cmd)
+	addDryRunFlags(cmd)
+}

@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Michael Gruener & Simon Fuhrer
+Copyright © 2021 Bedag Informatik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -50,7 +50,6 @@ func addClusterInventoryDefaultsFlags(cmd *cobra.Command) {
 	cmd.Flags().String("cluster-inventory-configmap", "cluster-inventory", "Name of the cluster inventory config map in the cluster inventory namespace")
 }
 
-func addClusterInventoryFlags(cmd *cobra.Command) {
-	addClusterInventoryDefaultsFlags(cmd)
-	addSkipClusterInventoryFlags(cmd)
+func addDryRunFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolP("dry-run", "C", false, "check mode (dry-run)")
 }

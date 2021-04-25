@@ -23,26 +23,31 @@ import (
 	helmutil "github.com/bedag/kusible/pkg/wrapper/helm"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"sigs.k8s.io/yaml"
 )
 
-func newRenderHelmCmd(c *Cli) *cobra.Command {
+func newUninstallHelmCmd(c *Cli) *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:                   "helm [playbook]",
-		Short:                 "Use helm to render manifests for an inventory entry",
+		Short:                 "Uninstall an application deployed with helm",
 		Args:                  cobra.ExactArgs(1),
 		TraverseChildren:      true,
 		DisableFlagsInUseLine: true,
-		RunE:                  c.wrap(runRenderHelm),
+		RunE:                  c.wrap(runUninstallHelm),
 	}
-	addRenderFlags(cmd)
-	helmutil.AddHelmTemplateFlags(cmd)
+
+	addUninstallFlags(cmd)
+	helmutil.AddHelmUninstallFlags(cmd)
 
 	return cmd
 }
 
-func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
+func runUninstallHelm(c *Cli, cmd *cobra.Command, args []string) error {
 	playbookFile := args[0]
+
+	inv, err := getInventoryWithKubeconfig(c)
+	if err != nil {
+		return err
+	}
 
 	playbookSet, err := loadPlaybooks(c, playbookFile)
 	if err != nil {
@@ -50,68 +55,60 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 	}
 
 	helmOptions := helmutil.NewOptions(c.viper)
-	helm, err := helmutil.New(helmOptions, c.HelmEnv, c.Log)
-	if err != nil {
-		return fmt.Errorf("failed to create helm client instance: %s", err)
-	}
 
-	bigManifest := ""
+	status := map[string][]string{}
 	for name, playbook := range playbookSet {
+		entry := inv.Entries()[name]
+		entryStatus := []string{}
+
 		for _, play := range playbook.Config.Plays {
-			for _, repo := range play.Repos {
-				c.Log.WithFields(logrus.Fields{
-					"play":  play.Name,
-					"repo":  repo.Name,
-					"entry": name,
-				}).Debug("Adding helm repository.")
-
-				if err := helm.RepoAdd(repo.Name, repo.URL); err != nil {
-					c.Log.WithFields(logrus.Fields{
-						"play":  play.Name,
-						"repo":  repo.Name,
-						"entry": name,
-						"error": err.Error(),
-					}).Error("Failed to add helm repo for play.")
-
-					return err
-				}
+			helm, err := helmutil.NewWithGetter(helmOptions, c.HelmEnv, entry.Kubeconfig(), c.Log)
+			if err != nil {
+				return fmt.Errorf("failed to create helm client instance: %s", err)
 			}
+
 			c.Log.WithFields(logrus.Fields{
 				"play":  play.Name,
 				"entry": name,
-			}).Debug("Rendering play charts.")
+			}).Info("Uninstalling play charts.")
 
-			manifest, err := helm.TemplatePlay(play)
+			playStatus, err := helm.UninstallPlay(play)
+			entryStatus = append(entryStatus, playStatus...)
 			if err != nil {
 				c.Log.WithFields(logrus.Fields{
 					"play":  play.Name,
 					"entry": name,
 					"error": err.Error(),
-				}).Error("Failed to render play manifests with helm.")
+				}).Error("Failed to uninstall application with helm.")
+
+				status[name] = entryStatus
+				outErr := c.output(uninstallHelmStatusQueue(status))
+				if outErr != nil {
+					return fmt.Errorf("%s + %s", err, outErr)
+				}
 
 				return err
 			}
-
-			bigManifest = fmt.Sprintf("%s%s\n---", bigManifest, manifest)
 		}
+
+		status[name] = entryStatus
 	}
 
-	manifests, err := helmutil.SplitSortManifest(bigManifest)
-	if err != nil {
-		c.Log.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Error("Failed to split combinded playbook manifest into separate yaml resources.")
+	return c.output(uninstallHelmStatusQueue(status))
+}
 
-		return err
-	}
-
+func uninstallHelmStatusQueue(releases map[string][]string) printer.Queue {
 	printerQueue := printer.Queue{}
-	for _, manifest := range manifests {
-		// see https://golang.org/doc/faq#closures_and_goroutines
-		manifest := manifest
+
+	for name, entryStatus := range releases {
+		name := name
+		entryStatus := entryStatus
+
 		job := printer.NewJob(func(fields []string) map[string]interface{} {
-			var defaultResult map[string]interface{}
-			yaml.Unmarshal([]byte(manifest), &defaultResult)
+			defaultResult := map[string]interface{}{
+				"entry":  name,
+				"status": entryStatus,
+			}
 
 			if len(fields) < 1 {
 				return defaultResult
@@ -127,6 +124,5 @@ func runRenderHelm(c *Cli, cmd *cobra.Command, args []string) error {
 		})
 		printerQueue = append(printerQueue, job)
 	}
-
-	return c.output(printerQueue)
+	return printerQueue
 }

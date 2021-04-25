@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 Michael Gruener
+Copyright © 2021 Bedag Informatik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ func runRenderPlaybook(c *Cli, cmd *cobra.Command, args []string) error {
 				"entry": name,
 				"error": err.Error(),
 			}).Error("Failed to convert playbook entry to a map.")
+
 			return err
 		}
 
@@ -87,6 +88,7 @@ func runRenderPlaybook(c *Cli, cmd *cobra.Command, args []string) error {
 						}
 						resultPlays = append(resultPlays, resultPlay)
 					}
+
 					return map[string]interface{}{
 						"entry": name,
 						"playbook": map[string]interface{}{
@@ -100,6 +102,7 @@ func runRenderPlaybook(c *Cli, cmd *cobra.Command, args []string) error {
 				// the whole playbook)
 				return defaultResult
 			})
+
 			printerQueue = append(printerQueue, job)
 		}
 	}

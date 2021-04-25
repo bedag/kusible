@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Michael Gruener
+Copyright © 2021 Bedag Informatik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/bedag/kusible/pkg/inventory"
+	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/cli"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // Helm encabsules a single helm instance
@@ -29,12 +30,13 @@ type Helm struct {
 	settings         *cli.EnvSettings
 	out              *os.File
 	helmDriver       string
-	restClientGetter genericclioptions.RESTClientGetter
-	globals          Globals
+	restClientGetter *inventory.Kubeconfig
+	options          Options
+	log              logrus.FieldLogger
 }
 
-// Globals holds all (relevant) helm cli options
-type Globals struct {
+// Options holds all (relevant) helm cli options
+type Options struct {
 	CreateNamespace          bool
 	DryRun                   bool
 	NoHooks                  bool
@@ -52,4 +54,10 @@ type Globals struct {
 	Validate                 bool
 	IncludeCRDs              bool
 	ExtraAPIs                []string
+	Force                    bool
+	ResetValues              bool
+	ReuseValues              bool
+	HistoryMax               int
+	CleanupOnFail            bool
+	KeepHistory              bool
 }

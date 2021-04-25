@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Michael Gruener & The Helm Authors
+Copyright © 2021 Bedag Informatik AG & The Helm Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,28 +20,30 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bedag/kusible/pkg/inventory"
+
+	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // New returns a new helm instance
-func New(globals Globals) (*Helm, error) {
+func New(options Options, settings *cli.EnvSettings, log logrus.FieldLogger) (*Helm, error) {
 	h := &Helm{
-		settings:   cli.New(),
+		settings:   settings,
 		out:        os.Stdout,
 		helmDriver: os.Getenv("HELM_DRIVER"),
-		globals:    globals,
+		options:    options,
+		log:        log,
 	}
-	h.restClientGetter = h.settings.RESTClientGetter()
 
 	return h, nil
 }
 
 // NewWithGetter returns a new helm instance that uses the provided getter to
 // retrieve kubeconfigs
-func NewWithGetter(globals Globals, getter genericclioptions.RESTClientGetter) (*Helm, error) {
-	h, err := New(globals)
+func NewWithGetter(options Options, settings *cli.EnvSettings, getter *inventory.Kubeconfig, log logrus.FieldLogger) (*Helm, error) {
+	h, err := New(options, settings, log)
 	if err != nil {
 		return nil, err
 	}
@@ -49,19 +51,25 @@ func NewWithGetter(globals Globals, getter genericclioptions.RESTClientGetter) (
 	return h, nil
 }
 
-func (h *Helm) ActionConfig() (*action.Configuration, error) {
+func (h *Helm) ActionConfig(namespace string) (*action.Configuration, error) {
+	// Set namespace acording to chart namespace in kubeconfig
+	h.restClientGetter.SetNamespace(namespace)
+
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(h.restClientGetter, h.settings.Namespace(), h.helmDriver, h.debug); err != nil {
+	if err := actionConfig.Init(h.restClientGetter, namespace, h.helmDriver, h.debug); err != nil {
 		return nil, err
 	}
 	return actionConfig, nil
 }
 
-// STUB, just here to be passed to action.Configration.Init()
-// TODO: implement proper debug log method
 func (h *Helm) debug(format string, v ...interface{}) {
 	if h.settings.Debug {
-		format = fmt.Sprintf("[debug] %s\n", format)
-		fmt.Printf(format, v...)
+		format = fmt.Sprintf("[helm-debug] %s", format)
+		h.log.Debugf(format, v...)
 	}
+}
+
+func (h *Helm) getChartPathOptions(c *action.ChartPathOptions) {
+	c.Verify = h.options.Verify
+	c.Keyring = h.options.Keyring
 }

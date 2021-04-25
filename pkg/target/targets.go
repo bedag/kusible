@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 Michael Gruener
+Copyright © 2021 Bedag Informatik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package target
 import (
 	"fmt"
 
-	"github.com/bedag/kusible/pkg/wrapper/ejson"
 	inv "github.com/bedag/kusible/pkg/inventory"
+	"github.com/bedag/kusible/pkg/wrapper/ejson"
 )
 
 func NewTargets(filter string, limits []string, valuesPath string, inventory *inv.Inventory, skipEval bool, ejson *ejson.Settings) (*Targets, error) {

@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 Michael Gruener
+Copyright © 2021 Bedag Informatik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ func NewRootCommand(c *Cli) *cobra.Command {
 		newRenderCmd(c),
 		newInventoryCmd(c),
 		newDeployCmd(c),
+		newUninstallCmd(c),
 	)
 
 	return rootCmd

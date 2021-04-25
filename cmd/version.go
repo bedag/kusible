@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 Michael Gruener
+Copyright © 2021 Bedag Inforamtik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,21 +19,30 @@ package cmd
 import (
 	"fmt"
 
+	goVersion "go.hein.dev/go-version"
+
 	"github.com/spf13/cobra"
 )
 
 const appName = "kusible"
 
-// Version is the application version. It will be overriden during the build process.
-// See https://www.digitalocean.com/community/tutorials/using-ldflags-to-set-version-information-for-go-applications
-var Version = "development"
 
+var (
+	shortened  = false
+	version    = "dev"
+	commit     = "none"
+	date       = "unknown"
+	output     = "json"
+)
 func newVersionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
-		Short: fmt.Sprint("Print the version number of ", appName),
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("%s %s\n", appName, Version)
+		Short: "Version will output the current build information",
+		Long:  ``,
+		Run: func(_ *cobra.Command, _ []string) {
+			resp := goVersion.FuncWithOutput(shortened, version, commit, date, output)
+			fmt.Print(resp)
+			return
 		},
 	}
 	return cmd

@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 Michael Gruener
+Copyright © 2021 Bedag Informatik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ func runInventoryValues(c *Cli, cmd *cobra.Command, args []string) error {
 	for name, target := range targets.Targets() {
 		values := target.Values().Map()
 		clusterInventory := map[string]interface{}{}
+
 		if !skipClusterInv {
 			ci, err := target.Entry().ClusterInventory()
 			if err != nil {
@@ -61,6 +62,7 @@ func runInventoryValues(c *Cli, cmd *cobra.Command, args []string) error {
 			}
 			clusterInventory = *ci
 		}
+
 		// see https://golang.org/doc/faq#closures_and_goroutines
 		name := name
 

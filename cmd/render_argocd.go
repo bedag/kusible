@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 Michael Gruener
+Copyright © 2021 Bedag Informatik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package cmd
 import (
 	"github.com/bedag/kusible/pkg/printer"
 	argocdutil "github.com/bedag/kusible/pkg/wrapper/argocd"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
 )
@@ -53,13 +53,19 @@ func runRenderArgoCD(c *Cli, cmd *cobra.Command, args []string) error {
 	allApps := []argocdutil.Application{}
 	for name, playbook := range playbookSet {
 		for _, play := range playbook.Config.Plays {
+			c.Log.WithFields(logrus.Fields{
+				"play":  play.Name,
+				"entry": name,
+			}).Debug("Rendering play.")
+
 			apps, err := argocdutil.ApplicationsFromPlay(play, project, namespace, name)
 			if err != nil {
-				log.WithFields(log.Fields{
+				c.Log.WithFields(logrus.Fields{
 					"play":  play.Name,
 					"entry": name,
 					"error": err.Error(),
 				}).Error("Failed to render ArgoCD application manifests.")
+
 				return err
 			}
 			allApps = append(allApps, apps...)

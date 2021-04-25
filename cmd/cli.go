@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 Michael Gruener & Simon Fuhrer
+Copyright © 2021 Bedag Informatik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,10 +20,11 @@ import (
 	"strings"
 
 	"github.com/bedag/kusible/pkg/printer"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	helmcli "helm.sh/helm/v3/pkg/cli"
 )
 
 // Cli is the core command line interface
@@ -33,6 +34,8 @@ import (
 type Cli struct {
 	RootCommand *cobra.Command
 	viper       *viper.Viper
+	HelmEnv     *helmcli.EnvSettings
+	Log         *logrus.Logger
 }
 
 // NewCli creates a
@@ -43,7 +46,9 @@ func NewCli() *Cli {
 	v.SetEnvKeyReplacer(dashReplacer)
 	v.AutomaticEnv()
 	cli := &Cli{
-		viper: v,
+		viper:   v,
+		HelmEnv: helmcli.New(),
+		Log:     logrus.New(),
 	}
 	cli.RootCommand = NewRootCommand(cli)
 	return cli
@@ -68,6 +73,9 @@ func (c *Cli) wrap(f func(*Cli, *cobra.Command, []string) error) func(*cobra.Com
 	return func(cmd *cobra.Command, args []string) error {
 		cmd.SilenceUsage = true
 		c.setupLogger()
+		if c.Log.IsLevelEnabled(logrus.DebugLevel) {
+			c.HelmEnv.Debug = true
+		}
 		c.bindAllFlags(cmd)
 		return f(c, cmd, args)
 	}
@@ -75,22 +83,22 @@ func (c *Cli) wrap(f func(*Cli, *cobra.Command, []string) error) func(*cobra.Com
 
 func (c *Cli) setupLogger() {
 	if c.viper.GetBool("log-json") {
-		log.SetFormatter(&log.JSONFormatter{})
+		c.Log.SetFormatter(&logrus.JSONFormatter{})
 	}
 
-	logLevel, err := log.ParseLevel(c.viper.GetString("log-level"))
+	logLevel, err := logrus.ParseLevel(c.viper.GetString("log-level"))
 	if err != nil {
-		log.Fatal(err.Error())
+		c.Log.Fatal(err.Error())
 	}
 
 	// According to the logrus documentation this is very costly, but
 	// if we need debug tracing or more, this is also very helpful
 	// See https://github.com/sirupsen/logrus/blob/d417be0fe654de640a82370515129985b407c7e3/README.md#logging-method-name
 	if c.viper.GetBool("log-functions") {
-		log.SetReportCaller(true)
+		c.Log.SetReportCaller(true)
 	}
 
-	log.SetLevel(logLevel)
+	c.Log.SetLevel(logLevel)
 }
 
 func (c *Cli) output(queue printer.Queue) error {
@@ -99,7 +107,7 @@ func (c *Cli) output(queue printer.Queue) error {
 
 	format, err := printer.ParseFormat(printerFormat)
 	if err != nil {
-		log.WithFields(log.Fields{
+		c.Log.WithFields(logrus.Fields{
 			"format": printerFormat,
 		}).Error("Unknown printer format")
 		return err
@@ -110,14 +118,16 @@ func (c *Cli) output(queue printer.Queue) error {
 	}
 	printer, err := printer.New(format, printerFields, queue, options)
 	if err != nil {
-		log.WithFields(log.Fields{
+		c.Log.WithFields(logrus.Fields{
 			"format": printerFormat,
 			"error":  err,
 		}).Error("Failed to create printer")
 		return err
 	}
+
 	if !c.viper.GetBool("quiet") {
 		printer.Print()
 	}
+
 	return nil
 }

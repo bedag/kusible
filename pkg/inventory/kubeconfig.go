@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 Michael Gruener
+Copyright © 2021 Bedag Informatik AG
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -117,6 +117,11 @@ func (k *Kubeconfig) Client() (kubernetes.Interface, error) {
 	return clientset, nil
 }
 
+func (k *Kubeconfig) SetNamespace(n string) error {
+	k.namespace = n
+	return k.loadConfig()
+}
+
 func (k *Kubeconfig) loadConfig() error {
 	configData, err := k.loader.Load()
 	if err != nil {
@@ -137,7 +142,6 @@ func (k *Kubeconfig) loadConfig() error {
 	if config.Contexts == nil {
 		config.Contexts = map[string]*clientcmdapi.Context{}
 	}
-
 	if len(config.Contexts) > 0 {
 		// normalize context names
 		// the resulting contexts only include contexts with unique
@@ -148,6 +152,11 @@ func (k *Kubeconfig) loadConfig() error {
 			if context.Namespace != "" {
 				name = fmt.Sprintf("%s-%s", name, context.Namespace)
 			}
+			if k.namespace != "" {
+				// set namespace play config
+				context.Namespace = k.namespace
+			}
+
 			contexts[name] = context
 		}
 		config.Contexts = contexts
