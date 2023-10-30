@@ -1,3 +1,22 @@
+# Deprecation Notice for Kusible
+
+Dear users and contributors of Kusible,
+
+We want to inform you that Kusible is being deprecated and will no longer be actively maintained. After careful consideration, the project maintainers have decided to discontinue further development and support for Kusible.
+
+**What does this mean for you?**
+
+1. **No Further Updates:** There will be no further updates, enhancements, or bug fixes to Kusible. The repository will remain as is, but we will not actively maintain or contribute to it.
+
+2. **Security and Compatibility:** As Kusible will no longer be actively maintained, it may become vulnerable to security issues or compatibility problems with newer dependencies or Kubernetes versions.
+
+3. **Consider Alternatives:** We encourage you to consider alternatives for your Kubernetes deployment needs, as Kusible will no longer be a recommended solution. Popular alternatives in the Kubernetes deployment space include Helm, Kustomize, and other similar tools.
+
+4. **Archival:** The Kusible Git repository will be archived, but it will remain accessible for historical purposes.
+
+We understand that this decision may impact users who have found value in Kusible, and we sincerely thank you for your support and contributions. We recommend transitioning to alternative solutions that are actively maintained and aligned with your requirements.
+
+
 ![Logo of kusible](assets/images/kusible-0.0.4-small.png)
 
 # Kusible
